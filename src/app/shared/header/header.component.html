@@ -1,0 +1,52 @@
+<header class="app-header">
+    <!-- Logo de la empresa a la izquierda -->
+    <div class="header-izquierda">
+        <div class="logo-contenedor" (click)="refrescarManual()" title="Refrescar datos">
+            <img src="https://appsurgicorperu.com/NewAPI/static/avatars/LogoSurgiC_SinFondo.png" alt="Surgicorp"
+                class="logo-surgicorp" />
+        </div>
+        <h2 class="header-titulo">Administrador de Vacaciones</h2>
+    </div>
+
+    <!-- Perfil del usuario -->
+    <div class="header-derecha">
+        <div class="perfil-usuario" (click)="alternarMenuPerfil()" [class.abierto]="menuPerfilAbierto">
+            <!-- Info del usuario (Nombre y Cargo) -->
+            <div class="info-usuario">
+                <span class="nombre-usuario">{{ nombreUsuario }}</span>
+                <span class="cargo-usuario">{{ cargoUsuario }}</span>
+            </div>
+
+            <!-- Avatar del usuario -->
+            <div class="avatar">
+                <img *ngIf="avatarUrl" [src]="avatarUrl" [alt]="nombreUsuario" />
+                <span *ngIf="!avatarUrl" class="avatar-iniciales">{{ inicialesUsuario }}</span>
+            </div>
+
+            <!-- Flecha dropdown -->
+            <svg class="flecha-dropdown" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9" />
+            </svg>
+        </div>
+
+        <!-- Dropdown de perfil -->
+        <div class="dropdown-perfil" *ngIf="menuPerfilAbierto" (click)="menuPerfilAbierto = false">
+            <div class="dropdown-header">
+                <strong>{{ nombreUsuario }}</strong>
+                <span>{{ cargoUsuario }}</span>
+            </div>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item btn-cerrar-sesion" (click)="cerrarSesion()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                Cerrar Sesión
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Overlay para cerrar dropdown al hacer clic fuera -->
+<div class="dropdown-overlay" *ngIf="menuPerfilAbierto" (click)="menuPerfilAbierto = false"></div>

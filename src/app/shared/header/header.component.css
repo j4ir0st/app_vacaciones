@@ -1,0 +1,224 @@
+/* ========================================
+   Header superior - Estilos
+   ======================================== */
+
+.app-header {
+    height: 70px;
+    background: #c41e3a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    box-shadow: 0 2px 10px rgba(196, 30, 58, 0.3);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-izquierda {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.logo-contenedor {
+    background: #fff;
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+}
+
+.logo-surgicorp {
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+}
+
+.header-titulo {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+    letter-spacing: 0.2px;
+}
+
+/* Perfil del usuario */
+.header-derecha {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.perfil-usuario {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    padding: 0.4rem 1rem;
+    border-radius: 50px;
+    transition: background 0.2s;
+    user-select: none;
+}
+
+.perfil-usuario:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Info del usuario a la derecha del avatar */
+.info-usuario {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.1;
+    order: 2;
+    /* Para que aparezca después del avatar */
+}
+
+.nombre-usuario {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+}
+
+.cargo-usuario {
+    font-size: 0.75rem;
+    color: #00bcd4;
+    /* Color similar al de la imagen "Programador" */
+    background: #fff;
+    padding: 1px 10px;
+    border-radius: 20px;
+    text-align: center;
+    margin-top: 3px;
+    font-weight: 600;
+}
+
+/* Avatar circular a la izquierda de la info */
+.avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    order: 1;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-iniciales {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #c41e3a;
+}
+
+.flecha-dropdown {
+    width: 14px;
+    height: 14px;
+    color: #fff;
+    transition: transform 0.2s;
+    order: 3;
+}
+
+.perfil-usuario.abierto .flecha-dropdown {
+    transform: rotate(180deg);
+}
+
+/* Dropdown del perfil */
+.dropdown-perfil {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    min-width: 220px;
+    z-index: 1000;
+    overflow: hidden;
+    animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-header {
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.dropdown-header strong {
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.dropdown-header span {
+    font-size: 0.78rem;
+    color: #888;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: #f0f0f0;
+}
+
+.dropdown-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.8rem 1.2rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.88rem;
+    color: #444;
+    text-align: left;
+    transition: background 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+
+.dropdown-item:hover {
+    background: #f8f8f8;
+}
+
+.dropdown-item svg {
+    width: 16px;
+    height: 16px;
+}
+
+.btn-cerrar-sesion {
+    color: #c41e3a;
+}
+
+.btn-cerrar-sesion:hover {
+    background: #fff0f0;
+}
+
+/* Overlay para cerrar el dropdown */
+.dropdown-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+}

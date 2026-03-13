@@ -1,0 +1,124 @@
+<div class="pagina-solicitudes">
+    <div class="pagina-header">
+        <div class="header-info">
+            <h2>Mis Solicitudes</h2>
+            <p class="subtitulo">Vea y administre sus solicitudes de vacaciones</p>
+        </div>
+        <button class="btn-nueva" (click)="mostrarFormulario = true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Nueva Solicitud
+        </button>
+    </div>
+
+    <!-- Filtros por estado con Contadores -->
+    <div class="filtros-container">
+        <div class="filtros">
+            <button class="btn-filtro" [class.activo]="filtroEstado === 'Todos'" (click)="cambiarFiltro('Todos')">
+                Todos ({{ counts['Todos'] }})
+            </button>
+            <button class="btn-filtro" [class.activo]="filtroEstado === 'Pendiente'" (click)="cambiarFiltro('Pendiente')">
+                Pendiente ({{ counts['Pendiente'] }})
+            </button>
+            <button class="btn-filtro" [class.activo]="filtroEstado === 'Aprobado Supervisor'" (click)="cambiarFiltro('Aprobado Supervisor')">
+                Aprobado Supervisor ({{ counts['Aprobado Supervisor'] }})
+            </button>
+            <button class="btn-filtro" [class.activo]="filtroEstado === 'Aprobado'" (click)="cambiarFiltro('Aprobado')">
+                Aprobado ({{ counts['Aprobado'] }})
+            </button>
+            <button class="btn-filtro" [class.activo]="filtroEstado === 'Rechazado'" (click)="cambiarFiltro('Rechazado')">
+                Rechazado ({{ counts['Rechazado'] }})
+            </button>
+        </div>
+    </div>
+
+    <!-- Loader Principal -->
+    <div class="loader-principal" *ngIf="cargando && solicitudes.length === 0">
+        <div class="spinner-shimmer"></div>
+        <p>Cargando sus solicitudes...</p>
+    </div>
+
+    <!-- Lista de solicitudes (Diseño tipo Card) -->
+    <div class="solicitudes-lista" *ngIf="solicitudesFiltradas.length > 0">
+        <div class="solicitud-card animate-in" *ngFor="let sol of solicitudesFiltradas">
+            <div class="card-status">
+                <span class="badge-label" [ngClass]="claseEstado(sol.estado_solicitud)">
+                    {{ vacacionesService.obtenerLabelEstado(sol.estado_solicitud) }}
+                </span>
+            </div>
+            
+            <div class="card-main">
+                <div class="card-fechas">
+                    {{ vacacionesService.formatearFechaCorta(sol.fecha_inicio) }} - {{ vacacionesService.formatearFechaCorta(sol.fecha_final) }} | {{ sol.total_periodo }} día(s)
+                </div>
+                <div class="card-motivo" *ngIf="sol.motivo">
+                    {{ sol.motivo }}
+                </div>
+            </div>
+
+            <div class="card-meta">
+                <!-- Como no hay fecha_creacion, mostramos un placeholder o el motivo -->
+                <div class="meta-fecha">Enviado el {{ vacacionesService.formatearFecha(sol.fecha_inicio) }}</div>
+                <div class="meta-hora">12:00</div>
+            </div>
+
+            <div class="card-acciones">
+                <button *ngIf="sol.estado_solicitud === 'Pendiente'" class="btn-accion-cancelar" (click)="confirmarCancelacion(sol)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Indicador de carga de siguientes páginas -->
+        <div class="loader-min" *ngIf="cargandoPaginaSiguiente">
+            <div class="dot-typing"></div>
+            <span>Cargando más registros...</span>
+        </div>
+    </div>
+
+        <!-- Sin resultados -->
+        <div class="sin-solicitudes" *ngIf="solicitudesFiltradas.length === 0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+            </svg>
+            <p>No tienes solicitudes {{ filtroEstado !== 'Todos' ? 'con estado ' + filtroEstado : '' }}</p>
+        </div>
+
+    <!-- Modal: Nueva Solicitud -->
+    <div class="modal-overlay" *ngIf="mostrarFormulario" (click)="intentarCerrarModal()">
+        <div class="modal-contenido" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Nueva Solicitud de Vacaciones</h3>
+                <button class="btn-cerrar-modal" (click)="intentarCerrarModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <app-nueva-solicitud (solicitudCreada)="onSolicitudCreada()" (cancelar)="intentarCerrarModal()">
+            </app-nueva-solicitud>
+        </div>
+    </div>
+
+    <!-- Modal: Confirmar cancelación -->
+    <div class="modal-overlay" *ngIf="solicitudACancelar" (click)="solicitudACancelar = null">
+        <div class="modal-confirm" (click)="$event.stopPropagation()">
+            <h3>¿Cancelar solicitud?</h3>
+            <p>Esta acción no se puede deshacer. La solicitud del período
+                <strong>{{ vacacionesService.formatearRangoFechas(solicitudACancelar.fecha_inicio || '',
+                    solicitudACancelar.fecha_final || '') }}</strong>
+                será eliminada.
+            </p>
+            <div class="confirm-acciones">
+                <button class="btn-outline" (click)="solicitudACancelar = null">No, mantener</button>
+                <button class="btn-danger" (click)="cancelarSolicitud()">Sí, cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,11 @@
+{
+    "/api-proxy": {
+        "target": "https://api.tu-servidor.com",
+        "secure": true,
+        "changeOrigin": true,
+        "pathRewrite": {
+            "^/api-proxy": ""
+        },
+        "logLevel": "info"
+    }
+}

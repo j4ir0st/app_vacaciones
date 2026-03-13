@@ -1,0 +1,386 @@
+.pagina-solicitudes {
+    padding: 1.5rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.pagina-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.header-info h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.subtitulo {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+.btn-nueva {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #C41E3A;
+    /* Rojo Surgicorp */
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    /* Tamaño más reducido y proporcional */
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(196, 30, 58, 0.2);
+}
+
+.btn-nueva svg {
+    width: 18px;
+    /* Icono más pequeño */
+    height: 18px;
+}
+
+.btn-nueva:hover {
+    background-color: #00a08a;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 191, 165, 0.3);
+}
+
+.filtros-container {
+    background: #f1f5f9;
+    padding: 0.4rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    display: flex;
+    overflow-x: auto;
+}
+
+.filtros {
+    display: flex;
+    gap: 0.25rem;
+    width: 100%;
+}
+
+.btn-filtro {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    border: none;
+    background: transparent;
+    color: #475569;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-filtro:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.btn-filtro.activo {
+    background: white;
+    color: #1e293b;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Solicitud Card Layout */
+.solicitudes-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    max-height: calc(100vh - 350px);
+    /* Evita que la tabla se salga de la página */
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+/* Personalización del scrollbar para que sea sutil */
+.solicitudes-lista::-webkit-scrollbar {
+    width: 6px;
+}
+
+.solicitudes-lista::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.solicitudes-lista::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.solicitud-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    /* Más espacio para que no se vea apretada la data */
+    display: grid;
+    grid-template-columns: 180px 1fr 180px 50px;
+    align-items: center;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    min-height: 70px;
+    /* Asegura altura mínima para legibilidad */
+}
+
+.solicitud-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    background: #fcfcfc;
+}
+
+.badge-label {
+    padding: 0.35rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-block;
+    min-width: 140px;
+    max-width: 140px;
+    /* Evita crecimiento horizontal excesivo */
+    white-space: normal;
+    /* Permite salto de línea */
+    line-height: 1.2;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border: 1px solid transparent;
+}
+
+/* Colores más vivos e intensos para los estados */
+.estado-pendiente {
+    background: #fff2e6;
+    color: #ea580c;
+    border-color: #fdba74;
+    box-shadow: 0 2px 4px rgba(234, 88, 12, 0.1);
+}
+
+.estado-aprobado {
+    background: #f0fdf4;
+    color: #16a34a;
+    border-color: #86efac;
+    box-shadow: 0 2px 4px rgba(22, 163, 74, 0.1);
+}
+
+.estado-rechazado {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fca5a5;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1);
+}
+
+.estado-supervisor {
+    background: #f0f9ff;
+    color: #0284c7;
+    border-color: #7dd3fc;
+    box-shadow: 0 2px 4px rgba(2, 132, 199, 0.1);
+}
+
+.estado-default {
+    background: #f8fafc;
+    color: #475569;
+    border-color: #cbd5e1;
+}
+
+.card-fechas {
+    font-size: 0.9rem;
+    color: #334155;
+    font-weight: 600;
+}
+
+.card-motivo {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 0.1rem;
+    max-width: 500px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-meta {
+    text-align: right;
+    color: #94a3b8;
+}
+
+.meta-fecha {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.meta-hora {
+    font-size: 0.7rem;
+}
+
+.btn-accion-cancelar {
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 0.4rem;
+}
+
+.btn-accion-cancelar svg {
+    width: 20px;
+    height: 20px;
+}
+
+.btn-accion-cancelar:hover {
+    color: #ef4444;
+}
+
+/* Animaciones */
+.animate-in {
+    animation: slideUp 0.4s ease-out backwards;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Sin resultados / Estado vacío */
+.sin-solicitudes {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    border: 1px dashed #e2e8f0;
+    color: #64748b;
+    text-align: center;
+}
+
+.sin-solicitudes svg {
+    width: 60px;
+    height: 60px;
+    color: #cbd5e1;
+    margin-bottom: 1.5rem;
+}
+
+.sin-solicitudes p {
+    font-size: 1rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 2rem;
+    /* Margen de seguridad */
+}
+
+.modal-contenido {
+    background: white;
+    width: 700px;
+    max-width: 95%;
+    max-height: 90vh;
+    /* Máximo 90% del alto de pantalla */
+    border-radius: 12px;
+    overflow-y: auto;
+    /* Scroll si el contenido es largo */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+}
+
+.form-fila.grid-3 {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1.5fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+input[readonly] {
+    background-color: #f1f5f9 !important;
+    cursor: not-allowed;
+    border-color: #cbd5e1 !important;
+    color: #64748b !important;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.btn-cerrar-modal {
+    background: none;
+    border: none;
+    padding: 0.2rem;
+    cursor: pointer;
+    color: #94a3b8;
+}
+
+.modal-confirm {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 400px;
+    text-align: center;
+}
+
+.confirm-acciones {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-outline,
+.btn-danger {
+    flex: 1;
+    padding: 0.6rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btn-outline {
+    border: 1px solid #cbd5e1;
+    background: white;
+    color: #475569;
+}
+
+.btn-danger {
+    border: none;
+    background: #ef4444;
+    color: white;
+}

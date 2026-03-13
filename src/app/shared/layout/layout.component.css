@@ -1,0 +1,42 @@
+/* ========================================
+   Layout principal - Estructura sidebar + contenido
+   ======================================== */
+
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+    background: #f0f2f5;
+    transition: all 0.3s ease;
+}
+
+.contenido-principal {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    /* Evita overflow horizontal */
+    margin-left: 240px;
+    transition: margin-left 0.3s ease;
+}
+
+/* Cuando el menú está colapsado */
+.app-layout.menu-colapsado .contenido-principal {
+    margin-left: 68px;
+}
+
+.contenido-pagina {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+/* Responsive para móvil */
+@media (max-width: 768px) {
+    .contenido-principal {
+        margin-left: 0;
+    }
+
+    .app-layout.menu-colapsado .contenido-principal {
+        margin-left: 0;
+    }
+}

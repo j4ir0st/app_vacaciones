@@ -1,0 +1,180 @@
+<div class="pagina-admin">
+    <!-- Pestanas -->
+    <div class="tabs">
+        <button class="tab" [class.activo]="pestanaActiva === 'solicitudes'" (click)="pestanaActiva = 'solicitudes'">
+            Solicitudes de Vacaciones
+        </button>
+        <button class="tab" [class.activo]="pestanaActiva === 'usuarios'" (click)="pestanaActiva = 'usuarios'">
+            Gestión de Usuarios
+        </button>
+    </div>
+
+    <!-- ===== PESTAnA SOLICITUDES ===== -->
+    <div *ngIf="pestanaActiva === 'solicitudes'">
+        <div class="filtros">
+            <button *ngFor="let estado of opcionesFiltroAdmin" class="btn-filtro"
+                [class.activo]="filtroEstado === estado" (click)="cambiarFiltroEstado(estado)">{{ estado }}</button>
+        </div>
+
+        <div class="loader-contenedor" *ngIf="cargandoSolicitudes">
+            <div class="spinner-med"></div>
+        </div>
+
+        <div class="tabla-contenedor" *ngIf="!cargandoSolicitudes">
+            <table class="tabla-admin" *ngIf="solicitudesFiltradas.length > 0">
+                <thead>
+                    <tr>
+                        <th>Empleado</th>
+                        <th>Período</th>
+                        <th>Días</th>
+                        <th>Motivo</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let sol of solicitudesFiltradas">
+                        <td>
+                            <div class="celda-usuario">
+                                <div class="avatar-sm">
+                                    <img *ngIf="sol.avatarUsuario" [src]="sol.avatarUsuario"
+                                        [alt]="sol.nombreUsuario" />
+                                    <span *ngIf="!sol.avatarUsuario" class="iniciales-sm">
+                                        {{ sol.nombreUsuario.substring(0, 2).toUpperCase() }}
+                                    </span>
+                                </div>
+                                <span>{{ sol.nombreUsuario }}</span>
+                            </div>
+                        </td>
+                        <td>{{ vacacionesService.formatearRangoFechas(sol.fecha_inicio, sol.fecha_final) }}</td>
+                        <td class="col-dias">{{ sol.total_periodo }}</td>
+                        <td class="col-motivo" [title]="sol.motivo">{{ sol.motivo }}</td>
+                        <td>
+                            <span class="badge-estado" [ngClass]="claseEstado(sol.estado_solicitud)">{{
+                                vacacionesService.obtenerLabelEstado(sol.estado_solicitud) }}</span>
+                        </td>
+                        <td>
+                            <div class="acciones-fila"
+                                *ngIf="vacacionesService.obtenerCodigoEstado(sol.estado_solicitud) === 'PD'">
+                                <button class="btn-aprobar" (click)="iniciarAccion(sol, 'aprobar')" title="Aprobar">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                </button>
+                                <button class="btn-rechazar" (click)="iniciarAccion(sol, 'rechazar')" title="Rechazar">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <span *ngIf="vacacionesService.obtenerCodigoEstado(sol.estado_solicitud) !== 'PD'"
+                                class="sin-accion">—</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="sin-datos" *ngIf="solicitudesFiltradas.length === 0">
+                <p>No hay solicitudes con estado "{{ filtroEstado }}"</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PESTAnA USUARIOS ===== -->
+    <div *ngIf="pestanaActiva === 'usuarios'">
+        <div class="buscador">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input type="text" [(ngModel)]="textoBusqueda" placeholder="Buscar usuario por nombre, área..." />
+        </div>
+
+        <div class="loader-contenedor" *ngIf="cargandoUsuarios">
+            <div class="spinner-med"></div>
+        </div>
+
+        <div class="tabla-contenedor" *ngIf="!cargandoUsuarios">
+            <table class="tabla-admin">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Área</th>
+                        <th>Email</th>
+                        <th>Ingreso</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let u of usuariosFiltrados">
+                        <td>
+                            <div class="celda-usuario">
+                                <div class="avatar-sm">
+                                    <img *ngIf="u.avatar" [src]="u.avatar" [alt]="u.first_name" />
+                                    <span *ngIf="!u.avatar" class="iniciales-sm">{{ obtenerIniciales(u) }}</span>
+                                </div>
+                                <div>
+                                    <div class="nombre-usuario">{{ u.first_name }} {{ u.last_name }}</div>
+                                    <div class="sub-usuario">{{ u.username }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ u.area_id.nombre || u.area }}</td>
+                        <td class="col-email">{{ u.email }}</td>
+                        <td>{{ vacacionesService.formatearFecha(u.fecha_ingreso) }}</td>
+                        <td>
+                            <span class="badge-estado" [class.estado-aprobado]="u.is_active"
+                                [class.estado-rechazado]="!u.is_active">
+                                {{ u.is_active ? 'Activo' : 'Inactivo' }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-toggle-estado" (click)="iniciarDesactivacion(u)"
+                                [title]="u.is_active ? 'Desactivar usuario' : 'Activar usuario'">
+                                {{ u.is_active ? 'Desactivar' : 'Activar' }}
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal confirmación de acción en solicitud -->
+    <div class="modal-overlay" *ngIf="solicitudEnAccion" (click)="solicitudEnAccion = null; accionPendiente = null">
+        <div class="modal-confirm" (click)="$event.stopPropagation()">
+            <h3>¿{{ accionPendiente === 'aprobar' ? 'Aprobar' : 'Rechazar' }} solicitud?</h3>
+            <p>Se {{ accionPendiente === 'aprobar' ? 'aprobará' : 'rechazará' }} la solicitud de
+                <strong>{{ solicitudEnAccion.nombreUsuario }}</strong> del período
+                <strong>{{ vacacionesService.formatearRangoFechas(solicitudEnAccion.fecha_inicio || '',
+                    solicitudEnAccion.fecha_final || '') }}</strong>.
+            </p>
+            <div class="confirm-acciones">
+                <button class="btn-outline" (click)="solicitudEnAccion = null; accionPendiente = null">Cancelar</button>
+                <button [class.btn-aprobar-confirm]="accionPendiente === 'aprobar'"
+                    [class.btn-danger]="accionPendiente === 'rechazar'" (click)="confirmarAccionSolicitud()">
+                    {{ accionPendiente === 'aprobar' ? 'Aprobar' : 'Rechazar' }}
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal desactivar/activar usuario -->
+    <div class="modal-overlay" *ngIf="usuarioADesactivar" (click)="usuarioADesactivar = null">
+        <div class="modal-confirm" (click)="$event.stopPropagation()">
+            <h3>¿{{ usuarioADesactivar.is_active ? 'Desactivar' : 'Activar' }} usuario?</h3>
+            <p>El usuario <strong>{{ usuarioADesactivar.first_name }} {{ usuarioADesactivar.last_name }}</strong>
+                {{ usuarioADesactivar.is_active ? 'no podrá iniciar sesión mientras esté inactivo.' : 'recuperará el
+                acceso al sistema.' }}
+            </p>
+            <div class="confirm-acciones">
+                <button class="btn-outline" (click)="usuarioADesactivar = null">Cancelar</button>
+                <button [class.btn-danger]="usuarioADesactivar.is_active"
+                    [class.btn-aprobar-confirm]="!usuarioADesactivar.is_active" (click)="cambiarEstadoUsuario()">
+                    {{ usuarioADesactivar.is_active ? 'Desactivar' : 'Activar' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

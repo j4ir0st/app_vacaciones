@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<div class="login-page">
+  <!-- Fondo con imagen corporativa -->
+  <div class="login-bg"></div>
+  <div class="login-overlay"></div>
+
+  <!-- Tarjeta de login -->
+  <div class="login-card">
+    <!-- Logo y título -->
+    <div class="login-logo">
+      <img src="https://appsurgicorperu.com/NewAPI/static/avatars/LogoSurgiC_SinFondo.png" alt="SurgiCorp Logo"
+        class="logo-img"
+        onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='block';" />
+      <h1 id="logo-fallback" style="display:none;">SURGICORP</h1>
+      <p class="login-subtitle">Solicitud de Vacaciones</p>
+      <p class="login-subtitle-sub">Ingrese sus credenciales para acceder a su cuenta</p>
+    </div>
+
+    <!-- Formulario -->
+    <form [formGroup]="formulario" (ngSubmit)="iniciarSesion()" class="login-form">
+      <!-- Campo usuario -->
+      <div class="form-group">
+        <label for="username">Usuario</label>
+        <div class="input-wrapper">
+          <span class="input-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </span>
+          <input id="username" type="text" formControlName="username" placeholder="Ingresa tu usuario"
+            autocomplete="username"
+            [class.input-error]="formulario.get('username')?.invalid && formulario.get('username')?.touched" />
+        </div>
+        <span class="error-msg" *ngIf="formulario.get('username')?.invalid && formulario.get('username')?.touched">
+          El usuario es requerido
+        </span>
+      </div>
+
+      <!-- Campo contraseña -->
+      <div class="form-group">
+        <label for="password">Contraseña</label>
+        <div class="input-wrapper">
+          <span class="input-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </span>
+          <input id="password" [type]="mostrarPassword ? 'text' : 'password'" formControlName="password"
+            placeholder="Ingresa tu contraseña" autocomplete="current-password"
+            [class.input-error]="formulario.get('password')?.invalid && formulario.get('password')?.touched" />
+          <button type="button" class="toggle-password" (click)="togglePassword()">
+            <svg *ngIf="!mostrarPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            <svg *ngIf="mostrarPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+              <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          </button>
+        </div>
+        <span class="error-msg" *ngIf="formulario.get('password')?.invalid && formulario.get('password')?.touched">
+          La contraseña es requerida
+        </span>
+      </div>
+
+      <!-- Mensaje de error del servidor -->
+      <div class="alert-error" *ngIf="error">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        {{ error }}
+      </div>
+
+      <!-- Botón de ingreso -->
+      <button type="submit" class="btn-login" [disabled]="formulario.invalid || cargando">
+        <span *ngIf="!cargando">Ingresar</span>
+        <span *ngIf="cargando" class="spinner-inline">
+          <span class="spinner"></span>
+          Iniciando sesión...
+        </span>
+      </button>
+    </form>
+
+    <p class="login-footer">© 2025 SurgiCorp Surgery For Life</p>
+  </div>
+</div>

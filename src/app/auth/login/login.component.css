@@ -1,0 +1,297 @@
+/* ========================================
+   Login - Estilos con branding Surgicorp
+   ======================================== */
+
+:host {
+    display: block;
+    height: 100vh;
+}
+
+.login-page {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Fondo con imagen de playa (fallback al degradado si no carga) */
+.login-bg {
+    position: absolute;
+    inset: 0;
+    /* Fallback degradado corporativo */
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 70%, #c41e3a 100%);
+    /* Desktop: versión horizontal de la imagen */
+    background-image: url('https://appsurgicorperu.com/NewAPI/static/avatars/bag-beach-accessories-kept-sand-horizontal.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    z-index: 0;
+}
+
+/* Móvil (portrait): usar la imagen vertical original */
+@media (max-width: 768px) and (orientation: portrait) {
+    .login-bg {
+        background-image: url('https://appsurgicorperu.com/NewAPI/static/avatars/bag-beach-accessories-kept-sand.jpg');
+        background-size: cover;
+        background-position: center center;
+    }
+}
+
+
+/* Patrón decorativo superpuesto */
+.login-bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 20% 80%, rgba(196, 30, 58, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(15, 52, 96, 0.5) 0%, transparent 50%);
+}
+
+.login-overlay {
+    position: absolute;
+    inset: 0;
+    backdrop-filter: blur(0px);
+    z-index: 1;
+}
+
+/* Tarjeta de login */
+.login-card {
+    position: relative;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.88);
+    border-radius: 20px;
+    padding: 2.5rem 2.5rem 2rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Logo y encabezado */
+.login-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.login-logo img,
+.login-logo .logo-img {
+    height: 80px;
+    max-width: 260px;
+    margin-bottom: 0.5rem;
+    object-fit: contain;
+}
+
+.login-logo h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #c41e3a;
+    letter-spacing: 3px;
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+.login-subtitle {
+    font-size: 1.15rem;
+    color: #222;
+    margin: 0.1rem 0 0;
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.login-subtitle-sub {
+    font-size: 0.82rem;
+    color: #c41e3a;
+    margin: 0.15rem 0 0;
+    text-align: center;
+    font-weight: 400;
+    letter-spacing: 0.2px;
+}
+
+/* Formulario */
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.form-group label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 0.9rem;
+    display: flex;
+    align-items: center;
+    color: #aaa;
+    pointer-events: none;
+}
+
+.input-icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+.input-wrapper input {
+    width: 100%;
+    padding: 0.75rem 2.8rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-family: 'Inter', sans-serif;
+    color: #333;
+    background: #f9f9f9;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.input-wrapper input:focus {
+    border-color: #c41e3a;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
+}
+
+.input-wrapper input.input-error {
+    border-color: #e74c3c;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 0.9rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.toggle-password:hover {
+    color: #c41e3a;
+}
+
+.toggle-password svg {
+    width: 17px;
+    height: 17px;
+}
+
+.error-msg {
+    font-size: 0.78rem;
+    color: #e74c3c;
+    font-weight: 500;
+}
+
+/* Alerta de error del servidor */
+.alert-error {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fff0f0;
+    border: 1px solid #ffc0c0;
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    color: #c41e3a;
+    font-size: 0.88rem;
+    font-weight: 500;
+}
+
+.alert-error svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+/* Botón de ingreso */
+.btn-login {
+    background: linear-gradient(135deg, #c41e3a, #a01530);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.85rem;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.3s;
+    margin-top: 0.3rem;
+}
+
+.btn-login:hover:not(:disabled) {
+    background: linear-gradient(135deg, #e02244, #c41e3a);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(196, 30, 58, 0.35);
+}
+
+.btn-login:disabled {
+    background: #d0d0d0;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Spinner de carga */
+.spinner-inline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+.spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.login-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.75rem;
+    color: #aaa;
+}

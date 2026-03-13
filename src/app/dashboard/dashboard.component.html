@@ -1,0 +1,124 @@
+<div class="dashboard">
+    <!-- Loader -->
+    <div class="loader-overlay" *ngIf="cargando">
+        <div class="spinner-grande"></div>
+    </div>
+
+    <!-- Fila 1: Widgets de estadísticas -->
+    <div class="widgets-fila" *ngIf="!cargando">
+
+        <!-- Widget: Días Pendientes -->
+        <div class="widget">
+            <div class="widget-header">
+                <span class="widget-titulo">Días Pendientes</span>
+                <span class="widget-icono icono-azul">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                </span>
+            </div>
+            <div class="widget-valor">{{ resumen.diasPendientes }} días</div>
+            <div class="widget-subtexto">
+                Tiene {{ porcentajeUtilizado }}% de sus vacaciones anuales restantes
+            </div>
+            <div class="widget-separador"></div>
+            <div class="widget-titulo-secundario">Días Truncos</div>
+            <div class="widget-valor-secundario">{{ resumen.diasTruncos }} día(s)</div>
+            <div class="progreso-barra">
+                <div class="progreso-relleno" [style.width.%]="porcentajeTruncos"></div>
+            </div>
+            <div class="widget-subtexto">Tiene {{ porcentajeTruncos }}% de sus días truncos restantes</div>
+        </div>
+
+        <!-- Widget: Vacaciones Tomadas -->
+        <div class="widget">
+            <div class="widget-header">
+                <span class="widget-titulo">Vacaciones Tomadas</span>
+                <span class="widget-icono icono-verde">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                </span>
+            </div>
+            <div class="widget-valor">{{ resumen.diasTomados }} día(s)</div>
+            <div class="widget-subtexto">
+                Tiene {{ porcentajeUtilizado }}% de sus vacaciones anuales utilizadas
+            </div>
+        </div>
+
+        <!-- Widget: Estado de Solicitudes -->
+        <div class="widget">
+            <div class="widget-header">
+                <span class="widget-titulo">Estado de Solicitudes</span>
+            </div>
+            <div class="estado-solicitudes">
+                <div class="estado-item">
+                    <div class="estado-numero">{{ resumen.solicitudesAprobadas }}</div>
+                    <div class="estado-etiqueta aprobado">Aprobado</div>
+                </div>
+                <div class="estado-divider"></div>
+                <div class="estado-item">
+                    <div class="estado-numero">{{ resumen.solicitudesPendientes }}</div>
+                    <div class="estado-etiqueta pendiente">Pendiente</div>
+                </div>
+                <div class="estado-divider"></div>
+                <div class="estado-item">
+                    <div class="estado-numero">{{ resumen.solicitudesRechazadas }}</div>
+                    <div class="estado-etiqueta rechazado">Rechazado</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fila 2: Próximas vacaciones + Solicitar -->
+    <div class="fila-inferior" *ngIf="!cargando">
+
+        <!-- Próximas Vacaciones -->
+        <div class="card-proximas">
+            <div class="card-header-fila">
+                <h3>Próximas Vacaciones</h3>
+                <button class="btn-ver-todo" routerLink="/mis-solicitudes">Ver Todo</button>
+            </div>
+
+            <div class="lista-vacaciones" *ngIf="proximasVacaciones.length > 0">
+                <div class="item-vacacion" *ngFor="let vac of proximasVacaciones">
+                    <div class="avatar-usuario">
+                        <img *ngIf="vac.avatarUsuario" [src]="vac.avatarUsuario" [alt]="vac.nombreUsuario" />
+                        <span *ngIf="!vac.avatarUsuario" class="avatar-iniciales-sm">
+                            {{ obtenerIniciales(vac.nombreUsuario) }}
+                        </span>
+                    </div>
+                    <div class="info-vacacion">
+                        <div class="nombre-vacacion">{{ vac.nombreUsuario }}</div>
+                        <div class="fechas-vacacion">{{ formatearRango(vac) }}</div>
+                    </div>
+                    <div class="dias-vacacion">{{ vac.total_periodo }} día(s)</div>
+                </div>
+            </div>
+
+            <div class="sin-datos" *ngIf="proximasVacaciones.length === 0">
+                <p>No hay vacaciones próximas aprobadas</p>
+            </div>
+        </div>
+
+        <!-- Solicitar Vacaciones -->
+        <div class="card-solicitar">
+            <h3>Solicitar Vacaciones</h3>
+            <div class="btn-nueva-solicitud-area">
+                <button class="btn-nueva-grande" (click)="nuevaSolicitud()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="16" />
+                        <line x1="8" y1="12" x2="16" y2="12" />
+                    </svg>
+                </button>
+                <p>Envíe una nueva solicitud de vacaciones</p>
+                <button class="btn-nueva-solicitud" (click)="nuevaSolicitud()">Nueva Solicitud</button>
+            </div>
+        </div>
+    </div>
+</div>

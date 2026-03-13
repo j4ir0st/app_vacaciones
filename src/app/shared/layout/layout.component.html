@@ -1,0 +1,16 @@
+<div class="app-layout" [class.menu-colapsado]="!menuExpandido">
+    <!-- Navbar lateral -->
+    <app-navbar [expandido]="menuExpandido" (toggleMenu)="alternarMenu()">
+    </app-navbar>
+
+    <!-- Área de contenido principal -->
+    <div class="contenido-principal">
+        <!-- Header superior -->
+        <app-header (toggleMenu)="alternarMenu()"></app-header>
+
+        <!-- Contenido de la ruta activa -->
+        <main class="contenido-pagina">
+            <router-outlet></router-outlet>
+        </main>
+    </div>
+</div>

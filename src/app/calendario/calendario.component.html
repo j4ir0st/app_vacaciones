@@ -1,0 +1,51 @@
+<div class="pagina-calendario">
+    <div class="pagina-header">
+        <h2>Calendario de Vacaciones</h2>
+        <div class="leyenda">
+            <span class="leyenda-item">
+                <span class="leyenda-dot" style="background:#1a73e8"></span> Vacaciones Aprobadas
+            </span>
+        </div>
+    </div>
+
+    <!-- Loader -->
+    <div class="loader-contenedor" *ngIf="cargando">
+        <div class="spinner-med"></div>
+    </div>
+
+    <!-- FullCalendar -->
+    <div class="calendario-contenedor" *ngIf="!cargando">
+        <full-calendar [options]="opcionesCalendario"></full-calendar>
+    </div>
+
+    <!-- Detalle del evento al hacer clic -->
+    <div class="modal-overlay" *ngIf="eventoSeleccionado" (click)="eventoSeleccionado = null">
+        <div class="modal-evento" (click)="$event.stopPropagation()">
+            <div class="evento-header" [style.background]="eventoSeleccionado.color">
+                <h3>{{ eventoSeleccionado.nombre }}</h3>
+                <button (click)="eventoSeleccionado = null">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <div class="evento-body">
+                <div class="evento-dato">
+                    <span class="dato-etiqueta">Período</span>
+                    <span class="dato-valor">
+                        {{ vacacionesService.formatearRangoFechas(eventoSeleccionado.inicio, eventoSeleccionado.fin) }}
+                    </span>
+                </div>
+                <div class="evento-dato">
+                    <span class="dato-etiqueta">Días</span>
+                    <span class="dato-valor">{{ eventoSeleccionado.total_periodo }} día(s)</span>
+                </div>
+                <div class="evento-dato" *ngIf="eventoSeleccionado.motivo">
+                    <span class="dato-etiqueta">Motivo</span>
+                    <span class="dato-valor">{{ eventoSeleccionado.motivo }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
