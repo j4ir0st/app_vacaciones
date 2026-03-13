@@ -95,7 +95,8 @@
               "buildTarget": "app-vacaciones:build:production"
             },
             "development": {
-              "buildTarget": "app-vacaciones:build:development"
+              "buildTarget": "app-vacaciones:build:development",
+              "proxyConfig": "proxy.conf.js"
             }
           },
           "defaultConfiguration": "development"

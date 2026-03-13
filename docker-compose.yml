@@ -16,5 +16,6 @@ services:
     restart: unless-stopped
     environment:
       - TZ=America/Lima
+      - BACKEND_URL=${BACKEND_URL}
     # Nombre del contenedor para fácil identificación
     container_name: surgicorp-vacaciones
