@@ -7,6 +7,7 @@ export interface SolicitudVacaciones {
     url: string;    //url de la solicitud de Vacaciones.
     usuario_id: string;        // URL del usuario que solicita.
     usuario_nombre?: string; // Nombre completo (calculado en frontend).
+    fecha_solicitud?: string; // Fecha en la que se envió la solicitud.
     fecha_inicio: string;   // Fecha de inicio de vacaciones (YYYY-MM-DD).
     fecha_final: string;      // Fecha de fin de vacaciones (YYYY-MM-DD).
     total_periodo: number;           // Cantidad de días hábiles solicitados.

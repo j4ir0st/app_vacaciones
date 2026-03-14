@@ -213,6 +213,7 @@ export class NuevaSolicitudComponent implements OnInit {
         const payload = {
             ...datos,
             total_periodo: this.diasCalculados,
+            fecha_solicitud: new Date().toISOString(),
             estado_solicitud: estado as any,
             area_id: this.usuarioActual?.area_id?.url || '', // Enviamos la URL del área, no el objeto ni el nombre
             jefe_id: null,

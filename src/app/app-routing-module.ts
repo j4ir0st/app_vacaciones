@@ -24,10 +24,27 @@ const routes: Routes = [
       { path: 'mis-solicitudes', component: MisSolicitudesComponent, canActivate: [AuthGuard] },
       { path: 'calendario', component: CalendarioComponent, canActivate: [AuthGuard] },
       {
-        path: 'admin',
+        path: 'aprobaciones',
         component: AdminComponent,
         canActivate: [AuthGuard],
-        data: { requiereAprobador: true } // Solo jefes y gerentes
+        data: { requiereAprobador: true, pestana: 'solicitudes' }
+      },
+      {
+        path: 'admin/usuarios',
+        component: AdminComponent,
+        canActivate: [AuthGuard],
+        data: { requiereAprobador: true, pestana: 'usuarios' }
+      },
+      {
+        path: 'reportes',
+        component: DashboardComponent, // Placeholder por ahora usando Dashboard
+        canActivate: [AuthGuard],
+        data: { requiereAprobador: true }
+      },
+      {
+        path: 'admin',
+        redirectTo: 'aprobaciones',
+        pathMatch: 'full'
       },
     ]
   },

@@ -23,16 +23,16 @@
 
 .logo-contenedor {
     background: #fff;
-    padding: 2px 8px;
-    border-radius: 6px;
+    padding: 1px 4px;
+    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 40px;
+    height: 42px;
 }
 
 .logo-surgicorp {
-    height: 32px;
+    height: 40px;
     width: auto;
     object-fit: contain;
 }

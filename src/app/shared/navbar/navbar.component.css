@@ -26,8 +26,10 @@
 .navbar-header {
     display: flex;
     align-items: center;
-    justify-content: center; /* Centrado */
-    padding: 0.8rem 0.5rem; /* Padding reducido */
+    justify-content: space-around;
+    /* Centrado */
+    padding: 0.3rem 0.5rem;
+    /* Padding reducido */
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     min-height: 70px;
 }
@@ -41,9 +43,10 @@
 }
 
 .navbar-logo img {
-    height: 50px; /* Un poco más grande */
+    height: 60px;
+    /* Un poco más grande */
     width: auto;
-    max-width: 90%;
+    max-width: 100%;
     object-fit: contain;
     filter: brightness(0) invert(1);
     flex-shrink: 0;

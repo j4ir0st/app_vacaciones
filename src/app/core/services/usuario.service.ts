@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Usuario } from '../models/usuario.model';
 
@@ -12,14 +12,23 @@ export class UsuarioService {
 
     constructor(private http: HttpClient) { }
 
-    // Obtiene la lista completa de usuarios activos
-    obtenerUsuarios(): Observable<Usuario[]> {
-        return this.http.get<Usuario[]>(this.URL_USUARIOS);
+    // Obtiene la lista completa de usuarios activos (soporta paginación DRF)
+    obtenerUsuarios(url: string = this.URL_USUARIOS): Observable<any> {
+        return this.http.get<any>(url);
     }
 
     // Obtiene usuarios de un área específica (usa la URL del área para precisión en DRF)
     obtenerUsuariosPorArea(areaIdentificador: string): Observable<Usuario[]> {
-        return this.http.get<Usuario[]>(`${this.URL_USUARIOS}&area_id=${encodeURIComponent(areaIdentificador)}`);
+        return this.http.get<any>(`${this.URL_USUARIOS}&area_id=${encodeURIComponent(areaIdentificador)}`).pipe(
+            map(resp => Array.isArray(resp) ? resp : (resp.results || []))
+        );
+    }
+
+    // Obtiene usuarios filtrando por nombre de área (puede recibir varios nombres separados por comas)
+    obtenerUsuariosPorNombreArea(nombresArea: string): Observable<Usuario[]> {
+        return this.http.get<any>(`${this.URL_USUARIOS}&area_nombre=${encodeURIComponent(nombresArea)}`).pipe(
+            map(resp => Array.isArray(resp) ? resp : (resp.results || []))
+        );
     }
 
     // Obtiene un usuario específico por su URL

@@ -1,50 +1,63 @@
 import { Injectable } from '@angular/core';
 import { SolicitudVacaciones, ResumenVacaciones, EstadoSolicitud } from '../models/solicitud-vacaciones.model';
 
-// Días de vacaciones acumulados por mes trabajado
-const DIAS_POR_MES = 2.5;
-
 @Injectable({
     providedIn: 'root'
 })
 export class VacacionesService {
 
-    // Calcula el total de días acumulados desde la fecha de ingreso
-    calcularDiasAcumulados(fechaIngreso: string): number {
-        if (!fechaIngreso) return 0;
-        const hoy = new Date();
-        const inicio = new Date(fechaIngreso);
-        const meses = this.calcularMesesTranscurridos(inicio, hoy);
-        return Math.floor(meses) * DIAS_POR_MES;
-    }
-
-    // Calcula los días truncos (correspondientes a la fracción de mes no completada)
-    calcularDiasTruncos(fechaIngreso: string): number {
-        if (!fechaIngreso) return 0;
-        const hoy = new Date();
-        const inicio = new Date(fechaIngreso);
-        const mesesTotales = this.calcularMesesTranscurridos(inicio, hoy);
-        const fraccionMes = mesesTotales - Math.floor(mesesTotales);
-        return Math.round(fraccionMes * DIAS_POR_MES * 10) / 10; // Redondear a 1 decimal
-    }
-
-    // Calcula el resumen completo de vacaciones de un usuario
+    // Calcula el resumen completo de vacaciones de un usuario basado en fórmulas de PowerApps
     calcularResumen(fechaIngreso: string, solicitudes: SolicitudVacaciones[]): ResumenVacaciones {
-        const diasAcumulados = this.calcularDiasAcumulados(fechaIngreso);
-        const diasTruncos = this.calcularDiasTruncos(fechaIngreso);
+        if (!fechaIngreso) {
+            return {
+                diasAcumulados: 0, diasTomados: 0, diasPendientes: 0, diasTruncos: 0,
+                solicitudesAprobadas: 0, solicitudesPendientes: 0, solicitudesRechazadas: 0
+            };
+        }
 
+        const hoy = new Date();
+        const ingreso = new Date(fechaIngreso);
+        
+        // 1. MesesCumplidos
+        // Set(MesesCumplidos; DateDiff(varUserRecord.FECHA_INGRESO; Today(); TimeUnit.Months) - If(Day(Today()) < Day(varUserRecord.FECHA_INGRESO); 1; 0))
+        let mesesCompletos = (hoy.getFullYear() - ingreso.getFullYear()) * 12 + (hoy.getMonth() - ingreso.getMonth());
+        if (hoy.getDate() < ingreso.getDate()) {
+            mesesCompletos--;
+        }
+        const mesesCumplidos = Math.max(0, mesesCompletos);
+
+        // 2. DiasAcumulados (Total acumulado histórico por meses cumplidos)
+        // Set(DiasAcumulados; Max(MesesCumplidos;0) * 2,5)
+        const diasAcumuladosReferencia = mesesCumplidos * 2.5;
+
+        // 3. DiasGozados (Suma de TOTAL_PERIODO de solicitudes Aprobadas)
         const solicitudesAprobadas = solicitudes.filter(s => this.obtenerCodigoEstado(s.estado_solicitud) === 'AP');
         const solicitudesPendientes = solicitudes.filter(s => this.obtenerCodigoEstado(s.estado_solicitud) === 'PD');
         const solicitudesRechazadas = solicitudes.filter(s => this.obtenerCodigoEstado(s.estado_solicitud) === 'RC');
-
+        
         const diasTomados = solicitudesAprobadas.reduce((total, s) => total + (s.total_periodo || 0), 0);
-        const diasPendientes = Math.max(0, diasAcumulados - diasTomados);
+
+        // 4. DiasPendientes (Días de años completos menos lo gozado)
+        // Set(DiasPendientes; With({acum: DiasAcumulados; goz: DiasGozados}; Int(acum / 30) * 30 - goz))
+        const diasDeAniosCompletos = Math.floor(diasAcumuladosReferencia / 30) * 30;
+        const diasPendientesPotencial = diasDeAniosCompletos - diasTomados;
+        const diasPendientesDisplay = Math.max(0, diasPendientesPotencial);
+
+        // 5. DiasTruncos (Resto de días acumulados en el año actual, ajustado si se tomó de más)
+        // Set(DiasTruncos; If(DiasPendientes > 0; Mod(DiasAcumulados; 30); Mod(DiasAcumulados;30) + DiasPendientes))
+        const remanenteAnual = diasAcumuladosReferencia % 30;
+        let diasTruncos = 0;
+        if (diasPendientesPotencial > 0) {
+            diasTruncos = remanenteAnual;
+        } else {
+            diasTruncos = remanenteAnual + diasPendientesPotencial;
+        }
 
         return {
-            diasAcumulados,
+            diasAcumulados: diasAcumuladosReferencia,
             diasTomados,
-            diasPendientes,
-            diasTruncos,
+            diasPendientes: diasPendientesPotencial,
+            diasTruncos: Math.max(0, diasTruncos), // Aseguramos que truncos tampoco sea negativo
             solicitudesAprobadas: solicitudesAprobadas.length,
             solicitudesPendientes: solicitudesPendientes.length,
             solicitudesRechazadas: solicitudesRechazadas.length,
@@ -85,19 +98,6 @@ export class VacacionesService {
     // Formatea el rango de fechas de una solicitud
     formatearRangoFechas(inicio: string, fin: string): string {
         return `${this.formatearFecha(inicio)} - ${this.formatearFecha(fin)}`;
-    }
-
-    // Calcula los meses transcurridos entre dos fechas (con fracción)
-    private calcularMesesTranscurridos(inicio: Date, fin: Date): number {
-        const años = fin.getFullYear() - inicio.getFullYear();
-        const meses = fin.getMonth() - inicio.getMonth();
-        const dias = fin.getDate() - inicio.getDate();
-        const mesesCompletos = años * 12 + meses + (dias < 0 ? -1 : 0);
-        const diasEnMes = 30; // Aproximación estándar
-        const fraccion = dias < 0
-            ? (diasEnMes + dias) / diasEnMes
-            : dias / diasEnMes;
-        return mesesCompletos + fraccion;
     }
 
     // Formatea una fecha como "Día Mes" (ej: 10 mar)

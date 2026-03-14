@@ -8,6 +8,7 @@ import { VacacionesService } from '../core/services/vacaciones.service';
 import { RefreshService } from '../core/services/refresh.service';
 import { SolicitudVacaciones, EstadoSolicitud } from '../core/models/solicitud-vacaciones.model';
 import { NuevaSolicitudComponent } from './nueva-solicitud/nueva-solicitud.component';
+import { environment } from '../../environments/environment';
 
 @Component({
     selector: 'app-mis-solicitudes',
@@ -97,8 +98,8 @@ export class MisSolicitudesComponent implements OnInit, OnDestroy {
                 const urlSiguiente = resp.next;
                 if (urlSiguiente) {
                     this.cargandoPaginaSiguiente = true;
-                    // Llamamos a la siguiente página de resultados
-                    return this.solicitudService.obtenerSolicitudes(urlSiguiente);
+                    // Llamamos a la siguiente página de resultados usando proxy local
+                    return this.solicitudService.obtenerSolicitudes(urlSiguiente.replace(/^https?:\/\/[^\/]+/, environment.apiUrl));
                 }
                 // Si no hay más páginas, devolvemos EMPTY para detener la recursión
                 return EMPTY;

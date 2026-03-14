@@ -20,9 +20,9 @@
                     </svg>
                 </span>
             </div>
-            <div class="widget-valor">{{ resumen.diasPendientes }} días</div>
+            <div class="widget-valor">{{ resumen.diasPendientes < 0 ? 0 : resumen.diasPendientes }} días</div>
             <div class="widget-subtexto">
-                Tiene {{ porcentajeUtilizado }}% de sus vacaciones anuales restantes
+                Tiene {{ porcentajeRestante }}% de sus vacaciones anuales restantes
             </div>
             <div class="widget-separador"></div>
             <div class="widget-titulo-secundario">Días Truncos</div>
@@ -30,7 +30,7 @@
             <div class="progreso-barra">
                 <div class="progreso-relleno" [style.width.%]="porcentajeTruncos"></div>
             </div>
-            <div class="widget-subtexto">Tiene {{ porcentajeTruncos }}% de sus días truncos restantes</div>
+            <div class="widget-subtexto">Tiene {{ porcentajeTruncos }}% de sus vacaciones truncas restantes</div>
         </div>
 
         <!-- Widget: Vacaciones Tomadas -->
@@ -51,24 +51,24 @@
         </div>
 
         <!-- Widget: Estado de Solicitudes -->
-        <div class="widget">
+        <div class="widget widget-estados">
             <div class="widget-header">
                 <span class="widget-titulo">Estado de Solicitudes</span>
             </div>
-            <div class="estado-solicitudes">
-                <div class="estado-item">
+            <div class="estado-solicitudes-vertical">
+                <div class="estado-destacado">
                     <div class="estado-numero">{{ resumen.solicitudesAprobadas }}</div>
                     <div class="estado-etiqueta aprobado">Aprobado</div>
                 </div>
-                <div class="estado-divider"></div>
-                <div class="estado-item">
-                    <div class="estado-numero">{{ resumen.solicitudesPendientes }}</div>
-                    <div class="estado-etiqueta pendiente">Pendiente</div>
-                </div>
-                <div class="estado-divider"></div>
-                <div class="estado-item">
-                    <div class="estado-numero">{{ resumen.solicitudesRechazadas }}</div>
-                    <div class="estado-etiqueta rechazado">Rechazado</div>
+                <div class="estado-secundarios">
+                    <div class="estado-item">
+                        <div class="estado-numero">{{ resumen.solicitudesPendientes }}</div>
+                        <div class="estado-etiqueta pendiente">Pendiente</div>
+                    </div>
+                    <div class="estado-item">
+                        <div class="estado-numero">{{ resumen.solicitudesRechazadas }}</div>
+                        <div class="estado-etiqueta rechazado">Rechazado</div>
+                    </div>
                 </div>
             </div>
         </div>

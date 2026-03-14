@@ -8,6 +8,37 @@
         </div>
     </div>
 
+    <!-- Filtros de búsqueda -->
+    <div class="calendario-filtros">
+        <div class="filtro-grupo">
+            <div class="select-wrapper">
+                <select [(ngModel)]="areaSeleccionada" (change)="onAreaChange()"
+                    [disabled]="areasFiltradas.length <= 1">
+                    <option value="">Filtrar por Área</option>
+                    <option *ngFor="let area of areasFiltradas" [value]="area">{{ area }}</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filtro-grupo">
+            <div class="select-wrapper">
+                <select [(ngModel)]="usuarioSeleccionado" (change)="onUsuarioChange()">
+                    <option value="">Filtrar por Usuario</option>
+                    <option *ngFor="let usu of usuariosParaDropdown" [value]="usu.url">
+                        {{ usu.first_name }} {{ usu.last_name }}
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn-refrescar" (click)="limpiarFiltros()" title="Limpiar filtros">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                    d="M23 4v6h-6m-14 10v-6h6M2 12a10 10 0 0 1 10-10 10 10 0 0 1 9.5 6.5M22 12a10 10 0 0 1-10 10A10 10 0 0 1 2.5 15.5" />
+            </svg>
+        </button>
+    </div>
+
     <!-- Loader -->
     <div class="loader-contenedor" *ngIf="cargando">
         <div class="spinner-med"></div>

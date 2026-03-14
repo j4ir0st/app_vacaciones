@@ -33,15 +33,20 @@ export class DashboardComponent implements OnInit {
     // Próximas vacaciones del equipo (solicitudes aprobadas futuras)
     proximasVacaciones: Array<SolicitudVacaciones & { nombreUsuario: string; avatarUsuario: string | null }> = [];
 
-    // Porcentaje de vacaciones anuales utilizadas
+    // Porcentaje de vacaciones anuales restantes (según Días Pendientes)
+    get porcentajeRestante(): number {
+        return Math.floor((this.resumen.diasPendientes / 30) * 100);
+    }
+
+    // Porcentaje de vacaciones anuales utilizadas (según Días Pendientes)
+    // Formula: RoundDown((30-DiasPendientes)/30*100;0)
     get porcentajeUtilizado(): number {
-        if (this.resumen.diasAcumulados === 0) return 0;
-        return Math.round((this.resumen.diasTomados / this.resumen.diasAcumulados) * 100);
+        return Math.floor(((30 - this.resumen.diasPendientes) / 30) * 100);
     }
 
     // Porcentaje de días truncos restantes
     get porcentajeTruncos(): number {
-        return Math.round((this.resumen.diasTruncos / 2.5) * 100);
+        return Math.floor((this.resumen.diasTruncos / 30) * 100);
     }
 
     constructor(
@@ -87,7 +92,9 @@ export class DashboardComponent implements OnInit {
 
                 // Calculamos las próximas vacaciones del equipo (solicitudes aprobadas con fechas futuras o actuales)
                 const hoy = new Date().toISOString().split('T')[0];
-                const mapaUsuarios = new Map<string, Usuario>(usuarios.map(u => [u.url, u]));
+                // Manejar tanto arrays directos como objetos de paginación de DRF para usuarios
+                const listaUsuarios: Usuario[] = Array.isArray(usuarios) ? usuarios : ((usuarios as any).results || []);
+                const mapaUsuarios = new Map<string, Usuario>(listaUsuarios.map(u => [u.url, u]));
 
                 this.proximasVacaciones = listaSolicitudes
                     .filter((s: SolicitudVacaciones) => this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud) === 'AP' && (s.fecha_final || '') >= hoy)

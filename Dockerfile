@@ -1,14 +1,17 @@
 # Dockerfile multi-stage para el Sistema de Vacaciones Surgicorp
 # Stage 1: Construcción del proyecto Angular
-FROM node:20 AS build
+FROM node:20-alpine AS build
 
 WORKDIR /app
+
+# Instalar dependencias del sistema necesarias para Alpine
+RUN apk add --no-cache libc6-compat gcompat
 
 # Copiar archivos de dependencias
 COPY package*.json ./
 
 # Instalar dependencias
-RUN rm -f package-lock.json && npm install
+RUN rm -f package-lock.json && npm install --legacy-peer-deps
 
 # Copiar el resto del código
 COPY . .

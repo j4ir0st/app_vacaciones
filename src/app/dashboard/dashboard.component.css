@@ -141,12 +141,30 @@
 }
 
 /* Widget Estado de Solicitudes */
-.estado-solicitudes {
+/* Layout Vertical para Estados (PowerApps Style) */
+.estado-solicitudes-vertical {
     display: flex;
+    flex-direction: column;
     align-items: center;
+    gap: 20px;
+    padding: 10px 0;
+}
+
+.estado-destacado {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.estado-destacado .estado-numero {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #1a1a1a;
+}
+
+.estado-secundarios {
+    display: flex;
     justify-content: space-around;
-    padding: 1rem 0;
-    gap: 0.5rem;
+    width: 100%;
 }
 
 .estado-item {
@@ -155,19 +173,18 @@
 }
 
 .estado-numero {
-    font-size: 2.2rem;
-    font-weight: 800;
-    color: #1a1a2e;
-    line-height: 1;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: #333;
 }
 
 .estado-etiqueta {
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 0.2rem 0.7rem;
+    padding: 6px 16px;
     border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
     display: inline-block;
-    margin-top: 0.4rem;
 }
 
 .estado-etiqueta.aprobado {
@@ -183,12 +200,6 @@
 .estado-etiqueta.rechazado {
     background: #fce8e6;
     color: #c41e3a;
-}
-
-.estado-divider {
-    width: 1px;
-    height: 50px;
-    background: #f0f0f0;
 }
 
 /* Fila inferior */
@@ -271,7 +282,7 @@
     flex-shrink: 0;
 }
 
-.avatar-usuario img {
+.item-vacacion .avatar-usuario img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -378,7 +389,6 @@
     box-shadow: 0 5px 15px rgba(196, 30, 58, 0.3);
 }
 
-/* Responsive */
 @media (max-width: 1100px) {
     .widgets-fila {
         grid-template-columns: repeat(2, 1fr);
@@ -389,8 +399,12 @@
     }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 1100px) {
     .widgets-fila {
         grid-template-columns: 1fr;
+    }
+
+    .widget-estados {
+        display: none;
     }
 }

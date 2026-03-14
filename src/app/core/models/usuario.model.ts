@@ -8,6 +8,7 @@ export interface ObjetoSerializado {
 export interface Usuario {
     url: string;          // Funciona como ID único del usuario
     username: string;
+    area_puesto?: { area_nombre: string; puesto_nombre: string };
     first_name: string;
     last_name: string;
     email: string;

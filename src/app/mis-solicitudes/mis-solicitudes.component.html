@@ -59,9 +59,8 @@
             </div>
 
             <div class="card-meta">
-                <!-- Como no hay fecha_creacion, mostramos un placeholder o el motivo -->
-                <div class="meta-fecha">Enviado el {{ vacacionesService.formatearFecha(sol.fecha_inicio) }}</div>
-                <div class="meta-hora">12:00</div>
+                <div class="meta-fecha">Enviado el {{ sol.fecha_solicitud ? vacacionesService.formatearFecha(sol.fecha_solicitud) : vacacionesService.formatearFecha(sol.fecha_inicio) }}</div>
+                <div class="meta-hora">{{ sol.fecha_solicitud ? sol.fecha_solicitud.substring(11, 16) : '12:00' }}</div>
             </div>
 
             <div class="card-acciones">

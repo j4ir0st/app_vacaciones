@@ -84,7 +84,8 @@
 }
 
 .btn-filtro:hover {
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(196, 30, 58, 0.05);
+    color: #c41e3a;
 }
 
 .btn-filtro.activo {

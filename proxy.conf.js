@@ -1,3 +1,9 @@
+require('dotenv').config();
+
+console.log('--- DEBUG PROXY ---');
+console.log('BACKEND_URL:', process.env.BACKEND_URL);
+console.log('-------------------');
+
 const PROXY_CONFIG = [
   {
     context: [

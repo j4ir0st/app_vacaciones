@@ -110,10 +110,18 @@ export class AuthService {
         return `${u.first_name} ${u.last_name}`.trim() || u.username;
     }
 
-    // Verifica si el usuario tiene rol de aprobador (jefe/gerente)
+    // Verifica si el usuario tiene rol de aprobador (jefe/gerente/supervisor)
     get esAprobador(): boolean {
-        const grupos = this.usuarioActual?.groups ?? [];
-        return grupos.some(g => GRUPOS_APROBADORES.includes(g));
+        const u = this.usuarioActual;
+        if (!u) return false;
+
+        const grupos = u.groups ?? [];
+        const tieneGrupo = grupos.some(g => GRUPOS_APROBADORES.includes(g));
+
+        const puesto = (u.puesto_id?.nombre || '').toLowerCase();
+        const tienePuesto = puesto.includes('jefe') || puesto.includes('gerente') || puesto.includes('supervisor');
+
+        return tieneGrupo || tienePuesto;
     }
 
     // Refresca el token de acceso usando el refresh token

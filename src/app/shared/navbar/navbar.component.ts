@@ -20,12 +20,14 @@ export class NavbarComponent {
     @Input() expandido = true;
     @Output() toggleMenu = new EventEmitter<void>();
 
-    // Elementos del menú lateral
+    // Elementos del menú lateral (Sincronizado con PowerApps)
     elementosMenu: ElementoMenu[] = [
-        { ruta: '/dashboard', etiqueta: 'Panel de Control', icono: 'dashboard' },
-        { ruta: '/mis-solicitudes', etiqueta: 'Mis Solicitudes', icono: 'solicitudes' },
-        { ruta: '/calendario', etiqueta: 'Calendario', icono: 'calendario' },
-        { ruta: '/admin', etiqueta: 'Administración', icono: 'admin', soloAprobador: true },
+        { ruta: '/dashboard', etiqueta: 'Panel de Control', icono: 'home' },
+        { ruta: '/mis-solicitudes', etiqueta: 'Mis Solicitudes', icono: 'airplane' },
+        { ruta: '/calendario', etiqueta: 'Calendario', icono: 'calendar' },
+        { ruta: '/aprobaciones', etiqueta: 'Aprobaciones', icono: 'check', soloAprobador: true },
+        { ruta: '/admin/usuarios', etiqueta: 'Administración Usuarios', icono: 'person', soloAprobador: true },
+        { ruta: '/reportes', etiqueta: 'Reportes', icono: 'message', soloAprobador: true },
     ];
 
     constructor(public authService: AuthService, private router: Router) { }
