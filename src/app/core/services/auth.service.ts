@@ -124,6 +124,14 @@ export class AuthService {
         return tieneGrupo || tienePuesto;
     }
 
+    // Verifica específicamente si el usuario tiene rol de Gerente
+    get esGerente(): boolean {
+        const u = this.usuarioActual;
+        if (!u) return false;
+        const puesto = (u.area_puesto?.puesto_nombre || u.puesto_id?.nombre || '').toLowerCase();
+        return puesto.includes('gerente') || (u.groups ?? []).some(g => g.toLowerCase() === 'gerentes');
+    }
+
     // Refresca el token de acceso usando el refresh token
     refrescarToken(): Observable<any> {
         const refresh = this.sesionSubject.value?.refresh;

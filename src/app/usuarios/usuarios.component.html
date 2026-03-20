@@ -1,0 +1,84 @@
+<div class="pagina-admin">
+    <div class="pagina-header">
+        <div class="header-info">
+            <h2>Administración de Usuarios</h2>
+            <p class="subtitulo">Gestione el acceso y estados de los usuarios del sistema.</p>
+        </div>
+    </div>
+
+    <div class="buscador">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input type="text" [(ngModel)]="textoBusqueda" placeholder="Buscar usuario por nombre, área..." />
+    </div>
+
+    <div class="loader-contenedor" *ngIf="cargandoUsuarios">
+        <div class="spinner-med"></div>
+    </div>
+
+    <div class="tabla-contenedor" *ngIf="!cargandoUsuarios">
+        <table class="tabla-admin">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Área</th>
+                    <th>Email</th>
+                    <th>Ingreso</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let u of usuariosFiltrados">
+                    <td>
+                        <div class="celda-usuario">
+                            <div class="avatar-sm">
+                                <img *ngIf="u.avatar" [src]="u.avatar" [alt]="u.first_name" />
+                                <span *ngIf="!u.avatar" class="iniciales-sm">{{ obtenerIniciales(u) }}</span>
+                            </div>
+                            <div>
+                                <div class="nombre-usuario">{{ u.first_name }} {{ u.last_name }}</div>
+                                <div class="sub-usuario">{{ u.username }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ u.area_id.nombre || u.area }}</td>
+                    <td class="col-email">{{ u.email }}</td>
+                    <td>{{ vacacionesService.formatearFecha(u.fecha_ingreso) }}</td>
+                    <td>
+                        <span class="badge-estado" [class.estado-aprobado]="u.is_active"
+                            [class.estado-rechazado]="!u.is_active">
+                            {{ u.is_active ? 'Activo' : 'Inactivo' }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn-toggle-estado" (click)="iniciarDesactivacion(u)"
+                            [title]="u.is_active ? 'Desactivar usuario' : 'Activar usuario'">
+                            {{ u.is_active ? 'Desactivar' : 'Activar' }}
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal desactivar/activar usuario -->
+<div class="modal-overlay" *ngIf="usuarioADesactivar" (click)="usuarioADesactivar = null">
+    <div class="modal-confirm" (click)="$event.stopPropagation()">
+        <h3>¿{{ usuarioADesactivar.is_active ? 'Desactivar' : 'Activar' }} usuario?</h3>
+        <p>El usuario <strong>{{ usuarioADesactivar.first_name }} {{ usuarioADesactivar.last_name }}</strong>
+            {{ usuarioADesactivar.is_active ? 'no podrá iniciar sesión mientras esté inactivo.' : 'recuperará el acceso
+            al sistema.' }}
+        </p>
+        <div class="confirm-acciones">
+            <button class="btn-outline" (click)="usuarioADesactivar = null">Cancelar</button>
+            <button [class.btn-danger]="usuarioADesactivar.is_active"
+                [class.btn-aprobar-confirm]="!usuarioADesactivar.is_active" (click)="cambiarEstadoUsuario()">
+                {{ usuarioADesactivar.is_active ? 'Desactivar' : 'Activar' }}
+            </button>
+        </div>
+    </div>
+</div>

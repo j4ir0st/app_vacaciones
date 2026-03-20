@@ -14,7 +14,7 @@ export class UsuarioService {
 
     // Obtiene la lista completa de usuarios activos (soporta paginación DRF)
     obtenerUsuarios(url: string = this.URL_USUARIOS): Observable<any> {
-        return this.http.get<any>(url);
+        return this.http.get<any>(this.fixUrl(url));
     }
 
     // Obtiene usuarios de un área específica (usa la URL del área para precisión en DRF)
@@ -33,13 +33,25 @@ export class UsuarioService {
 
     // Obtiene un usuario específico por su URL
     obtenerUsuario(url: string): Observable<Usuario> {
-        const urlConFormato = url.includes('?') ? `${url}&format=json` : `${url}?format=json`;
+        let urlConFormato = this.fixUrl(url);
+        if (!urlConFormato.includes('format=json')) {
+            urlConFormato = urlConFormato.includes('?') ? `${urlConFormato}&format=json` : `${urlConFormato}?format=json`;
+        }
         return this.http.get<Usuario>(urlConFormato);
     }
 
     // Actualiza parcialmente un usuario (PATCH a su URL directa)
     actualizarUsuario(url: string, datos: Partial<Usuario>): Observable<Usuario> {
-        return this.http.patch<Usuario>(url, datos);
+        return this.http.patch<Usuario>(this.fixUrl(url), datos);
+    }
+
+    // Ajusta la URL para usar el proxy en lugar del dominio absoluto (evita CORS)
+    private fixUrl(url: string): string {
+        if (!url) return '';
+        if (url.startsWith('http')) {
+            return url.replace(/^https?:\/\/[^\/]+/, environment.apiUrl);
+        }
+        return url.startsWith('/') ? url : `${environment.apiUrl}/${url.includes('?') ? url : url + '/'}`;
     }
 
     // Desactiva un usuario en lugar de eliminarlo (is_active = false)

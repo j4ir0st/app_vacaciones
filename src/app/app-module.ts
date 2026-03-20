@@ -22,7 +22,9 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 import { MisSolicitudesComponent } from './mis-solicitudes/mis-solicitudes.component';
 import { NuevaSolicitudComponent } from './mis-solicitudes/nueva-solicitud/nueva-solicitud.component';
 import { CalendarioComponent } from './calendario/calendario.component';
-import { AdminComponent } from './admin/admin.component';
+import { AprobacionesComponent } from './aprobaciones/aprobaciones.component';
+import { UsuariosComponent } from './usuarios/usuarios.component';
+import { ReportesComponent } from './reportes/reportes.component';
 
 // FullCalendar
 import { FullCalendarModule } from '@fullcalendar/angular';
@@ -39,7 +41,9 @@ import { FullCalendarModule } from '@fullcalendar/angular';
     MisSolicitudesComponent,
     NuevaSolicitudComponent,
     CalendarioComponent,
-    AdminComponent,
+    AprobacionesComponent,
+    UsuariosComponent,
+    ReportesComponent,
   ],
   imports: [
     BrowserModule,

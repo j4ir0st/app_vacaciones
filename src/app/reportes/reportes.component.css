@@ -1,0 +1,182 @@
+/* ========================================
+   Reportes - Estilos Modernizados
+   ======================================== */
+
+.pagina-admin {
+    padding: 1.5rem 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.pagina-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.header-info h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+.subtitulo {
+    font-size: 0.95rem;
+    color: #64748b;
+    margin-top: 0.3rem;
+}
+
+/* Botón Descargar */
+.btn-descargar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #0d9488; /* Teal moderno */
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
+}
+
+.btn-descargar:hover:not(:disabled) {
+    background-color: #0f766e;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(13, 148, 136, 0.35);
+}
+
+.btn-descargar:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.btn-descargar svg { width: 20px; height: 20px; }
+
+/* Filtros */
+.filtros-reporte {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.5rem;
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.campo-filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.campo-filtro label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.input-busqueda input, .select-wrapper select {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #1e293b;
+    background: #f8fafc;
+    transition: all 0.2s;
+}
+
+.input-busqueda input:focus, .select-wrapper select:focus {
+    outline: none;
+    border-color: #0d9488;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+
+.btn-refrescar {
+    background: #f1f5f9;
+    border: none;
+    padding: 0.65rem;
+    border-radius: 8px;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-refrescar:hover { background: #e2e8f0; color: #0d9488; }
+.btn-refrescar svg { width: 22px; height: 22px; }
+.btn-refrescar.girando svg { animation: spin 1s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Tabla */
+.tabla-scroll-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    overflow: hidden;
+}
+
+.tabla-contenedor {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.tabla-reporte {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.tabla-reporte thead {
+    background: #f8fafc;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.tabla-reporte th {
+    padding: 1.2rem 1rem;
+    text-align: left;
+    font-weight: 700;
+    color: #475569;
+    white-space: nowrap;
+}
+
+.tabla-reporte td {
+    padding: 1.1rem 1rem;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.tabla-reporte tbody tr:hover { background-color: #f0fdfa; }
+
+.col-nombre { font-weight: 600; color: #1e293b; min-width: 250px; }
+.col-numero { text-align: center; font-weight: 500; }
+
+.loader-contenedor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4rem;
+    gap: 1rem;
+}
+
+.txt-cargando { color: #64748b; font-weight: 500; font-size: 0.9rem; }
+
+.sin-resultados {
+    padding: 3rem;
+    text-align: center;
+    color: #94a3b8;
+    font-style: italic;
+}

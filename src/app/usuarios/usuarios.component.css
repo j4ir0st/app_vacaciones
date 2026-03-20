@@ -1,0 +1,83 @@
+/* ========================================
+   Usuarios - Estilos de Administración de Personal
+   ======================================== */
+
+.pagina-admin {
+    padding: 1.5rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.pagina-header {
+    margin-bottom: 2rem;
+}
+
+.header-info h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.subtitulo {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+/* Buscador */
+.buscador {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s;
+}
+
+.buscador:focus-within { border-color: #c41e3a; }
+.buscador svg { width: 18px; height: 18px; color: #aaa; flex-shrink: 0; }
+.buscador input { border: none; outline: none; font-size: 0.9rem; width: 100%; font-family: 'Inter', sans-serif; }
+
+/* Tabla */
+.tabla-contenedor { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+.tabla-admin { width: 100%; border-collapse: collapse; }
+.tabla-admin thead { background: #f8f9fa; border-bottom: 2px solid #e0e0e0; }
+.tabla-admin th { padding: 1rem; text-align: left; font-size: 0.78rem; font-weight: 700; color: #888; text-transform: uppercase; }
+.tabla-admin td { padding: 1rem; font-size: 0.88rem; color: #444; border-bottom: 1px solid #f5f5f5; }
+
+.celda-usuario { display: flex; align-items: center; gap: 0.7rem; }
+.avatar-sm { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: #f0f2f5; display: flex; align-items: center; justify-content: center; }
+.avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
+.nombre-usuario { font-weight: 600; color: #333; }
+.sub-usuario { font-size: 0.75rem; color: #999; }
+
+/* Badges */
+.badge-estado { padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+.estado-aprobado { background: #e6f4ea; color: #1e7e34; }
+.estado-rechazado { background: #fce8e6; color: #c41e3a; }
+
+.btn-toggle-estado {
+    background: none; border: 2px solid #e0e0e0; border-radius: 6px; padding: 0.3rem 0.75rem;
+    font-size: 0.78rem; font-weight: 600; cursor: pointer; color: #666; transition: all 0.2s;
+}
+.btn-toggle-estado:hover { border-color: #c41e3a; color: #c41e3a; }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.modal-confirm { background: #fff; border-radius: 16px; padding: 2rem; width: 100%; max-width: 400px; }
+.confirm-acciones { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; }
+
+.btn-outline, .btn-danger, .btn-aprobar-confirm {
+    padding: 0.6rem 1.2rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.88rem;
+}
+.btn-outline { background: none; border: 2px solid #e0e0e0; color: #666; }
+.btn-danger { background: #c41e3a; border: none; color: #fff; }
+.btn-aprobar-confirm { background: #2d7a3a; border: none; color: #fff; }
+
+.loader-contenedor { display: flex; justify-content: center; padding: 3rem; }
+.spinner-med { width: 38px; height: 38px; border: 3px solid #e0e0e0; border-top-color: #c41e3a; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

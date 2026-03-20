@@ -1,0 +1,80 @@
+<div class="pagina-admin">
+    <div class="pagina-header">
+        <div class="header-info">
+            <h2>Reporte de Vacaciones</h2>
+            <p class="subtitulo">Revise y analice las solicitudes de vacaciones de los usuarios.</p>
+        </div>
+        <button class="btn-descargar" (click)="descargarReporte()" [disabled]="cargando || filasFiltradas.length === 0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Descargar Reporte
+        </button>
+    </div>
+
+    <div class="filtros-reporte">
+        <div class="campo-filtro">
+            <label>Nombre</label>
+            <div class="input-busqueda">
+                <input type="text" [(ngModel)]="textoBusqueda" placeholder="Buscar por nombre" />
+            </div>
+        </div>
+        <div class="campo-filtro">
+            <label>Área</label>
+            <div class="select-wrapper">
+                <select [(ngModel)]="filtroArea">
+                    <option value="">Buscar por área</option>
+                    <option *ngFor="let area of areas" [value]="area">{{ area }}</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn-refrescar" (click)="refrescar()" title="Refrescar datos" [class.girando]="cargando">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 4v6h-6" />
+                <path d="M1 20v-6h6" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+            </svg>
+        </button>
+    </div>
+
+    <div class="loader-contenedor" *ngIf="cargando">
+        <div class="spinner-med"></div>
+        <p class="txt-cargando">Procesando información histórica...</p>
+    </div>
+
+    <div class="tabla-scroll-container" *ngIf="!cargando">
+        <div class="tabla-contenedor">
+            <table class="tabla-reporte">
+                <thead>
+                    <tr>
+                        <th class="col-nombre">Nombre</th>
+                        <th>Área</th>
+                        <th>Fecha Ingreso</th>
+                        <th class="col-numero">Total Acumulado</th>
+                        <th class="col-numero">Días Utilizados</th>
+                        <th class="col-numero">Días Truncos</th>
+                        <th class="col-numero">Días Pendientes</th>
+                        <th class="col-numero">Días Programados</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let fila of filasFiltradas">
+                        <td class="col-nombre">{{ fila.nombre }}</td>
+                        <td>{{ fila.area }}</td>
+                        <td>{{ vacacionesService.formatearFecha(fila.fechaIngreso) }}</td>
+                        <td class="col-numero">{{ fila.totalAcumulado | number:'1.1-1' }}</td>
+                        <td class="col-numero">{{ fila.diasUtilizados }}</td>
+                        <td class="col-numero">{{ fila.diasTruncos | number:'1.1-1' }}</td>
+                        <td class="col-numero">{{ fila.diasPendientes | number:'1.1-1' }}</td>
+                        <td class="col-numero">{{ fila.diasProgramados }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="sin-resultados" *ngIf="filasFiltradas.length === 0">
+            No se encontraron usuarios con los filtros aplicados.
+        </div>
+    </div>
+</div>

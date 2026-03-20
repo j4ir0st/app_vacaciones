@@ -6,7 +6,9 @@ import { LayoutComponent } from './shared/layout/layout.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { MisSolicitudesComponent } from './mis-solicitudes/mis-solicitudes.component';
 import { CalendarioComponent } from './calendario/calendario.component';
-import { AdminComponent } from './admin/admin.component';
+import { AprobacionesComponent } from './aprobaciones/aprobaciones.component';
+import { UsuariosComponent } from './usuarios/usuarios.component';
+import { ReportesComponent } from './reportes/reportes.component';
 
 // Definición de rutas de la aplicación de vacaciones
 const routes: Routes = [
@@ -25,19 +27,19 @@ const routes: Routes = [
       { path: 'calendario', component: CalendarioComponent, canActivate: [AuthGuard] },
       {
         path: 'aprobaciones',
-        component: AdminComponent,
+        component: AprobacionesComponent,
         canActivate: [AuthGuard],
-        data: { requiereAprobador: true, pestana: 'solicitudes' }
+        data: { requiereAprobador: true }
       },
       {
         path: 'admin/usuarios',
-        component: AdminComponent,
+        component: UsuariosComponent,
         canActivate: [AuthGuard],
-        data: { requiereAprobador: true, pestana: 'usuarios' }
+        data: { requiereAprobador: true }
       },
       {
         path: 'reportes',
-        component: DashboardComponent, // Placeholder por ahora usando Dashboard
+        component: ReportesComponent,
         canActivate: [AuthGuard],
         data: { requiereAprobador: true }
       },
