@@ -16,11 +16,12 @@ import { NavbarComponent } from './shared/navbar/navbar.component';
 import { HeaderComponent } from './shared/header/header.component';
 import { LayoutComponent } from './shared/layout/layout.component';
 import { ConfirmDialogComponent } from './shared/confirm-dialog/confirm-dialog.component';
+import { NotificacionComponent } from './shared/notificacion/notificacion.component';
 
 // Módulos de funcionalidades
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { MisSolicitudesComponent } from './mis-solicitudes/mis-solicitudes.component';
-import { NuevaSolicitudComponent } from './mis-solicitudes/nueva-solicitud/nueva-solicitud.component';
+import { NuevaSolicitudComponent } from './nueva-solicitud/nueva-solicitud.component';
 import { CalendarioComponent } from './calendario/calendario.component';
 import { AprobacionesComponent } from './aprobaciones/aprobaciones.component';
 import { UsuariosComponent } from './usuarios/usuarios.component';
@@ -44,6 +45,7 @@ import { FullCalendarModule } from '@fullcalendar/angular';
     AprobacionesComponent,
     UsuariosComponent,
     ReportesComponent,
+    NotificacionComponent,
   ],
   imports: [
     BrowserModule,

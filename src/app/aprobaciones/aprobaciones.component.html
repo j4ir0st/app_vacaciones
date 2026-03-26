@@ -20,76 +20,75 @@
         <div class="spinner-med"></div>
     </div>
 
-    <div class="tabla-contenedor" *ngIf="!cargandoSolicitudes && !solicitudDetalle">
-        <!-- MODO LISTA DE TARJETAS -->
-        <div class="solicitudes-lista" *ngIf="solicitudesFiltradas.length > 0">
-            <div class="solicitud-card animate-in cursor-pointer" *ngFor="let sol of solicitudesFiltradas"
-                (click)="verDetalle(sol)">
-                <!-- Columna 1: Usuario -->
-                <div class="celda-usuario">
-                    <div class="avatar-md">
-                        <img *ngIf="sol.avatarUsuario" [src]="sol.avatarUsuario" [alt]="sol.nombreUsuario" />
-                        <span *ngIf="!sol.avatarUsuario" class="iniciales-md">
-                            {{ sol.nombreUsuario.substring(0, 2).toUpperCase() }}
-                        </span>
-                    </div>
-                    <div class="usuario-info">
-                        <span class="nombre-empleado">{{ sol.nombreUsuario }}</span>
-                        <span class="area-puesto">{{ sol.areaNombre }} | {{ sol.puestoNombre }}</span>
-                    </div>
-                </div>
 
-                <!-- Columna 2: Fechas del periodo -->
-                <div class="card-fechas">
-                    <ng-container *ngIf="sol.fecha_inicio && sol.fecha_final; else sinFechasPeriodo">
-                        {{ vacacionesService.formatearFechaCorta(sol.fecha_inicio) }} - {{
-                        vacacionesService.formatearFechaCorta(sol.fecha_final) }}, 2026<br><span
-                            style="color: #64748b; font-size: 0.85em;">{{ sol.total_periodo }}
-                            día(s)</span>
-                    </ng-container>
-                    <ng-template #sinFechasPeriodo>
-                        <span style="color: #999; font-style: italic;">Sin rango de fechas</span>
-                    </ng-template>
-                </div>
-
-                <!-- Columna 3: Fecha de envío -->
-                <div class="card-meta">
-                    <div class="meta-fecha" style="text-align: left;">
-                        <span style="color: #999;">Enviado el</span><br>
-                        <ng-container *ngIf="sol.fecha_solicitud || sol.fecha_inicio; else sinEnvio">
-                            {{ sol.fecha_solicitud ? vacacionesService.formatearFecha(sol.fecha_solicitud) :
-                            vacacionesService.formatearFecha(sol.fecha_inicio) }} {{ sol.fecha_solicitud ?
-                            sol.fecha_solicitud.substring(11, 16) : '' }}
-                        </ng-container>
-                        <ng-template #sinEnvio>
-                            <span style="color: #999; font-style: italic;">Sin fecha de envío</span>
-                        </ng-template>
-                    </div>
-                </div>
-
-                <!-- Columna 4: Estado -->
-                <div class="card-status">
-                    <span class="badge-estado badge-outline" [ngClass]="claseEstado(sol.estado_solicitud)">
-                        {{ vacacionesService.obtenerLabelEstado(sol.estado_solicitud) | uppercase }}
+    <!-- MODO LISTA DE TARJETAS -->
+    <div class="solicitudes-lista" *ngIf="!solicitudDetalle && solicitudesFiltradas.length > 0">
+        <div class="solicitud-card animate-in cursor-pointer" *ngFor="let sol of solicitudesFiltradas"
+            (click)="verDetalle(sol)">
+            <!-- Columna 1: Usuario -->
+            <div class="celda-usuario">
+                <div class="avatar-md">
+                    <img *ngIf="sol.avatarUsuario" [src]="sol.avatarUsuario" [alt]="sol.nombreUsuario" />
+                    <span *ngIf="!sol.avatarUsuario" class="iniciales-md">
+                        {{ sol.nombreUsuario.substring(0, 2).toUpperCase() }}
                     </span>
                 </div>
+                <div class="usuario-info">
+                    <span class="nombre-empleado">{{ sol.nombreUsuario }}</span>
+                    <span class="area-puesto">{{ sol.areaNombre }} | {{ sol.puestoNombre }}</span>
+                </div>
+            </div>
+
+            <!-- Columna 2: Fechas del periodo -->
+            <div class="card-fechas">
+                <ng-container *ngIf="sol.fecha_inicio && sol.fecha_final; else sinFechasPeriodo">
+                    {{ vacacionesService.formatearFechaCorta(sol.fecha_inicio) }} - {{
+                    vacacionesService.formatearFechaCorta(sol.fecha_final) }}, 2026<br><span
+                        style="color: #64748b; font-size: 0.85em;">{{ sol.total_periodo }}
+                        día(s)</span>
+                </ng-container>
+                <ng-template #sinFechasPeriodo>
+                    <span style="color: #999; font-style: italic;">Sin rango de fechas</span>
+                </ng-template>
+            </div>
+
+            <!-- Columna 3: Fecha de envío -->
+            <div class="card-meta">
+                <div class="meta-fecha" style="text-align: left;">
+                    <span style="color: #999;">Enviado el</span><br>
+                    <ng-container *ngIf="sol.fecha_solicitud || sol.fecha_inicio; else sinEnvio">
+                        {{ sol.fecha_solicitud ? vacacionesService.formatearFecha(sol.fecha_solicitud) :
+                        vacacionesService.formatearFecha(sol.fecha_inicio) }} {{ sol.fecha_solicitud ?
+                        sol.fecha_solicitud.substring(11, 16) : '' }}
+                    </ng-container>
+                    <ng-template #sinEnvio>
+                        <span style="color: #999; font-style: italic;">Sin fecha de envío</span>
+                    </ng-template>
+                </div>
+            </div>
+
+            <!-- Columna 4: Estado -->
+            <div class="card-status">
+                <span class="badge-estado badge-outline" [ngClass]="claseEstado(sol.estado_solicitud)">
+                    {{ vacacionesService.obtenerLabelEstado(sol.estado_solicitud) | uppercase }}
+                </span>
             </div>
         </div>
+    </div>
 
-        <!-- Sin resultados (Lista) -->
-        <div class="sin-solicitudes" *ngIf="solicitudesFiltradas.length === 0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-            </svg>
-            <p>No tienes solicitudes con estado {{ filtroEstado }}</p>
-        </div>
+    <!-- Sin resultados (Lista) -->
+    <div class="sin-solicitudes" *ngIf="!solicitudDetalle && solicitudesFiltradas.length === 0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+        </svg>
+        <p>No tienes solicitudes con estado {{ filtroEstado }}</p>
     </div>
 
     <!-- MODO DETALLE -->
     <div class="detalle-container animate-in" *ngIf="solicitudDetalle">
-        <!-- Contenido detalle (Solo si no hay éxito) -->
-        <ng-container *ngIf="!rechazoExitoso && !aprobacionExitosa">
+        <!-- Contenido detalle (Solo si no hay éxito ni preview) -->
+        <ng-container *ngIf="!rechazoExitoso && !aprobacionExitosa && !modoPreviewPDF && !aprobacionExitosaGerente">
 
             <div class="detalle-toolbar">
                 <button class="btn-atras" (click)="cerrarDetalle()">
@@ -165,7 +164,7 @@
             <div class="cronologia-container mt-20">
                 <h4 class="titulo-cronologia">Cronología del Estatus</h4>
                 <div class="timeline">
-                    <div class="timeline-step completado">
+                    <div class="timeline-step completado step-enviado">
                         <div class="step-icon"></div>
                         <div class="step-content">
                             <span class="step-title">Solicitud enviada</span>
@@ -176,7 +175,7 @@
                                 vacacionesService.formatearFecha(solicitudDetalle.fecha_inicio) }}</span>
                         </div>
                     </div>
-                    <div class="timeline-step" [class.completado]="solicitudDetalle.fecha_jefe">
+                    <div class="timeline-step step-supervisor" [class.completado]="solicitudDetalle.fecha_jefe">
                         <div class="step-icon"></div>
                         <div class="step-content">
                             <span class="step-title" *ngIf="!solicitudDetalle.fecha_jefe">En espera de revisión del
@@ -189,7 +188,7 @@
                             <span class="step-date" *ngIf="!solicitudDetalle.fecha_jefe">Pendiente</span>
                         </div>
                     </div>
-                    <div class="timeline-step" [class.completado]="solicitudDetalle.fecha_gerente">
+                    <div class="timeline-step step-gerente" [class.completado]="solicitudDetalle.fecha_gerente">
                         <div class="step-icon"></div>
                         <div class="step-content">
                             <span class="step-title" *ngIf="!solicitudDetalle.fecha_gerente">En espera de revisión del
@@ -258,10 +257,12 @@
                     </svg>
                 </div>
                 <h3>Solicitud Aprobada</h3>
-                <p class="exito-desc">Ha Aprobado con éxito la solicitud de <strong>{{ solicitudDetalle.nombreUsuario }}</strong>.</p>
-                
+                <p class="exito-desc">Ha Aprobado con éxito la solicitud de <strong>{{ solicitudDetalle.nombreUsuario
+                        }}</strong>.</p>
+
                 <div class="notificacion-box">
-                    <p>El empleado será notificado sobre esta decisión. Se esperará la firma del gerente del área para su aprobación final.</p>
+                    <p>El empleado será notificado sobre esta decisión. Se esperará la firma del gerente del área para
+                        su aprobación final.</p>
                 </div>
 
                 <button class="btn-retornar" (click)="retornarDeExito()">
@@ -270,6 +271,120 @@
                     </svg>
                     Retornar a Aprobaciones
                 </button>
+            </div>
+        </div>
+
+        <!-- Pantalla de Éxito Final (Aprobación Gerente) -->
+        <div class="exito-container animate-in" *ngIf="aprobacionExitosaGerente">
+            <div class="exito-card">
+                <div class="icon-header-teal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                </div>
+                <h3>Solicitud Aprobada y Firmada</h3>
+                <p class="exito-desc">Ha aprobado y firmado con éxito la solicitud de <strong>{{
+                        solicitudDetalle.nombreUsuario }}</strong>.</p>
+
+                <div class="notificacion-box">
+                    <p>El empleado será notificado sobre esta decisión. El documento firmado ha sido generado y enviado
+                        por correo.</p>
+                </div>
+
+                <button class="btn-retornar" (click)="retornarDeExito()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Retornar a Aprobaciones
+                </button>
+            </div>
+        </div>
+
+        <!-- Vista Previa Documento (Gerente) -->
+        <div class="preview-pdf-container animate-in" *ngIf="modoPreviewPDF">
+            <!-- Overlay de Carga Premium -->
+            <div class="loading-overlay" *ngIf="procesandoDetalle">
+                <div class="loading-content">
+                    <div class="spinner-premium"></div>
+                    <p>Firmando y enviando documento...</p>
+                    <span class="loading-sub">Esto puede tomar unos segundos</span>
+                </div>
+            </div>
+            <div class="preview-header">
+                <div class="preview-actions">
+                    <button class="btn-cancelar-preview" (click)="cancelarPreview()">
+                        Cancelar
+                    </button>
+                    <button class="btn-confirmar-firma" (click)="firmarYEnviar()" [disabled]="procesandoDetalle">
+                        <svg *ngIf="!procesandoDetalle" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"></path>
+                            <polygon points="18 2 22 6 12 16 8 16 8 12 18 2"></polygon>
+                        </svg>
+                        <div class="spinner-min white" *ngIf="procesandoDetalle"></div>
+                        FIRMAR Y ENVIAR CORREO
+                    </button>
+                </div>
+            </div>
+
+            <div class="doc-pdf-emulado">
+                <div class="doc-header">
+                    <div class="doc-titulo">Aprobación de Gerencia</div>
+                    <div class="doc-actions-header">
+                        <button class="btn-icon-circular" (click)="descargarDocumento()" title="Descargar PDF oficial">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="doc-logo-placeholder">
+                        <img src="https://appsurgicorperu.com/static/avatars/LogoSurgiC_SinFondo.png" alt="Surgicorp"
+                            onerror="this.src='https://appsurgicorperu.com/static/avatars/LogoSurgiC_SinFondo.png'">
+                    </div>
+                </div>
+
+                <div class="doc-resumen-box">
+                    <h4 class="doc-section-title">Resumen de la Solicitud:</h4>
+                    <div class="doc-grid">
+                        <div class="doc-row"><span class="doc-label">Colaborador:</span><span class="doc-valor">{{
+                                solicitudDetalle.nombreUsuario }}</span></div>
+                        <div class="doc-row"><span class="doc-label">Área:</span><span class="doc-valor">{{
+                                solicitudDetalle.puestoNombre }}</span></div>
+                        <div class="doc-row"><span class="doc-label">Tipo de Solicitud:</span><span
+                                class="doc-valor">Autorizada</span></div>
+                        <div class="doc-row"><span class="doc-label">Fechas:</span><span class="doc-valor">{{
+                                vacacionesService.formatearFecha(solicitudDetalle.fecha_inicio) }} - {{
+                                vacacionesService.formatearFecha(solicitudDetalle.fecha_final) }} | {{
+                                solicitudDetalle.total_periodo }} día(s)</span></div>
+                        <div class="doc-row"><span class="doc-label">Aprobación de Supervisor:</span><span
+                                class="doc-valor">{{ authService.usuarioActual?.first_name }} {{
+                                authService.usuarioActual?.last_name }} | {{ solicitudDetalle.fecha_jefe ?
+                                (vacacionesService.formatearFecha(solicitudDetalle.fecha_jefe) + ' ' +
+                                solicitudDetalle.fecha_jefe.substring(11, 16)) : '--' }}</span></div>
+                        <div class="doc-row"><span class="doc-label">Motivo:</span><span class="doc-valor">{{
+                                solicitudDetalle.motivo || 'Sin especificar' }}</span></div>
+                    </div>
+                </div>
+
+                <div class="doc-comentarios-section">
+                    <h4 class="doc-section-title">Comentarios</h4>
+                    <div class="doc-comentario-texto">
+                        {{ observacionDetalle || 'Sin observaciones adicionales.' }}
+                    </div>
+                </div>
+
+                <div class="doc-firma-footer">
+                    <div class="doc-firma-caja">
+                        <div class="firma-linea"></div>
+                        <p class="firma-nombre">{{ authService.usuarioActual?.first_name }} {{
+                            authService.usuarioActual?.last_name }}</p>
+                        <p class="firma-puesto">{{ authService.usuarioActual?.puesto_id?.nombre }} de {{
+                            authService.usuarioActual?.area_id?.nombre }}</p>
+                        <p class="firma-digital-tag">Firma Digital {{ (fechaFirma | date:'dd/MM/yyyy HH:mm') }}</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -283,6 +398,15 @@
             <div class="modal-body">
                 <p>¿Está seguro de que desea rechazar esta solicitud de vacaciones?</p>
                 <p class="txt-sub">Se enviará una notificación al usuario indicando el motivo.</p>
+
+                <div class="alert-error-inline" *ngIf="errorRechazo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span>{{ errorRechazo }}</span>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn-cancelar-modal" (click)="cancelarRechazo()">Cancelar</button>

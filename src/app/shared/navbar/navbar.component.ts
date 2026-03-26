@@ -26,7 +26,7 @@ export class NavbarComponent {
         { ruta: '/mis-solicitudes', etiqueta: 'Mis Solicitudes', icono: 'airplane' },
         { ruta: '/calendario', etiqueta: 'Calendario', icono: 'calendar' },
         { ruta: '/aprobaciones', etiqueta: 'Aprobaciones', icono: 'check', soloAprobador: true },
-        { ruta: '/admin/usuarios', etiqueta: 'Administración Usuarios', icono: 'person', soloAprobador: true },
+        { ruta: '/usuarios', etiqueta: 'Adm. Usuarios', icono: 'person', soloAprobador: true },
         { ruta: '/reportes', etiqueta: 'Reportes', icono: 'message', soloAprobador: true },
     ];
 

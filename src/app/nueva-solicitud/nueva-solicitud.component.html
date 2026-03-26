@@ -37,7 +37,7 @@
                 <p class="panel-subt">Seleccione el tipo de licencia y el rango de fechas</p>
 
                 <!-- Selección de Usuario (Solo Jefes/Gerentes) -->
-                <div class="form-campo" *ngIf="esJefeOGerente">
+                <div class="form-campo" *ngIf="authService.esJefeOGerente">
                     <label>Usuario a Solicitar</label>
                     <div class="select-wrapper">
                         <select formControlName="usuario_id" [class.cargando]="cargandoUsuarios">
@@ -61,7 +61,7 @@
                 <div class="form-fila grid-3">
                     <div class="form-campo">
                         <label>Fecha de Inicio</label>
-                        <input type="date" formControlName="fecha_inicio" [min]="fechaMinima" />
+                        <input type="date" formControlName="fecha_inicio" />
                     </div>
                     <div class="form-campo">
                         <label>Días Totales</label>
@@ -73,8 +73,10 @@
                     </div>
                 </div>
 
-                <div class="dias-info" *ngIf="diasCalculados > 0">
-                    <span class="dias-count">{{ diasCalculados }} día(s) solicitado(s)</span>
+                <div class="dias-info-container">
+                    <div class="dias-info" *ngIf="diasCalculados > 0">
+                        <span class="dias-count">{{ diasCalculados }} día(s) solicitado(s)</span>
+                    </div>
                 </div>
             </div>
 
@@ -127,8 +129,8 @@
                         <path d="M12 16v-4" />
                         <path d="M12 8h.01" />
                     </svg>
-                    <p *ngIf="!esJefeOGerente">Al enviar, su solicitud quedará en estado <strong>Pendiente</strong> a la espera de aprobación de su jefe directo.</p>
-                    <p *ngIf="esJefeOGerente">Al ser jefe/gerente, su solicitud se registrará como <strong>Aprobada</strong> automáticamente.</p>
+                    <p *ngIf="!authService.esJefeOGerente">Al enviar, su solicitud quedará en estado <strong>Pendiente</strong> a la espera de aprobación de su jefe directo.</p>
+                    <p *ngIf="authService.esJefeOGerente">Al ser jefe/gerente, su solicitud se registrará como <strong>Aprobada</strong> automáticamente.</p>
                 </div>
             </div>
 

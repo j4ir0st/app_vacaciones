@@ -1,0 +1,439 @@
+/* Contenedor Principal */
+.stepper-contenedor {
+    padding: 1rem 1.5rem;
+    /* Compactado */
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+/* Header del Stepper (Indicadores) */
+.stepper-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+    /* Compactado */
+    position: relative;
+    padding: 0 0.5rem;
+}
+
+.paso-indicador {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    /* Compactado */
+    z-index: 2;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.paso-circulo {
+    width: 38px;
+    /* Reducido un poco */
+    height: 38px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: all 0.4s ease;
+}
+
+.paso-circulo svg {
+    width: 20px;
+    height: 20px;
+}
+
+.paso-nombre {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.paso-linea {
+    flex: 1;
+    height: 3px;
+    background: #f1f5f9;
+    margin: 0 0.3rem;
+    margin-bottom: 1.4rem;
+    /* Ajustado */
+    z-index: 1;
+    border-radius: 4px;
+}
+
+/* Estados Activos - Revertido a ROJO Surgicorp */
+.paso-activo .paso-circulo {
+    border-color: #c41e3a;
+    background: linear-gradient(135deg, #c41e3a, #9b182e);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(196, 30, 58, 0.25);
+    transform: scale(1.05);
+}
+
+.paso-activo .paso-nombre {
+    color: #c41e3a;
+}
+
+.linea-activa {
+    background: linear-gradient(90deg, #c41e3a, #e53e3e);
+}
+
+/* Paneles de Contenido */
+.paso-panel {
+    animation: slideUp 0.5s cubic-bezier(0, 0, 0.2, 1);
+    min-height: 320px;
+    /* Unificado para evitar saltos de altura */
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.panel-titulo {
+    font-size: 1.3rem;
+    /* Un poco más pequeño */
+    font-weight: 800;
+    color: #1a202c;
+    margin-bottom: 0.2rem;
+}
+
+.panel-subt {
+    font-size: 0.85rem;
+    color: #718096;
+    margin-bottom: 1rem;
+    /* Compactado */
+}
+
+/* Formulario */
+.form-campo {
+    margin-bottom: 1rem;
+    /* Compactado */
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.form-campo label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #4a5568;
+    margin-left: 0.1rem;
+}
+
+.form-campo select,
+.form-campo input,
+.form-campo textarea {
+    width: 100%;
+    /* Aseguramos que ocupen todo el ancho disponible */
+    padding: 0.75rem 1rem;
+    /* Más compacto */
+    border: 2px solid #edf2f7;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    color: #2d3748;
+    outline: none;
+    transition: all 0.3s ease;
+    background: #f8fafc;
+}
+
+.form-campo select:focus,
+.form-campo input:focus,
+.form-campo textarea:focus {
+    border-color: #c41e3a;
+    /* Rojo en el enfoque */
+    box-shadow: 0 0 0 4px rgba(196, 30, 58, 0.08);
+    background: #fff;
+}
+
+.form-fila {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-fila.grid-3 {
+    grid-template-columns: 1.2fr 1fr 1.2fr;
+    gap: 1rem;
+}
+
+input[readonly] {
+    background-color: #f1f5f9 !important;
+    cursor: not-allowed;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+    opacity: 0.8;
+}
+
+/* Info de Días - Verde */
+.dias-info {
+    background: linear-gradient(90deg, #f0fdf4, #dcfce7);
+    border-radius: 10px;
+    padding: 0.6rem 1rem;
+    /* Compactado */
+    border-left: 5px solid #10b981;
+    margin-top: 0.2rem;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.05);
+}
+
+.dias-count {
+    font-weight: 800;
+    color: #10b981;
+    font-size: 0.95rem;
+}
+
+/* Resumen Paso 3 */
+.resumen-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    /* Compactado */
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+}
+
+.resumen-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.resumen-item label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+}
+
+.resumen-item span {
+    font-weight: 700;
+    color: #1e293b;
+    font-size: 0.95rem;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Badges en Verde */
+.badge-dias {
+    background: #10b981;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    width: fit-content;
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.2);
+}
+
+.resumen-motivo {
+    font-size: 0.85rem;
+    color: #334155;
+    line-height: 1.4;
+    background: #fff;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+    border-left: 3px solid #cbd5e1;
+}
+
+.info-proceso {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.8rem;
+    padding: 0.5rem 0.75rem;
+    background: #eff6ff;
+    border-radius: 10px;
+    color: #1d4ed8;
+    font-size: 0.8rem;
+    border: 1px solid #dbeafe;
+}
+
+.info-proceso svg {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+/* Footer de Navegación */
+.stepper-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.2rem;
+    /* Compactado */
+    padding-top: 1rem;
+    border-top: 2px solid #f1f5f9;
+}
+
+.btn-primario,
+.btn-secundario,
+.btn-exito {
+    padding: 0.75rem 1.8rem;
+    /* Más compacto */
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primario {
+    background: #10b981;
+    /* Botón principal a verde también por ahora si el acento es verde */
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+/* Si el botón de éxito debe ser igual al primario, mantenemos colores coherentes */
+.btn-exito {
+    background: #10b981;
+    color: #fff;
+    border: none;
+}
+
+.btn-primario:disabled {
+    background: #e2e8f0 !important;
+    color: #94a3b8 !important;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.btn-secundario {
+    background: #fff;
+    color: #475569;
+    border: 2px solid #e2e8f0;
+}
+
+.btn-primario:hover:not(:disabled),
+.btn-exito:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Panel de Éxito */
+.exito-panel {
+    text-align: center;
+    padding: 2rem 1rem;
+    /* Compactado */
+    animation: zoomIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.exito-icono {
+    width: 80px;
+    height: 80px;
+    background: #ecfdf5;
+    color: #10b981;
+    border-radius: 25px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.exito-icono svg {
+    width: 48px;
+    height: 48px;
+}
+
+.exito-panel h2 {
+    font-size: 1.7rem;
+    color: #1a202c;
+    font-weight: 800;
+    margin-bottom: 0.8rem;
+}
+
+.exito-panel p {
+    color: #4a5568;
+    max-width: 450px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+.pasos-siguientes {
+    background: #fcfcfc;
+    border: 2px dashed #e2e8f0;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: left;
+    max-width: 500px;
+    margin: 0 auto 2rem;
+}
+
+.pasos-siguientes li {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Otros */
+.alert-error {
+    background: #fff5f5;
+    color: #c41e3a;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    border: 1px solid rgba(196, 30, 58, 0.1);
+}
+
+.loader-chico {
+    width: 18px;
+    height: 18px;
+    border: 3px solid #f1f5f9;
+    border-top-color: #10b981;
+    /* Verde */
+    border-radius: 50%;
+    animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.select-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    /* Garantiza que el contenedor del select sea full-width */
+}
+
+.select-wrapper select {
+    width: 100%;
+}
+
+.select-wrapper .loader-chico {
+    position: absolute;
+    right: 35px;
+}

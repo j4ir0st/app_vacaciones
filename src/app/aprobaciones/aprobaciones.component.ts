@@ -55,6 +55,12 @@ export class AprobacionesComponent implements OnInit {
     // Estados para el flujo de aprobación
     mostrandoConfirmacionAprobacion = false;
     aprobacionExitosa = false;
+    modoPreviewPDF = false;
+    aprobacionExitosaGerente = false;
+    fechaFirma: Date = new Date();
+
+    // Mensajes de error
+    errorRechazo = '';
 
     constructor(
         public authService: AuthService,
@@ -105,7 +111,7 @@ export class AprobacionesComponent implements OnInit {
                         const uUrlLimpia = (u.url || '').replace(/\/$/, '').toLowerCase();
                         return solUrlLimpia === uUrlLimpia || solUrlLimpia.endsWith(uUrlLimpia) || uUrlLimpia.endsWith(solUrlLimpia);
                     });
-                    
+
                     return {
                         ...s,
                         nombreUsuario: usu
@@ -132,16 +138,19 @@ export class AprobacionesComponent implements OnInit {
         const user = this.authService.usuarioActual;
         if (!user) return '';
 
-        const puesto = (user.area_puesto?.puesto_nombre || user.puesto_id?.nombre || '').trim().toLowerCase();
         const areaUser = (user.area_puesto?.area_nombre || user.area_id?.nombre || user.area || '').trim().toLowerCase();
         const nombreUser = `${user.first_name} ${user.last_name}`.trim().toLowerCase();
+        const username = user.username?.toLowerCase() || '';
 
         let areas: string[] = [];
 
-        if (puesto === 'gerente' || puesto === 'jefe' || puesto === 'supervisor') {
+        // Usamos la lógica centralizada del AuthService para determinar permisos
+        if (this.authService.esAprobador) {
             if (areaUser === 'operaciones') {
-                areas = ["Gerencia", "Desarrollo Software", "Logística Inversa", "Atenciones", "Distribución", "Almacenes", "Facturación"];
-            } else if (nombreUser === 'katherine lewis') {
+                // Lista exacta según fórmula PowerApps para Operaciones
+                areas = ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa"];
+            } else if (username === 'klewis' || username === 'klewism' || nombreUser.includes('katherine lewis')) {
+                // Caso Katherine Lewis (coincide con fórmula heredada)
                 areas = ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
             } else {
                 areas = [user.area_puesto?.area_nombre || user.area_id?.nombre || user.area || ''];
@@ -193,15 +202,14 @@ export class AprobacionesComponent implements OnInit {
         this.observacionDetalle = '';
     }
 
-    procesarDetalle(accion: 'aprobar' | 'rechazar'): void {
+    procesarDetalle(accion: 'aprobar' | 'rechazar', vieneDeFirma: boolean = false): void {
         if (!this.solicitudDetalle?.url) return;
-        
+
         const user = this.authService.usuarioActual;
         if (!user) return;
-        
+
         this.procesandoDetalle = true;
-        const puesto = (user.area_puesto?.puesto_nombre || user.puesto_id?.nombre || '').trim().toLowerCase();
-        const esGerente = puesto === 'gerente';
+        const esGerente = this.authService.esGerente;
 
         let nuevoEstado: string = 'RC';
         let payloadAuditoria: any = { obs: this.observacionDetalle };
@@ -218,7 +226,7 @@ export class AprobacionesComponent implements OnInit {
                 payloadAuditoria['fecha_jefe'] = nowIso;
             }
         } else {
-             if (esGerente) {
+            if (esGerente) {
                 payloadAuditoria['gerente_id'] = user.url;
                 payloadAuditoria['fecha_gerente'] = nowIso;
             } else {
@@ -232,14 +240,26 @@ export class AprobacionesComponent implements OnInit {
         this.solicitudService.actualizarSolicitud(this.solicitudDetalle.url, payloadAuditoria)
             .subscribe({
                 next: () => {
-                    this.procesandoDetalle = false;
                     if (accion === 'rechazar') {
+                        this.procesandoDetalle = false;
                         this.rechazoExitoso = true;
-                    } else if (accion === 'aprobar' && !esGerente) {
-                        this.aprobacionExitosa = true;
+                    } else if (accion === 'aprobar') {
+                        if (esGerente && vieneDeFirma) {
+                            // Solo si venimos de 'firmarYEnviar', procedemos a notificar y cerrar
+                            this.ejecutarNotificacionFinal();
+                        } else if (esGerente) {
+                            // Este caso ya no debería ocurrir por el cambio en ejecutarAprobacion
+                            this.procesandoDetalle = false;
+                            this.modoPreviewPDF = true;
+                            this.fechaFirma = new Date();
+                        } else {
+                            this.procesandoDetalle = false;
+                            this.aprobacionExitosa = true;
+                        }
                     } else {
+                        this.procesandoDetalle = false;
                         this.cerrarDetalle();
-                        this.cargarDatos(); 
+                        this.cargarDatos();
                     }
                 },
                 error: (err) => {
@@ -255,9 +275,15 @@ export class AprobacionesComponent implements OnInit {
 
     cancelarRechazo(): void {
         this.mostrandoConfirmacionRechazo = false;
+        this.errorRechazo = '';
     }
 
     ejecutarRechazo(): void {
+        if (!this.observacionDetalle || this.observacionDetalle.trim() === '') {
+            this.errorRechazo = 'El campo observaciones es Obligatorio y se debe indicar el motivo del rechazo.';
+            return;
+        }
+        this.errorRechazo = '';
         this.mostrandoConfirmacionRechazo = false;
         this.procesarDetalle('rechazar');
     }
@@ -265,6 +291,9 @@ export class AprobacionesComponent implements OnInit {
     retornarDeExito(): void {
         this.rechazoExitoso = false;
         this.aprobacionExitosa = false;
+        this.aprobacionExitosaGerente = false;
+        this.modoPreviewPDF = false;
+        this.errorRechazo = '';
         this.cerrarDetalle();
         this.cargarDatos();
     }
@@ -279,7 +308,70 @@ export class AprobacionesComponent implements OnInit {
 
     ejecutarAprobacion(): void {
         this.mostrandoConfirmacionAprobacion = false;
-        this.procesarDetalle('aprobar');
+        
+        const user = this.authService.usuarioActual;
+        const puesto = (user?.area_puesto?.puesto_nombre || user?.puesto_id?.nombre || '').trim().toLowerCase();
+        
+        if (puesto === 'gerente') {
+            // Caso Gerente: Solo transición local a Vista Previa (sin PATCH aún)
+            this.modoPreviewPDF = true;
+            this.fechaFirma = new Date();
+        } else {
+            // Caso Supervisor/Jefe: Aprobación directa en BD
+            this.procesarDetalle('aprobar');
+        }
+    }
+
+    cancelarPreview(): void {
+        this.modoPreviewPDF = false;
+        this.cerrarDetalle();
+        this.cargarDatos();
+    }
+
+    firmarYEnviar(): void {
+        // Al firmar, recién ejecutamos el PATCH de aprobación y luego el POST de notificación
+        this.procesarDetalle('aprobar', true);
+    }
+
+    private ejecutarNotificacionFinal(): void {
+        if (!this.solicitudDetalle?.url) return;
+        
+        this.solicitudService.enviarNotificacion(this.solicitudDetalle.url).subscribe({
+            next: () => {
+                this.procesandoDetalle = false;
+                this.modoPreviewPDF = false;
+                this.aprobacionExitosaGerente = true;
+            },
+            error: (err) => {
+                this.procesandoDetalle = false;
+                console.error('Error al enviar notificación:', err);
+                alert('La solicitud fue aprobada pero hubo un error al enviar el correo de notificación.');
+                // Aun con error de correo, la solicitud ya quedó aprobada en BD
+                this.modoPreviewPDF = false;
+                this.aprobacionExitosaGerente = true;
+            }
+        });
+    }
+
+    descargarDocumento(): void {
+        if (!this.solicitudDetalle?.url) return;
+        
+        this.solicitudService.descargarPDF(this.solicitudDetalle.url).subscribe({
+            next: (blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const urlParts = this.solicitudDetalle?.url.split('/') || [];
+                const id = urlParts.filter(p => p).pop() || 'documento';
+                a.download = `Solicitud_Vacaciones_${id}.pdf`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            },
+            error: (err) => {
+                console.error('Error al descargar PDF:', err);
+                alert('No se pudo descargar el documento en este momento.');
+            }
+        });
     }
 
     claseEstado(estado: EstadoSolicitud): string {

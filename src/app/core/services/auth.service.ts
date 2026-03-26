@@ -124,6 +124,11 @@ export class AuthService {
         return tieneGrupo || tienePuesto;
     }
 
+    // Alias para esAprobador usado en el formulario de nueva solicitud
+    get esJefeOGerente(): boolean {
+        return this.esAprobador;
+    }
+
     // Verifica específicamente si el usuario tiene rol de Gerente
     get esGerente(): boolean {
         const u = this.usuarioActual;

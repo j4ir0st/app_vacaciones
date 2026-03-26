@@ -32,7 +32,7 @@ const routes: Routes = [
         data: { requiereAprobador: true }
       },
       {
-        path: 'admin/usuarios',
+        path: 'usuarios',
         component: UsuariosComponent,
         canActivate: [AuthGuard],
         data: { requiereAprobador: true }
@@ -42,11 +42,6 @@ const routes: Routes = [
         component: ReportesComponent,
         canActivate: [AuthGuard],
         data: { requiereAprobador: true }
-      },
-      {
-        path: 'admin',
-        redirectTo: 'aprobaciones',
-        pathMatch: 'full'
       },
     ]
   },

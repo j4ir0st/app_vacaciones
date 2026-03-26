@@ -48,6 +48,28 @@ export class SolicitudService {
         return this.http.delete<void>(this.fixUrl(url));
     }
 
+    // Envía la notificación de aprobación por correo (Gerente)
+    enviarNotificacion(url: string): Observable<any> {
+        const base = this.fixUrl(this.cleanUrl(url));
+        return this.http.post<any>(`${base}enviar-notificacion/?format=json`, {});
+    }
+
+    // Descarga el PDF oficial de la solicitud
+    descargarPDF(url: string): Observable<Blob> {
+        const base = this.fixUrl(this.cleanUrl(url));
+        return this.http.get(`${base}descargar-pdf/`, { responseType: 'blob' });
+    }
+
+    // Limpia la URL de parámetros de consulta y asegura el slash final
+    private cleanUrl(url: string): string {
+        if (!url) return '';
+        let clean = url.split('?')[0];
+        if (!clean.endsWith('/')) {
+            clean += '/';
+        }
+        return clean;
+    }
+
     // Ajusta la URL para usar el proxy en lugar del dominio absoluto (evita CORS)
     private fixUrl(url: string): string {
         if (!url) return '';

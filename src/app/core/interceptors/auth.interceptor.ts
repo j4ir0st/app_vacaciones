@@ -3,24 +3,39 @@ import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, switchMap, filter, take } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
+import { NotificacionService } from '../services/notificacion.service';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
     private refrescando = false;
     private refreshSubject = new BehaviorSubject<string | null>(null);
 
-    constructor(private authService: AuthService) { }
+    constructor(
+        private authService: AuthService,
+        private notificacionService: NotificacionService
+    ) { }
 
     intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-        // Agrega el token de autorización a todas las peticiones a la API
+        // No interceptamos la propia petición de refresco para evitar recursión infinita
+        if (req.url.includes('/api/token/refresh/')) {
+            return next.handle(req);
+        }
+
+        // Agrega el token de autorización a todas las demás peticiones a la API
         const token = this.authService.tokenAcceso;
         const reqConToken = token ? this.agregarToken(req, token) : req;
 
         return next.handle(reqConToken).pipe(
             catchError((error: HttpErrorResponse) => {
-                // Si el token expiró (401), intentar refrescarlo
-                if (error.status === 401 && token) {
-                    return this.manejarTokenExpirado(req, next);
+                // Si el error es 401 (Unauthorized)
+                if (error.status === 401) {
+                    // Si existe un token previo, intentamos refrescarlo
+                    if (token) {
+                        return this.manejarTokenExpirado(req, next);
+                    } else {
+                        // Si no hay token y dio 401, redirigimos al login (sesión no iniciada o perdida)
+                        this.notificarYRedirigir();
+                    }
                 }
                 return throwError(() => error);
             })
@@ -56,9 +71,26 @@ export class AuthInterceptor implements HttpInterceptor {
             }),
             catchError(err => {
                 this.refrescando = false;
-                this.authService.cerrarSesion();
+                // Notificamos fallo en el refresco y redirigimos
+                this.notificarYRedirigir();
                 return throwError(() => err);
             })
         );
+    }
+
+    /**
+     * Muestra mensaje de error y redirige al login tras una breve pausa
+     */
+    private notificarYRedirigir(): void {
+        this.notificacionService.mostrar(
+            'Sesión expirada o no válida. Redirigiendo al inicio de sesión...', 
+            'error', 
+            3000
+        );
+
+        // Retardo para que el usuario pueda leer el mensaje antes de la redirección
+        setTimeout(() => {
+            this.authService.cerrarSesion();
+        }, 800);
     }
 }

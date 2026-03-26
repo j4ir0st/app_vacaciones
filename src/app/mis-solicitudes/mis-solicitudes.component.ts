@@ -7,7 +7,7 @@ import { SolicitudService } from '../core/services/solicitud.service';
 import { VacacionesService } from '../core/services/vacaciones.service';
 import { RefreshService } from '../core/services/refresh.service';
 import { SolicitudVacaciones, EstadoSolicitud } from '../core/models/solicitud-vacaciones.model';
-import { NuevaSolicitudComponent } from './nueva-solicitud/nueva-solicitud.component';
+import { NuevaSolicitudComponent } from '../nueva-solicitud/nueva-solicitud.component';
 import { environment } from '../../environments/environment';
 
 @Component({
@@ -18,18 +18,18 @@ import { environment } from '../../environments/environment';
 })
 export class MisSolicitudesComponent implements OnInit, OnDestroy {
     @ViewChild(NuevaSolicitudComponent) compNuevaSolicitud?: NuevaSolicitudComponent;
-    
+
     // Listas de solicitudes
     solicitudes: SolicitudVacaciones[] = [];
     solicitudesFiltradas: SolicitudVacaciones[] = [];
-    
+
     // Estado de carga
     cargando = true;
     cargandoPaginaSiguiente = false;
-    
+
     // Filtro de estado activo
     filtroEstado: string = 'Todos';
-    
+
     // Contadores
     counts = {
         'Todos': 0,
@@ -42,7 +42,11 @@ export class MisSolicitudesComponent implements OnInit, OnDestroy {
     // Control del modal
     mostrarFormulario = false;
     solicitudACancelar: SolicitudVacaciones | null = null;
-    
+
+    // Estado para la Vista Detalle
+    solicitudDetalle: SolicitudVacaciones | null = null;
+
+
     // Suscripciones
     private refreshSub?: Subscription;
 
@@ -109,11 +113,11 @@ export class MisSolicitudesComponent implements OnInit, OnDestroy {
             // Filtramos localmente para mostrar solo las solicitudes que pertenecen al usuario autenticado
             map(items => items.filter((s: SolicitudVacaciones) => {
                 if (!s.usuario_id || !urlUsuario) return false;
-                
+
                 // Normalizamos las URLs e IDs para una comparación robusta (sin slashes finales y en minúsculas)
                 const idLimpio = s.usuario_id.replace(/\/$/, '').toLowerCase();
                 const urlLimpia = urlUsuario.replace(/\/$/, '').toLowerCase();
-                
+
                 // Comprobamos coincidencia por URL completa o por nombre de usuario
                 return idLimpio === urlLimpia || idLimpio.endsWith(urlLimpia) || urlLimpia.endsWith(idLimpio) || (username && idLimpio === username);
             })),
@@ -121,7 +125,7 @@ export class MisSolicitudesComponent implements OnInit, OnDestroy {
             tap((itemsFiltrados: SolicitudVacaciones[]) => {
                 todas = [...todas, ...itemsFiltrados];
                 // Ordenamos por fecha de inicio descendente (las más recientes arriba)
-                this.solicitudes = [...todas].sort((a, b) => 
+                this.solicitudes = [...todas].sort((a, b) =>
                     (b.fecha_inicio || '').localeCompare(a.fecha_inicio || '')
                 );
                 // Actualizamos los contadores de la cabecera y aplicamos los filtros visuales activos
@@ -177,6 +181,15 @@ export class MisSolicitudesComponent implements OnInit, OnDestroy {
         this.filtroEstado = estado;
         this.aplicarFiltro();
     }
+
+    verDetalle(solicitud: SolicitudVacaciones): void {
+        this.solicitudDetalle = solicitud;
+    }
+
+    cerrarDetalle(): void {
+        this.solicitudDetalle = null;
+    }
+
 
     intentarCerrarModal(): void {
         if (this.compNuevaSolicitud?.esSucio) {
