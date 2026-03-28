@@ -100,6 +100,15 @@ export class VacacionesService {
         return `${dia} ${mes}`;
     }
 
+    formatearFechaCompleta(fecha: string): string {
+        if (!fecha) return '';
+        const d = new Date(fecha.includes('T') ? fecha : fecha + 'T00:00:00Z');
+        const dia = String(d.getUTCDate()).padStart(2, '0');
+        const mes = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const anio = d.getUTCFullYear();
+        return `${dia}/${mes}/${anio}`;
+    }
+
     obtenerCodigoEstado(estado: EstadoSolicitud | undefined): string {
         if (!estado) return '';
         if (typeof estado === 'string') return estado;

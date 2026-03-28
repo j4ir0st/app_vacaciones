@@ -1,8 +1,8 @@
-<div class="pagina-admin">
+<div class="pagina-reportes">
     <div class="pagina-header">
         <div class="header-info">
             <h2>Reporte de Vacaciones</h2>
-            <p class="subtitulo">Revise y analice las solicitudes de vacaciones de los usuarios.</p>
+            <p class="subtitulo">Consolidado de días pendientes y acumulados por colaborador.</p>
         </div>
         <button class="btn-descargar" (click)="descargarReporte()" [disabled]="cargando || filasFiltradas.length === 0">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -16,20 +16,31 @@
 
     <div class="filtros-reporte">
         <div class="campo-filtro">
-            <label>Nombre</label>
-            <div class="input-busqueda">
-                <input type="text" [(ngModel)]="textoBusqueda" placeholder="Buscar por nombre" />
+            <label>Colaborador</label>
+            <div class="select-wrapper">
+                <select [(ngModel)]="usuarioSeleccionado">
+                    <option value="">Todos los colaboradores</option>
+                    <option *ngFor="let u of usuariosParaFiltro" [value]="u.username">
+                        {{ u.nombre }}
+                    </option>
+                </select>
             </div>
         </div>
         <div class="campo-filtro">
             <label>Área</label>
             <div class="select-wrapper">
                 <select [(ngModel)]="filtroArea">
-                    <option value="">Buscar por área</option>
-                    <option *ngFor="let area of areas" [value]="area">{{ area }}</option>
+                    <option value="">Todas las áreas</option>
+                    <option *ngFor="let area of areasDisponibles" [value]="area">{{ area }}</option>
                 </select>
             </div>
         </div>
+        <button class="btn-reset" (click)="resetearFiltros()" title="Limpiar filtros">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <polyline points="3 3 3 8 8 8"/>
+            </svg>
+        </button>
         <button class="btn-refrescar" (click)="refrescar()" title="Refrescar datos" [class.girando]="cargando">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M23 4v6h-6" />
@@ -39,42 +50,62 @@
         </button>
     </div>
 
+    <!-- Loader -->
     <div class="loader-contenedor" *ngIf="cargando">
-        <div class="spinner-med"></div>
-        <p class="txt-cargando">Procesando información histórica...</p>
+        <div class="spinner-shimmer"></div>
+        <p class="txt-cargando">Procesando información histórica de la planilla...</p>
     </div>
 
-    <div class="tabla-scroll-container" *ngIf="!cargando">
-        <div class="tabla-contenedor">
-            <table class="tabla-reporte">
-                <thead>
-                    <tr>
-                        <th class="col-nombre">Nombre</th>
-                        <th>Área</th>
-                        <th>Fecha Ingreso</th>
-                        <th class="col-numero">Total Acumulado</th>
-                        <th class="col-numero">Días Utilizados</th>
-                        <th class="col-numero">Días Truncos</th>
-                        <th class="col-numero">Días Pendientes</th>
-                        <th class="col-numero">Días Programados</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr *ngFor="let fila of filasFiltradas">
-                        <td class="col-nombre">{{ fila.nombre }}</td>
-                        <td>{{ fila.area }}</td>
-                        <td>{{ vacacionesService.formatearFecha(fila.fechaIngreso) }}</td>
-                        <td class="col-numero">{{ fila.totalAcumulado | number:'1.1-1' }}</td>
-                        <td class="col-numero">{{ fila.diasUtilizados }}</td>
-                        <td class="col-numero">{{ fila.diasTruncos | number:'1.1-1' }}</td>
-                        <td class="col-numero">{{ fila.diasPendientes | number:'1.1-1' }}</td>
-                        <td class="col-numero">{{ fila.diasProgramados }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="sin-resultados" *ngIf="filasFiltradas.length === 0">
-            No se encontraron usuarios con los filtros aplicados.
+    <!-- Contenedor con Scroll Personalizado -->
+    <div class="reportes-lista-container" *ngIf="!cargando">
+        <div class="reportes-lista">
+            <div class="reporte-card animate-in" *ngFor="let fila of filasFiltradas" [ngClass]="fila.claseColor">
+                <div class="card-usuario">
+                    <div class="usuario-main">
+                        <span class="nombre-empleado">{{ fila.nombre }}</span>
+                        <span class="area-tag">{{ fila.area }}</span>
+                    </div>
+                </div>
+
+                <div class="card-metricas">
+                    <div class="metrica">
+                        <label>Ingreso</label>
+                        <span class="valor" style="font-size: 0.85rem;">{{ vacacionesService.formatearFechaCompleta(fila.fechaIngreso) }}</span>
+                    </div>
+                    <div class="metrica">
+                        <label>Acumulado</label>
+                        <span class="valor">{{ fila.totalAcumulado | number:'1.1-1' }}</span>
+                    </div>
+                    <div class="metrica">
+                        <label>Utilizados</label>
+                        <span class="valor">{{ fila.diasUtilizados }}</span>
+                    </div>
+                    <div class="metrica">
+                        <label>Truncos</label>
+                        <span class="valor">{{ fila.diasTruncos | number:'1.1-1' }}</span>
+                    </div>
+                    <div class="metrica destacada">
+                        <label>Pendientes</label>
+                        <span class="valor">{{ fila.diasPendientes | number:'1.1-1' }}</span>
+                    </div>
+                    <div class="metrica">
+                        <label>Programados</label>
+                        <span class="valor">{{ fila.diasProgramados }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sin resultados -->
+            <div class="sin-resultados" *ngIf="filasFiltradas.length === 0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                <p>No se encontraron registros bajo estos criterios.</p>
+            </div>
         </div>
     </div>
 </div>
+
