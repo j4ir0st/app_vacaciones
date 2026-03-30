@@ -5,13 +5,10 @@ services:
   app-vacaciones:
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    volumes:
-      - .:/app
-      - /app/node_modules # Evita que node_modules local sobrescriba el del contenedor
-    # Puerto 8005 del host → puerto 4200 del dev server
+      dockerfile: Dockerfile
+    # Puerto 8005 del host → puerto 80 de Nginx (producción)
     ports:
-      - "8005:4200"
+      - "8005:80"
     # Reiniciar automáticamente si el contenedor falla
     restart: unless-stopped
     environment:

@@ -1,6 +1,6 @@
 // Configuración de entorno de producción
 export const environment = {
     produccion: true,
-    apiUrl: '/api-proxy',
+    apiUrl: '',
     baseHref: '/app_vacaciones/'
 };

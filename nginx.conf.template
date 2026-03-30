@@ -13,32 +13,30 @@ server {
     # ^~ asegura que coincida antes que las expresiones regulares
     location ^~ /api-proxy/ {
         resolver 8.8.8.8;
-        proxy_pass ${BACKEND_URL};
-        proxy_set_header Host $host;
+        # La barra "/" al final de proxy_pass indica a nginx que reemplace el prefijo
+        # /api-proxy/ con la raíz del backend: /api-proxy/api/token/ → /api/token/
+        # IMPORTANTE: BACKEND_URL no debe terminar en / (se agrega aquí explícitamente)
+        proxy_pass ${BACKEND_URL}/;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # Inyectar headers de CORS si es necesario (el proxy ya unifica el origen)
+
         add_header 'Access-Control-Allow-Origin' '*' always;
     }
 
     # Servir la aplicación Angular bajo /app_vacaciones/
     location /app_vacaciones/ {
         alias /usr/share/nginx/html/app_vacaciones/;
-        # Redirigir todas las rutas al index.html para que Angular Router maneje la navegación
-        try_files $uri $uri/ /app_vacaciones/index.html;
+        # Se usa ruta absoluta del filesystem como fallback para evitar loops internos con alias
+        try_files $uri $uri/ /usr/share/nginx/html/app_vacaciones/index.html;
     }
 
-    # Redirigir la raíz hacia /app_vacaciones/
-    location = / {
-        return 301 /app_vacaciones/;
-    }
-
-    # Caché para assets estáticos
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-        expires 1y;
-        add_header Cache-Control "public, no-transform";
-        access_log off;
+    # Fallback: cuando IIS elimina el prefijo /app_vacaciones/ al hacer reverse proxy,
+    # nginx recibe rutas como "/", "/login" o "/runtime.xyz.js".
+    # El root apunta a la carpeta de la app para resolver todos los archivos correctamente.
+    location / {
+        root /usr/share/nginx/html/app_vacaciones;
+        try_files $uri $uri/ /index.html;
     }
 }
