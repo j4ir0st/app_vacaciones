@@ -6,6 +6,7 @@ export interface ObjetoSerializado {
 
 // Modelo de Usuario - corresponde a la tabla users de la API DRF
 export interface Usuario {
+    id: number;           // ID numérico para filtrado eficiente
     url: string;          // Funciona como ID único del usuario
     username: string;
     area_puesto?: { area_nombre: string; puesto_nombre: string };

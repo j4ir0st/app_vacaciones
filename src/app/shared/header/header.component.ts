@@ -1,6 +1,7 @@
 import { Component, Output, EventEmitter } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
 import { RefreshService } from '../../core/services/refresh.service';
+import { UsuarioService } from '../../core/services/usuario.service';
 import { Usuario } from '../../core/models/usuario.model';
 
 @Component({
@@ -17,7 +18,8 @@ export class HeaderComponent {
 
     constructor(
         public authService: AuthService,
-        private refreshService: RefreshService
+        private refreshService: RefreshService,
+        private usuarioService: UsuarioService
     ) { }
 
     // Obtiene el nombre completo del usuario actual
@@ -55,7 +57,8 @@ export class HeaderComponent {
     }
 
     refrescarManual(): void {
-        console.log('Disparando refresco manual desde el logo...');
+        console.log('Limpiando caché y disparando refresco manual desde el logo...');
+        this.usuarioService.limpiarCache();
         this.refreshService.triggerRefresh();
     }
 

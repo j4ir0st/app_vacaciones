@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { forkJoin, EMPTY, from, of } from 'rxjs';
-import { expand, map, reduce, concatMap, toArray } from 'rxjs/operators';
+import { expand, map, reduce, concatMap, toArray, catchError } from 'rxjs/operators';
 import { AuthService } from '../core/services/auth.service';
 import { SolicitudService } from '../core/services/solicitud.service';
 import { UsuarioService } from '../core/services/usuario.service';
@@ -19,6 +19,7 @@ interface FilaReporte {
     diasPendientes: number;
     diasProgramados: number;
     claseColor: string;
+    cargandoRow: boolean; // Flag para carga individual
 }
 
 @Component({
@@ -28,7 +29,7 @@ interface FilaReporte {
     standalone: false
 })
 export class ReportesComponent implements OnInit {
-    cargando = true;
+    cargando = false;
     usuarioSeleccionado: string = ''; // Almacena el username para el filtro
     filtroArea = '';
 
@@ -48,86 +49,137 @@ export class ReportesComponent implements OnInit {
     }
 
     /**
-     * Carga inicial de datos de solicitudes y usuarios de manera asíncrona.
+     * Carga inicial de usuarios y disparo de carga asíncrona de solicitudes por fila.
      */
     cargarDatos(): void {
         this.cargando = true;
+        this.todasLasFilas = [];
 
-        // Petición recursiva para obtener todas las solicitudes (DRF pagination)
-        const peticionSolicitudes = this.solicitudService.obtenerSolicitudes().pipe(
-            expand((resp: any) => resp.next ? this.solicitudService.obtenerSolicitudes(resp.next) : EMPTY),
-            map((resp: any) => Array.isArray(resp) ? resp : (resp.results || [])),
-            reduce((acc: any[], curr: any[]) => acc.concat(curr), [])
-        );
-
-        // Petición recursiva para obtener todos los usuarios (DRF pagination)
-        const peticionUsuarios = this.usuarioService.obtenerUsuarios().pipe(
-            expand((resp: any) => resp.next ? this.usuarioService.obtenerUsuarios(resp.next) : EMPTY),
-            map((resp: any) => Array.isArray(resp) ? resp : (resp.results || [])),
-            reduce((acc: any[], curr: any[]) => acc.concat(curr), [])
-        );
-
-        forkJoin([peticionSolicitudes, peticionUsuarios]).subscribe({
-            next: ([listaSolicitudes, listaUsuarios]: [SolicitudVacaciones[], Usuario[]]) => {
+        // 1. Obtenemos todos los usuarios (aprovecha la caché de 24h)
+        this.usuarioService.obtenerUsuariosTodo().subscribe({
+            next: (listaUsuarios: Usuario[]) => {
                 const usuarioActual = this.authService.usuarioActual;
                 if (!usuarioActual) {
                     this.cargando = false;
                     return;
                 }
 
-                // Aplicar lógica de filtrado heredada de PowerApps
+                // 2. Filtrar usuarios según lógica de roles
                 const usuariosPermitidos = this.filtrarUsuariosSegunRol(usuarioActual, listaUsuarios);
 
-                this.todasLasFilas = usuariosPermitidos.map(usuario => {
-                    const solicitudesDelUsuario = listaSolicitudes.filter(s => {
-                        const solUrl = (s.usuario_id || '').toLowerCase().replace(/\/$/, '');
-                        const userUrl = (usuario.url || '').toLowerCase().replace(/\/$/, '');
-                        return solUrl === userUrl || solUrl.endsWith(userUrl) || userUrl.endsWith(solUrl);
-                    });
+                // 3. Inicializar tabla con valores en cero y estado "cargando"
+                this.todasLasFilas = usuariosPermitidos.map(usuario => ({
+                    nombre: `${usuario.first_name} ${usuario.last_name}`.trim() || usuario.username,
+                    username: usuario.username,
+                    area: usuario.area_id?.nombre || usuario.area || 'Sin Área',
+                    fechaIngreso: usuario.fecha_ingreso,
+                    totalAcumulado: 0,
+                    diasUtilizados: 0,
+                    diasTruncos: 0,
+                    diasPendientes: 0,
+                    diasProgramados: 0,
+                    claseColor: 'color-blanco',
+                    cargandoRow: true
+                })).sort((a, b) => a.nombre.localeCompare(b.nombre));
 
-                    const resumen = this.vacacionesService.calcularResumen(usuario.fecha_ingreso, solicitudesDelUsuario);
-
-                    // Días programados: Solicitudes en estado Pendiente (PD) o Aprobado Supervisor (AS)
-                    const diasProgramados = solicitudesDelUsuario
-                        .filter(s => {
-                            const cod = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
-                            return cod === 'PD' || cod === 'AS';
-                        })
-                        .reduce((sum, s) => sum + (s.total_periodo || 0), 0);
-
-                    // Lógica de color según días pendientes
-                    let claseColor = 'color-blanco';
-                    if (resumen.diasPendientes >= 60) {
-                        claseColor = 'color-rojo-rechazado';
-                    } else if (resumen.diasPendientes >= 30) {
-                        claseColor = 'color-amarillo-pendiente';
-                    }
-
-                    return {
-                        nombre: `${usuario.first_name} ${usuario.last_name}`.trim() || usuario.username,
-                        username: usuario.username,
-                        area: usuario.area_puesto?.area_nombre || usuario.area_id?.nombre || usuario.area || 'Sin Área',
-                        fechaIngreso: usuario.fecha_ingreso,
-                        totalAcumulado: resumen.diasAcumulados,
-                        diasUtilizados: resumen.diasTomados,
-                        diasTruncos: resumen.diasTruncos,
-                        diasPendientes: resumen.diasPendientes,
-                        diasProgramados: diasProgramados,
-                        claseColor: claseColor
-                    };
-                }).sort((a, b) => a.nombre.localeCompare(b.nombre));
-
-                // Preparar filtros
+                // Preparar filtros rápidos
                 this.areasDisponibles = Array.from(new Set(this.todasLasFilas.map(f => f.area))).sort();
                 this.usuariosParaFiltro = this.todasLasFilas.map(f => ({ nombre: f.nombre, username: f.username }));
 
-                this.cargando = false;
+                // 4. Iniciar la carga asíncrona de solicitudes para cada usuario
+                this.procesarCargaPorFila(usuariosPermitidos);
             },
             error: (err) => {
-                console.error('Error cargando datos de reporte:', err);
+                console.error('Error cargando usuarios para reporte:', err);
                 this.cargando = false;
             }
         });
+    }
+
+    /**
+     * Procesa las solicitudes de cada usuario de forma independiente para no bloquear la UI.
+     */
+    private procesarCargaPorFila(usuarios: Usuario[]): void {
+        // Usamos from() para convertir el array en un stream y procesar cada uno
+        from(usuarios).pipe(
+            concatMap(u => {
+                // Filtramos por el ID numérico proporcionado por el backend
+                const params = `&usuario_id=${u.id}`;
+                
+                // Construimos la URL inicial con el filtro de usuario
+                const urlInicial = `${this.solicitudService.URL_SOLICITUDES}${params}`;
+                
+                return this.solicitudService.obtenerSolicitudes(urlInicial).pipe(
+                    // Lógica para obtener todas las páginas de solicitudes del usuario específico
+                    expand((resp: any) => resp.next ? this.solicitudService.obtenerSolicitudes(resp.next + params) : EMPTY),
+                    // Nota: El backend de DRF a veces pierde los filtros en el 'next' si no están bien configurados,
+                    // por eso concatenamos el params si no existe en la URL de next.
+                    map((resp: any) => {
+                        const results = Array.isArray(resp) ? resp : (resp.results || []);
+                        return results.filter((s: any) => {
+                            // Doble verificación: que la solicitud pertenezca realmente al usuario (por URL)
+                            const solUrl = (s.usuario_id || '').toLowerCase().replace(/\/$/, '');
+                            const userUrl = (u.url || '').toLowerCase().replace(/\/$/, '');
+                            return solUrl === userUrl || solUrl.endsWith(userUrl) || userUrl.endsWith(solUrl);
+                        });
+                    }),
+                    reduce((acc: any[], curr: any[]) => acc.concat(curr), []),
+                    map(solicitudes => ({ usuario: u, solicitudes })),
+                    catchError(err => {
+                        console.error(`Error cargando solicitudes para ${u.username}:`, err);
+                        return of({ usuario: u, solicitudes: [] });
+                    })
+                );
+            })
+        ).subscribe({
+            next: (resultado) => {
+                this.actualizarFilaConDatos(resultado.usuario, resultado.solicitudes);
+                // Si ya no quedan filas cargando, detenemos el spinner general
+                if (!this.todasLasFilas.some(f => f.cargandoRow)) {
+                    this.cargando = false;
+                }
+            },
+            complete: () => {
+                this.cargando = false;
+            }
+        });
+    }
+
+    /**
+     * Realiza los cálculos de vacaciones para un usuario específico y actualiza su fila.
+     */
+    private actualizarFilaConDatos(usuario: Usuario, solicitudes: SolicitudVacaciones[]): void {
+        const index = this.todasLasFilas.findIndex(f => f.username === usuario.username);
+        if (index === -1) return;
+
+        const resumen = this.vacacionesService.calcularResumen(usuario.fecha_ingreso, solicitudes);
+
+        // Días programados: Solicitudes en estado Pendiente (PD) o Aprobado Supervisor (AS)
+        const diasProgramados = solicitudes
+            .filter(s => {
+                const cod = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
+                return cod === 'PD' || cod === 'AS';
+            })
+            .reduce((sum, s) => sum + (s.total_periodo || 0), 0);
+
+        // Lógica de color según días pendientes
+        let claseColor = 'color-blanco';
+        if (resumen.diasPendientes >= 60) {
+            claseColor = 'color-rojo-rechazado';
+        } else if (resumen.diasPendientes >= 30) {
+            claseColor = 'color-amarillo-pendiente';
+        }
+
+        this.todasLasFilas[index] = {
+            ...this.todasLasFilas[index],
+            totalAcumulado: resumen.diasAcumulados,
+            diasUtilizados: resumen.diasTomados,
+            diasTruncos: resumen.diasTruncos,
+            diasPendientes: resumen.diasPendientes,
+            diasProgramados: diasProgramados,
+            claseColor: claseColor,
+            cargandoRow: false
+        };
     }
 
     /**

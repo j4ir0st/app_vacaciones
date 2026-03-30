@@ -50,14 +50,14 @@
         </button>
     </div>
 
-    <!-- Loader -->
-    <div class="loader-contenedor" *ngIf="cargando">
+    <!-- Loader superior (opcional, ahora preferimos ver la tabla cargando) -->
+    <div class="loader-reporte-global" *ngIf="cargando && todasLasFilas.length === 0">
         <div class="spinner-shimmer"></div>
-        <p class="txt-cargando">Procesando información histórica de la planilla...</p>
+        <p class="txt-cargando">Localizando colaboradores permitidos...</p>
     </div>
 
-    <!-- Contenedor con Scroll Personalizado -->
-    <div class="reportes-lista-container" *ngIf="!cargando">
+    <!-- Contenedor con Scroll Personalizado (Visible siempre que existan filas) -->
+    <div class="reportes-lista-container" *ngIf="todasLasFilas.length > 0">
         <div class="reportes-lista">
             <div class="reporte-card animate-in" *ngFor="let fila of filasFiltradas" [ngClass]="fila.claseColor">
                 <div class="card-usuario">
@@ -88,11 +88,13 @@
                         <label>Pendientes</label>
                         <span class="valor">{{ fila.diasPendientes | number:'1.1-1' }}</span>
                     </div>
-                    <div class="metrica">
+                    <div class="metrica" [class.dato-cargando]="fila.cargandoRow">
                         <label>Programados</label>
                         <span class="valor">{{ fila.diasProgramados }}</span>
                     </div>
                 </div>
+                <!-- Shimmer individual por fila si está cargando -->
+                <div class="shimmer-row" *ngIf="fila.cargandoRow"></div>
             </div>
 
             <!-- Sin resultados -->

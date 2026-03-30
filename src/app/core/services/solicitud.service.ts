@@ -8,7 +8,7 @@ import { SolicitudVacaciones } from '../models/solicitud-vacaciones.model';
     providedIn: 'root'
 })
 export class SolicitudService {
-    private readonly URL_SOLICITUDES = `${environment.apiUrl}/SolicitudVacaciones/?format=json`;
+    public readonly URL_SOLICITUDES = `${environment.apiUrl}/SolicitudVacaciones/?format=json`;
 
     constructor(private http: HttpClient) { }
 

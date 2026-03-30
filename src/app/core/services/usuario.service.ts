@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of, tap, expand, reduce, EMPTY } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Usuario } from '../models/usuario.model';
 
@@ -10,9 +10,45 @@ import { Usuario } from '../models/usuario.model';
 export class UsuarioService {
     private readonly URL_USUARIOS = `${environment.apiUrl}/users/?format=json`;
 
+    // Caché de usuarios en memoria
+    private usuariosCache: Usuario[] | null = null;
+    private ultimaActualizacion: number = 0;
+    private readonly TTL_CACHE = 24 * 60 * 60 * 1000; // 24 horas en ms
+
     constructor(private http: HttpClient) { }
 
-    // Obtiene la lista completa de usuarios activos (soporta paginación DRF)
+    /**
+     * Obtiene todos los usuarios usando recursividad para manejar la paginación de DRF.
+     * Implementa una caché de 24 horas.
+     */
+    obtenerUsuariosTodo(forzarRefresco: boolean = false): Observable<Usuario[]> {
+        const ahora = Date.now();
+        const cacheExpirada = ahora - this.ultimaActualizacion > this.TTL_CACHE;
+
+        if (!forzarRefresco && this.usuariosCache && !cacheExpirada) {
+            return of(this.usuariosCache);
+        }
+
+        return this.http.get<any>(this.URL_USUARIOS).pipe(
+            expand((resp: any) => resp.next ? this.http.get<any>(this.fixUrl(resp.next)) : EMPTY),
+            map((resp: any) => Array.isArray(resp) ? resp : (resp.results || [])),
+            reduce((acc: Usuario[], curr: Usuario[]) => acc.concat(curr), []),
+            tap(usuarios => {
+                this.usuariosCache = usuarios;
+                this.ultimaActualizacion = Date.now();
+            })
+        );
+    }
+
+    /**
+     * Limpia la caché local para forzar una nueva petición al servidor.
+     */
+    limpiarCache(): void {
+        this.usuariosCache = null;
+        this.ultimaActualizacion = 0;
+    }
+
+    // Obtiene una página individual de usuarios (soporta paginación DRF)
     obtenerUsuarios(url: string = this.URL_USUARIOS): Observable<any> {
         return this.http.get<any>(this.fixUrl(url));
     }

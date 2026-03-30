@@ -32,62 +32,35 @@ export class UsuariosComponent implements OnInit {
         this.cargarDatos();
 
         this.refreshService.refresh$.subscribe(() => {
-            this.cargarDatos();
+            this.cargarDatos(true); // Forzamos refresco al disparar refresh manual
         });
     }
 
     /**
-     * Carga de usuarios con soporte para paginación (scroll infinito).
+     * Carga de usuarios desde el servicio con soporte de caché.
      */
-    cargarDatos(nuevaPagina: boolean = false): void {
+    cargarDatos(forzarRefresco: boolean = false): void {
         if (this.cargandoUsuarios) return;
-
-        const url = nuevaPagina && this.proximaPagina ? this.proximaPagina : undefined;
-
-        if (!nuevaPagina) {
-            this.usuarios = [];
-            this.proximaPagina = null;
-        }
 
         this.cargandoUsuarios = true;
 
-        this.usuarioService.obtenerUsuarios(url).subscribe({
-            next: (resp: any) => {
-                const results = Array.isArray(resp) ? resp : (resp.results || []);
+        this.usuarioService.obtenerUsuariosTodo(forzarRefresco).subscribe({
+            next: (lista: Usuario[]) => {
                 const usuarioActual = this.authService.usuarioActual;
 
                 if (usuarioActual) {
-                    const filtrados = this.filtrarUsuariosSegunRol(usuarioActual, results);
-                    this.usuarios = [...this.usuarios, ...filtrados];
+                    this.usuarios = this.filtrarUsuariosSegunRol(usuarioActual, lista);
                 } else {
-                    this.usuarios = [...this.usuarios, ...results];
+                    this.usuarios = lista;
                 }
 
-                this.proximaPagina = resp.next || null;
                 this.cargandoUsuarios = false;
-
-                // Si se filtraron todos los de esta página pero hay más, intentamos cargar automáticamente
-                if (nuevaPagina && this.usuarios.length < 5 && this.proximaPagina) {
-                    this.cargarDatos(true);
-                }
             },
             error: (err) => {
                 console.error('Error cargando usuarios:', err);
                 this.cargandoUsuarios = false;
             }
         });
-    }
-
-    /**
-     * Detecta el scroll para cargar más datos al llegar al final.
-     */
-    onScroll(event: any): void {
-        const element = event.target;
-        if (element.scrollHeight - element.scrollTop <= element.clientHeight + 100) {
-            if (this.proximaPagina && !this.cargandoUsuarios) {
-                this.cargarDatos(true);
-            }
-        }
     }
 
     /**
