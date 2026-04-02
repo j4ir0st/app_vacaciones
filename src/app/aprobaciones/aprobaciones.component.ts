@@ -106,19 +106,24 @@ export class AprobacionesComponent implements OnInit {
         forkJoin([reqSolicitudes, reqUsuarios]).subscribe({
             next: ([listaSolicitudes, listaUsuarios]: [any[], any[]]) => {
                 this.todasSolicitudes = listaSolicitudes.map((s: SolicitudVacaciones): FilaSolicitud => {
-                    const solUrlLimpia = (s.usuario_id || '').replace(/\/$/, '').toLowerCase();
+                    const idParaComparar = typeof s.usuario_id === 'string' ? s.usuario_id : '';
+                    const solUrlLimpia = idParaComparar.replace(/\/$/, '').toLowerCase();
                     const usu = listaUsuarios.find((u: Usuario) => {
                         const uUrlLimpia = (u.url || '').replace(/\/$/, '').toLowerCase();
+                        // Si usuario_id es objeto, confiamos en que el backend ya filtró o usamos los datos del objeto
+                        if (typeof s.usuario_id === 'object') return true; 
                         return solUrlLimpia === uUrlLimpia || solUrlLimpia.endsWith(uUrlLimpia) || uUrlLimpia.endsWith(solUrlLimpia);
                     });
 
+                    const uInfo = typeof s.usuario_id === 'object' ? s.usuario_id : null;
+
                     return {
                         ...s,
-                        nombreUsuario: usu
+                        nombreUsuario: uInfo?.fullname || (usu
                             ? `${usu.first_name} ${usu.last_name}`.trim() || usu.username
-                            : 'Usuario Desconocido',
-                        avatarUsuario: usu?.avatar || null,
-                        areaNombre: usu?.area_id?.nombre || usu?.area || '',
+                            : 'Usuario Desconocido'),
+                        avatarUsuario: this.solicitudService.obtenerUrlAvatar(uInfo?.avatar || usu?.avatar),
+                        areaNombre: (s as any).area_id || usu?.area_id?.nombre || usu?.area || '',
                         puestoNombre: usu?.puesto_id?.nombre || 'Usuario'
                     };
                 }).sort((a: FilaSolicitud, b: FilaSolicitud) => (b.fecha_solicitud || '').localeCompare(a.fecha_solicitud || '') * -1);
@@ -247,6 +252,11 @@ export class AprobacionesComponent implements OnInit {
                         if (esGerente && vieneDeFirma) {
                             // Solo si venimos de 'firmarYEnviar', procedemos a notificar y cerrar
                             this.ejecutarNotificacionFinal();
+                            // usuario_id puede ser un objeto o un string
+                            const solUrlRaw = typeof this.solicitudDetalle?.usuario_id === 'string' ? this.solicitudDetalle.usuario_id : '';
+                            const solUrl = solUrlRaw.toLowerCase().replace(/\/$/, '');
+                            const userUrl = (user.url || '').toLowerCase().replace(/\/$/, '');
+                            const esMismoUsuario = solUrl === userUrl || solUrl.endsWith(userUrl) || userUrl.endsWith(solUrl) || (typeof this.solicitudDetalle?.usuario_id === 'object');
                         } else if (esGerente) {
                             // Este caso ya no debería ocurrir por el cambio en ejecutarAprobacion
                             this.procesandoDetalle = false;

@@ -117,8 +117,11 @@ export class ReportesComponent implements OnInit {
                     map((resp: any) => {
                         const results = Array.isArray(resp) ? resp : (resp.results || []);
                         return results.filter((s: any) => {
-                            // Doble verificación: que la solicitud pertenezca realmente al usuario (por URL)
-                            const solUrl = (s.usuario_id || '').toLowerCase().replace(/\/$/, '');
+                            // usuario_id puede ser un objeto o un string
+                            const idParaComparar = typeof s.usuario_id === 'string' ? s.usuario_id : '';
+                            if (!idParaComparar && typeof s.usuario_id === 'object') return true;
+
+                            const solUrl = idParaComparar.toLowerCase().replace(/\/$/, '');
                             const userUrl = (u.url || '').toLowerCase().replace(/\/$/, '');
                             return solUrl === userUrl || solUrl.endsWith(userUrl) || userUrl.endsWith(solUrl);
                         });

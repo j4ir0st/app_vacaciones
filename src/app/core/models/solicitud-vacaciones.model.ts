@@ -4,14 +4,16 @@ export type EstadoSolicitud = { [key: string]: string } | string;
 export type TipoSolicitud = 'Autorizada' | 'Adelanto';
 
 export interface SolicitudVacaciones {
-    url: string;    //url de la solicitud de Vacaciones.
-    usuario_id: string;        // URL del usuario que solicita.
-    usuario_nombre?: string; // Nombre completo (calculado en frontend).
+    url: string;    // url de la solicitud de Vacaciones.
+    usuario_id: {
+        fullname: string;
+        avatar: string;
+    } | string;        // Ahora es un objeto con datos del usuario, pero mantenemos string por compatibilidad si es necesario.
     fecha_solicitud?: string; // Fecha en la que se envió la solicitud.
     fecha_inicio: string;   // Fecha de inicio de vacaciones (YYYY-MM-DD).
     fecha_final: string;      // Fecha de fin de vacaciones (YYYY-MM-DD).
     total_periodo: number;           // Cantidad de días hábiles solicitados.
-    area_id: string; // Nombre del área (serializado)
+    area_id: string; // Nombre del área (serializado del backend)
     motivo: string;         // Motivo o descripción de la solicitud.
     tipo_solicitud: TipoSolicitud;    // Tipo de Solicitud del pedido de Vacaciones. 
     // AT=Autorizada - AD=Adelanto

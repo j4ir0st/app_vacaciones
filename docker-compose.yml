@@ -5,14 +5,18 @@ services:
   app-vacaciones:
     build:
       context: .
-      dockerfile: Dockerfile
-    # Puerto 8005 del host → puerto 80 de Nginx (producción)
+      # dockerfile: Dockerfile.dev # Usar este para desarrollar (rápido, sin build de prod)
+      dockerfile: Dockerfile # Usar este para desplegar (lento, genera Nginx)
+    container_name: surgicorp-vacaciones
     ports:
-      - "8005:80"
-    # Reiniciar automáticamente si el contenedor falla
+      # - "8005:4200" # MODO DESARROLLO (ng serve)
+      - "8005:80" # MODO PRODUCCIÓN (Nginx)
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
+    # El comando solo es necesario en modo DESARROLLO (Dockerfile.dev)
+    # command: npm start -- --host 0.0.0.0 --poll 2000
     restart: unless-stopped
     environment:
       - TZ=America/Lima
       - BACKEND_URL=${BACKEND_URL}
-    # Nombre del contenedor para fácil identificación
-    container_name: surgicorp-vacaciones

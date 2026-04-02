@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
-import { SolicitudVacaciones, ResumenVacaciones, EstadoSolicitud } from '../models/solicitud-vacaciones.model';
+import { SolicitudVacaciones, EstadoSolicitud, ResumenVacaciones } from '../models/solicitud-vacaciones.model';
+
+export type { ResumenVacaciones }; 
 
 @Injectable({
     providedIn: 'root'

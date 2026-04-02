@@ -1,13 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { forkJoin } from 'rxjs';
+import { Router } from '@angular/router';
+import { EMPTY } from 'rxjs';
+import { expand, map, tap } from 'rxjs/operators';
 import { AuthService } from '../core/services/auth.service';
 import { SolicitudService } from '../core/services/solicitud.service';
-import { UsuarioService } from '../core/services/usuario.service';
-import { VacacionesService } from '../core/services/vacaciones.service';
-import { RefreshService } from '../core/services/refresh.service';
-import { SolicitudVacaciones, ResumenVacaciones } from '../core/models/solicitud-vacaciones.model';
-import { Usuario } from '../core/models/usuario.model';
-import { Router } from '@angular/router';
+import { VacacionesService, ResumenVacaciones } from '../core/services/vacaciones.service';
+import { SolicitudVacaciones } from '../core/models/solicitud-vacaciones.model';
 
 @Component({
     selector: 'app-dashboard',
@@ -16,121 +14,126 @@ import { Router } from '@angular/router';
     standalone: false
 })
 export class DashboardComponent implements OnInit {
-    // Estado de carga
     cargando = true;
-
-    // Resumen de vacaciones del usuario actual
     resumen: ResumenVacaciones = {
         diasAcumulados: 0,
         diasTomados: 0,
         diasPendientes: 0,
         diasTruncos: 0,
-        solicitudesAprobadas: 0,
         solicitudesPendientes: 0,
-        solicitudesRechazadas: 0,
+        solicitudesAprobadas: 0,
+        solicitudesRechazadas: 0
     };
 
-    // Próximas vacaciones del equipo (solicitudes aprobadas futuras)
-    proximasVacaciones: Array<SolicitudVacaciones & { nombreUsuario: string; avatarUsuario: string | null }> = [];
-
-    // Porcentaje de vacaciones anuales restantes (según Días Pendientes)
-    get porcentajeRestante(): number {
-        return Math.floor((this.resumen.diasPendientes / 30) * 100);
-    }
-
-    // Porcentaje de vacaciones anuales utilizadas (según Días Pendientes)
-    // Formula: RoundDown((30-DiasPendientes)/30*100;0)
-    get porcentajeUtilizado(): number {
-        return Math.floor(((30 - this.resumen.diasPendientes) / 30) * 100);
-    }
-
-    // Porcentaje de días truncos restantes
-    get porcentajeTruncos(): number {
-        return Math.floor((this.resumen.diasTruncos / 30) * 100);
-    }
+    proximasVacaciones: any[] = [];
 
     constructor(
-        public authService: AuthService,
+        private authService: AuthService,
         private solicitudService: SolicitudService,
-        private usuarioService: UsuarioService,
         private vacacionesService: VacacionesService,
-        private refreshService: RefreshService,
         private router: Router
     ) { }
 
     ngOnInit(): void {
         this.cargarDatos();
+    }
 
-        // Escuchar refrescos manuales
-        this.refreshService.refresh$.subscribe(() => {
-            console.log('Recibida señal de refresco en Dashboard');
-            this.cargarDatos();
-        });
+    // Porcentajes para las barras de progreso
+    get porcentajeUtilizado(): number {
+        if (this.resumen.diasAcumulados === 0) return 0;
+        return Math.round((this.resumen.diasTomados / this.resumen.diasAcumulados) * 100);
+    }
+
+    get porcentajeRestante(): number {
+        return 100 - this.porcentajeUtilizado;
+    }
+
+    get porcentajeTruncos(): number {
+        // Asumiendo un máximo de 30 días para visualización
+        return Math.min(Math.round((this.resumen.diasTruncos / 30) * 100), 100);
     }
 
     // Carga todos los datos necesarios para el dashboard
     cargarDatos(): void {
+        const usuActual = this.authService.usuarioActual;
+        const nombreCompleto = this.authService.nombreCompleto.toLowerCase();
+
+        if (!usuActual?.id) {
+            this.cargando = false;
+            return;
+        }
+
         this.cargando = true;
-        const urlUsuario = this.authService.usuarioActual?.url || '';
 
-        forkJoin({
-            solicitudes: this.solicitudService.obtenerSolicitudes(),
-            usuarios: this.usuarioService.obtenerUsuarios()
-        }).subscribe({
-            next: ({ solicitudes, usuarios }) => {
-                // Manejar tanto arrays directos como objetos de paginación de DRF
-                const listaSolicitudes: SolicitudVacaciones[] = Array.isArray(solicitudes) ? solicitudes : (solicitudes.results || []);
-                
-                // Filtrar solicitudes propias
-                const misSolicitudes = listaSolicitudes.filter((s: SolicitudVacaciones) => s.usuario_id === urlUsuario);
-                
-                // Calcular resumen de vacaciones
-                this.resumen = this.vacacionesService.calcularResumen(
-                    this.authService.usuarioActual?.fecha_ingreso || '',
-                    misSolicitudes
-                );
+        // 1. Cargar historial completo filtrado por user_id (según especificación del backend)
+        let todas: SolicitudVacaciones[] = [];
 
-                // Calculamos las próximas vacaciones del equipo (solicitudes aprobadas con fechas futuras o actuales)
-                const hoy = new Date().toISOString().split('T')[0];
-                // Manejar tanto arrays directos como objetos de paginación de DRF para usuarios
-                const listaUsuarios: Usuario[] = Array.isArray(usuarios) ? usuarios : ((usuarios as any).results || []);
-                const mapaUsuarios = new Map<string, Usuario>(listaUsuarios.map(u => [u.url, u]));
-
-                this.proximasVacaciones = listaSolicitudes
-                    .filter((s: SolicitudVacaciones) => this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud) === 'AP' && (s.fecha_final || '') >= hoy)
-                    .sort((a, b) => (a.fecha_inicio || '').localeCompare(b.fecha_inicio || ''))
-                    // Mostramos solo los primeros 6 registros para no sobrecargar el panel
-                    .slice(0, 6)
-                    .map((s: SolicitudVacaciones) => {
-                        const usuarioSol = mapaUsuarios.get(s.usuario_id || '');
-                        return {
-                            ...s,
-                            nombreUsuario: usuarioSol
-                                ? `${usuarioSol.first_name} ${usuarioSol.last_name}`.trim() || usuarioSol.username
-                                : 'Usuario desconocido',
-                            avatarUsuario: usuarioSol?.avatar || null
-                        } as any;
-                    });
-
+        this.solicitudService.obtenerSolicitudes(this.solicitudService.URL_SOLICITUDES, { usuario_id: usuActual.id }).pipe(
+            expand(resp => resp.next ? this.solicitudService.obtenerSolicitudes(resp.next) : EMPTY),
+            map(resp => Array.isArray(resp) ? resp : (resp.results || [])),
+            tap(items => {
+                // Filtro local de seguridad para garantizar que solo se procesen datos del usuario actual
+                const itemsFiltrados = items.filter((s: SolicitudVacaciones) => {
+                    const uInfo = typeof s.usuario_id === 'object' ? s.usuario_id : null;
+                    if (uInfo) {
+                        return uInfo.fullname.toLowerCase().includes(nombreCompleto);
+                    }
+                    return true;
+                });
+                todas = [...todas, ...itemsFiltrados];
+            })
+        ).subscribe({
+            complete: () => {
+                this.procesarSolicitudes(todas, usuActual.fecha_ingreso);
                 this.cargando = false;
             },
-            error: () => { this.cargando = false; }
+            error: (err) => {
+                console.error('Error cargando datos del dashboard:', err);
+                this.cargando = false;
+            }
+        });
+
+        // 2. Cargar próximas vacaciones generales
+        this.solicitudService.obtenerSolicitudes().subscribe(resp => {
+            const items = Array.isArray(resp) ? resp : (resp.results || []);
+            const hoy = new Date().toISOString().split('T')[0];
+
+            this.proximasVacaciones = items
+                .filter((s: any) => {
+                    const cod = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
+                    return (cod === 'AP' || cod === 'AS') && (s.fecha_inicio || '') >= hoy;
+                })
+                .sort((a: any, b: any) => (a.fecha_inicio || '').localeCompare(b.fecha_inicio || ''))
+                .slice(0, 15)
+                .map((s: any) => {
+                    const uInfo = typeof s.usuario_id === 'object' ? s.usuario_id : null;
+                    return {
+                        ...s,
+                        nombreUsuario: uInfo?.fullname || 'Usuario',
+                        avatarUsuario: this.solicitudService.obtenerUrlAvatar(uInfo?.avatar)
+                    };
+                });
         });
     }
 
-    // Navega a la vista de nueva solicitud
+    private procesarSolicitudes(solicitudes: SolicitudVacaciones[], fechaIngreso: string): void {
+        this.resumen = this.vacacionesService.calcularResumen(fechaIngreso, solicitudes);
+    }
+
     nuevaSolicitud(): void {
         this.router.navigate(['/mis-solicitudes'], { queryParams: { nueva: 'true' } });
     }
 
-    // Formatea el rango de fechas de una solicitud
-    formatearRango(solicitud: SolicitudVacaciones): string {
-        return this.vacacionesService.formatearRangoFechas(solicitud.fecha_inicio, solicitud.fecha_final);
+    formatearRango(vac: any): string {
+        if (!vac.fecha_inicio || !vac.fecha_final) return '';
+        const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
+        const inicio = new Date(vac.fecha_inicio + 'T00:00:00').toLocaleDateString('es-ES', options);
+        const fin = new Date(vac.fecha_final + 'T00:00:00').toLocaleDateString('es-ES', options);
+        return `${inicio} - ${fin}`;
     }
 
-    // Obtiene las iniciales del nombre para el avatar
     obtenerIniciales(nombre: string): string {
-        const partes = nombre.trim().split(' ');
-        return (partes[0]?.[0] || '') + (partes[1]?.[0] || '');
+        if (!nombre) return 'U';
+        return nombre.split(' ').filter(n => n).map(n => n[0]).join('').substring(0, 2).toUpperCase();
     }
 }

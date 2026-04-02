@@ -91,29 +91,15 @@ export class CalendarioComponent implements OnInit {
     }
 
     private configurarFiltrosIniciales(): void {
-        const usuActual = this.authService.usuarioActual;
-        if (!usuActual) return;
-
-        const puesto = usuActual.puesto_id?.nombre;
-        const areaUsu = usuActual.area_id?.nombre;
-        const nombreUsu = this.authService.nombreCompleto;
-
-        // Determinar Áreas Visibles (según fórmulas PowerApps)
-        if (puesto === 'Gerente' || puesto === 'Jefe') {
-            if (areaUsu === 'Operaciones') {
-                this.areasFiltradas = ["Gerencia", "Desarrollo Software", "Logística Inversa", "Atenciones", "Distribución", "Almacenes", "Facturación"];
-            } else if (nombreUsu === 'Katherine Lewis') {
-                this.areasFiltradas = ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
-            } else {
-                this.areasFiltradas = [areaUsu || ''];
-            }
-        } else {
-            this.areasFiltradas = [areaUsu || ''];
-        }
+        // Usar la lógica centralizada de permisos para el calendario
+        this.areasFiltradas = this.authService.getAreasVisibles();
 
         // Si solo hay un área, seleccionarla por defecto
         if (this.areasFiltradas.length === 1) {
             this.areaSeleccionada = this.areasFiltradas[0];
+        } else {
+            // Si tiene varias áreas pero ninguna seleccionada, mostramos todas (o la primera)
+            this.areaSeleccionada = ''; 
         }
     }
 
@@ -142,7 +128,10 @@ export class CalendarioComponent implements OnInit {
     }
 
     private cargarTodasLasSolicitudes(): void {
-        this.solicitudService.obtenerSolicitudes().pipe(
+        const areasVisibles = this.authService.getAreasVisibles();
+        const paramsArea = this.solicitudService.obtenerFiltroArea(areasVisibles);
+
+        this.solicitudService.obtenerSolicitudes(this.solicitudService.URL_SOLICITUDES, paramsArea).pipe(
             expand(resp => resp.next ? this.solicitudService.obtenerSolicitudes(resp.next) : EMPTY),
             map(resp => Array.isArray(resp) ? resp : (resp.results || [])),
             reduce((acc, curr) => [...acc, ...curr], [] as SolicitudVacaciones[])
@@ -162,12 +151,19 @@ export class CalendarioComponent implements OnInit {
     // Getter para el dropdown de usuarios (se filtra por el área seleccionada si existe)
     get usuariosParaDropdown(): Usuario[] {
         if (!this.areaSeleccionada) return this.usuariosFiltrados;
-        return this.usuariosFiltrados.filter(u => (u.area_id?.nombre || u.area) === this.areaSeleccionada);
+        const areaFiltro = this.areaSeleccionada.trim().toLowerCase();
+        return this.usuariosFiltrados.filter(u => {
+            const areaU = (u.area_id?.nombre || u.area || '').trim().toLowerCase();
+            return areaU === areaFiltro;
+        });
     }
 
     // Filtra y actualiza los eventos en el calendario
     actualizarCalendario(): void {
         const mapaUsuarios = new Map<string, Usuario>(this.todosUsuarios.map(u => [u.url, u]));
+        const mapaUsuariosPorNombre = new Map<string, Usuario>(
+            this.todosUsuarios.map(u => [`${u.first_name} ${u.last_name}`.trim().toLowerCase(), u])
+        );
         const mapaColores = new Map<string, string>();
 
         // Asignar colores únicos por usuario
@@ -179,36 +175,77 @@ export class CalendarioComponent implements OnInit {
 
         const eventos: EventInput[] = this.todasSolicitudes
             .filter((s: SolicitudVacaciones) => {
-                // Solo aprobadas
+                // 1. Filtrar por estado (Solo Aprobadas)
                 if (this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud) !== 'AP') return false;
                 
-                const usu = mapaUsuarios.get(s.usuario_id || '');
-                if (!usu) return false;
+                const areaFiltro = (this.areaSeleccionada || '').trim().toLowerCase();
+                const usuarioFiltro = this.usuarioSeleccionado || '';
 
-                // Filtro por usuario seleccionado
-                if (this.usuarioSeleccionado && usu.url !== this.usuarioSeleccionado) return false;
+                // Identificar área de la solicitud
+                const areaSoliRaw = typeof s.area_id === 'string' ? s.area_id : (s as any).area_nombre || '';
+                const areaFinal = areaSoliRaw.trim().toLowerCase();
 
-                // Filtro por área seleccionada
-                if (this.areaSeleccionada && (usu.area_id?.nombre || usu.area) !== this.areaSeleccionada) return false;
+                // 2. Filtro por Área (si hay una seleccionada)
+                if (areaFiltro && areaFinal !== areaFiltro) return false;
 
-                // Si no hay filtros directos, solo mostramos usuarios permitidos por la carga inicial
-                return this.usuariosFiltrados.some(uf => uf.url === usu.url);
+                // 3. Filtro por Usuario (si hay uno seleccionado)
+                if (usuarioFiltro) {
+                    const usuSeleccionadoObj = mapaUsuarios.get(usuarioFiltro);
+                    // Obtenemos el nombre del objeto de la base de datos (dropdown)
+                    const nombreFiltroNormalized = usuSeleccionadoObj 
+                        ? `${usuSeleccionadoObj.first_name} ${usuSeleccionadoObj.last_name}`.trim().toLowerCase() 
+                        : '';
+                    
+                    let urlEnSoli = '';
+                    let nombreEnSoli = '';
+
+                    // Obtenemos el nombre/url que viene en la solicitud (backend)
+                    if (typeof s.usuario_id === 'string') {
+                        urlEnSoli = s.usuario_id;
+                        const usuEnSoli = mapaUsuarios.get(s.usuario_id);
+                        nombreEnSoli = usuEnSoli ? `${usuEnSoli.first_name} ${usuEnSoli.last_name}`.trim().toLowerCase() : '';
+                    } else if (s.usuario_id && typeof s.usuario_id === 'object') {
+                        nombreEnSoli = (s.usuario_id.fullname || '').trim().toLowerCase();
+                    }
+
+                    // Intentamos coincidencia por URL
+                    const matchUrl = urlEnSoli && urlEnSoli === usuarioFiltro;
+                    
+                    // Intentamos coincidencia por Nombre con soporte para nombres parciales
+                    // Esto resuelve casos como "Jairo Castillo" vs "Jairo Castillo Alcas"
+                    const matchNombre = (nombreEnSoli && nombreFiltroNormalized) && (
+                        nombreEnSoli.includes(nombreFiltroNormalized) || 
+                        nombreFiltroNormalized.includes(nombreEnSoli)
+                    );
+
+                    if (!matchUrl && !matchNombre) return false;
+                }
+
+                return true;
             })
             .map((s: SolicitudVacaciones) => {
-                const usuarioCal = mapaUsuarios.get(s.usuario_id || '');
-                const nombreCompleto = usuarioCal
-                    ? `${usuarioCal.first_name} ${usuarioCal.last_name}`.trim() || usuarioCal.username
-                    : 'Usuario';
+                let nombreCompleto = 'Usuario';
+                let urlUsuario = '';
+
+                if (typeof s.usuario_id === 'string') {
+                    const usu = mapaUsuarios.get(s.usuario_id);
+                    urlUsuario = s.usuario_id;
+                    nombreCompleto = usu ? `${usu.first_name} ${usu.last_name}`.trim() || usu.username : 'Usuario';
+                } else if (s.usuario_id && typeof s.usuario_id === 'object') {
+                    nombreCompleto = s.usuario_id.fullname || 'Usuario';
+                    const usuMatch = mapaUsuariosPorNombre.get(nombreCompleto.toLowerCase());
+                    urlUsuario = usuMatch?.url || '';
+                }
 
                 const fechaFinVisual = new Date(s.fecha_final);
                 fechaFinVisual.setDate(fechaFinVisual.getDate() + 1);
 
                 return {
                     id: String(s.url),
-                    title: `${this.usuarioService.nombreCompleto(usuarioCal!)} (${s.total_periodo}d)`,
+                    title: `${nombreCompleto} (${s.total_periodo}d)`,
                     start: s.fecha_inicio,
                     end: fechaFinVisual.toISOString().split('T')[0],
-                    backgroundColor: mapaColores.get(s.usuario_id || '') || '#c41e3a',
+                    backgroundColor: mapaColores.get(urlUsuario) || '#c41e3a',
                     borderColor: 'transparent',
                     extendedProps: { solicitud: s, nombreCompleto }
                 };
@@ -234,7 +271,7 @@ export class CalendarioComponent implements OnInit {
     limpiarFiltros(): void {
         this.areaSeleccionada = this.areasFiltradas.length === 1 ? this.areasFiltradas[0] : '';
         this.usuarioSeleccionado = '';
-        this.actualizarCalendario();
+        this.cargarEventos(); // Recargar todo del servidor
     }
 
     // Muestra el detalle de un evento al hacer clic

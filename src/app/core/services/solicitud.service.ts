@@ -12,18 +12,43 @@ export class SolicitudService {
 
     constructor(private http: HttpClient) { }
 
-    // Obtiene todas las solicitudes de vacaciones manejando la paginación recursivamente
-    obtenerSolicitudes(url: string = this.URL_SOLICITUDES): Observable<any> {
-        const urlFinal = this.fixUrl(url);
-        console.log('Solicitando página de solicitudes:', urlFinal);
+    // Genera el objeto de filtros para nombres de área basado en los permisos del usuario
+    obtenerFiltroArea(areas: string[]): any {
+        if (!areas || areas.length === 0) return {};
+        return { area_nombre: areas.join(',') };
+    }
+
+    // Obtiene solicitudes con soporte opcional para filtros (query params)
+    obtenerSolicitudes(url: string = this.URL_SOLICITUDES, params?: any): Observable<any> {
+        let urlFinal = this.fixUrl(url);
+        
+        // Si hay parámetros adicionales, los agregamos conservando los existentes
+        if (params) {
+            const currentUrl = new URL(urlFinal, window.location.origin);
+            Object.keys(params).forEach(key => {
+                if (params[key] !== undefined && params[key] !== null) {
+                    currentUrl.searchParams.set(key, params[key]);
+                }
+            });
+            urlFinal = currentUrl.toString().replace(window.location.origin, '');
+        }
+
+        console.log('Solicitando solicitudes:', urlFinal);
         return this.http.get<any>(urlFinal);
     }
 
-    // Método de utilidad para cargar todas las páginas y emitir resultados parciales
-    // Se recomienda usar este método cuando se necesite procesar los datos de forma acumulativa
-    obtenerTodasLasSolicitudes(): Observable<SolicitudVacaciones[]> {
-        // Esta implementación delega la carga recursiva al componente para un mejor control visual
-        return this.obtenerSolicitudes();
+    // Obtiene el historial completo de un usuario por su username
+    obtenerHistorialPorUsername(username: string): Observable<SolicitudVacaciones[]> {
+        return this.obtenerSolicitudes(this.URL_SOLICITUDES, { username: username });
+    }
+
+    // Asegura que la URL del avatar sea absoluta
+    obtenerUrlAvatar(path: string | null | undefined): string | null {
+        if (!path) return null;
+        if (path.startsWith('http')) return path;
+        // Limpiamos el path si tiene prefijos redundantes
+        const cleanPath = path.startsWith('/') ? path : `/${path}`;
+        return `${environment.apiUrl}${cleanPath}`;
     }
 
     // Crea una nueva solicitud de vacaciones enviando los datos al servidor DRF

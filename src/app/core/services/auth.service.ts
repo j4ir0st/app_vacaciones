@@ -137,6 +137,37 @@ export class AuthService {
         return puesto.includes('gerente') || (u.groups ?? []).some(g => g.toLowerCase() === 'gerentes');
     }
 
+    // Retorna la lista de nombres de áreas que el usuario tiene permiso para visualizar
+    // Basado en la lógica de negocio heredada de PowerApps
+    getAreasVisibles(): string[] {
+        const u = this.usuarioActual;
+        if (!u) return [];
+
+        const areaUser = (u.area_puesto?.area_nombre || u.area_id?.nombre || u.area || '').trim();
+        const areaLower = areaUser.toLowerCase();
+        const nombreUser = `${u.first_name} ${u.last_name}`.trim().toLowerCase();
+        const username = u.username?.toLowerCase() || '';
+
+        // Si es Rol Aprobador (Jete/Gerente)
+        if (this.esAprobador) {
+            // Caso especial: Gerencia de Operaciones (ve múltiples áreas de logística/facturación)
+            if (areaLower === 'operaciones') {
+                return ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa"];
+            } 
+            
+            // Caso especial: Katherine Lewis (ve áreas administrativas/soporte)
+            if (username === 'klewis' || username === 'klewism' || nombreUser.includes('katherine lewis')) {
+                return ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
+            }
+
+            // Caso general: Solo ve su propia área
+            return [areaUser];
+        }
+
+        // Usuario normal: Solo ve su propia área
+        return [areaUser];
+    }
+
     // Refresca el token de acceso usando el refresh token
     refrescarToken(): Observable<any> {
         const refresh = this.sesionSubject.value?.refresh;

@@ -252,10 +252,35 @@
 }
 
 /* Lista de próximas vacaciones */
+.wrap-scroll-lista {
+    max-height: 350px !important;
+    overflow-y: auto !important;
+    padding-right: 5px;
+}
+
 .lista-vacaciones {
     display: flex;
     flex-direction: column;
-    gap: 0.7rem;
+    gap: 0;
+}
+
+/* Estilo para el scrollbar de la lista */
+.lista-vacaciones::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lista-vacaciones::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.lista-vacaciones::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+
+.lista-vacaciones::-webkit-scrollbar-thumb:hover {
+    background: #c41e3a;
 }
 
 .item-vacacion {

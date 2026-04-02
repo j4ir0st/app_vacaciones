@@ -84,19 +84,21 @@
                 <button class="btn-ver-todo" routerLink="/mis-solicitudes">Ver Todo</button>
             </div>
 
-            <div class="lista-vacaciones" *ngIf="proximasVacaciones.length > 0">
-                <div class="item-vacacion" *ngFor="let vac of proximasVacaciones">
-                    <div class="avatar-usuario">
-                        <img *ngIf="vac.avatarUsuario" [src]="vac.avatarUsuario" [alt]="vac.nombreUsuario" />
-                        <span *ngIf="!vac.avatarUsuario" class="avatar-iniciales-sm">
-                            {{ obtenerIniciales(vac.nombreUsuario) }}
-                        </span>
+            <div class="wrap-scroll-lista">
+                <div class="lista-vacaciones" *ngIf="proximasVacaciones.length > 0">
+                    <div class="item-vacacion" *ngFor="let vac of proximasVacaciones">
+                        <div class="avatar-usuario">
+                            <img *ngIf="vac.avatarUsuario" [src]="vac.avatarUsuario" [alt]="vac.nombreUsuario" />
+                            <span *ngIf="!vac.avatarUsuario" class="avatar-iniciales-sm">
+                                {{ obtenerIniciales(vac.nombreUsuario) }}
+                            </span>
+                        </div>
+                        <div class="info-vacacion">
+                            <div class="nombre-vacacion">{{ vac.nombreUsuario }}</div>
+                            <div class="fechas-vacacion">{{ formatearRango(vac) }}</div>
+                        </div>
+                        <div class="dias-vacacion">{{ vac.total_periodo }} día(s)</div>
                     </div>
-                    <div class="info-vacacion">
-                        <div class="nombre-vacacion">{{ vac.nombreUsuario }}</div>
-                        <div class="fechas-vacacion">{{ formatearRango(vac) }}</div>
-                    </div>
-                    <div class="dias-vacacion">{{ vac.total_periodo }} día(s)</div>
                 </div>
             </div>
 
