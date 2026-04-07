@@ -22,6 +22,13 @@ export class AuthGuard implements CanActivate {
             return false;
         }
 
+        // Verificar si la ruta requiere rol de gerente
+        const requiereGerente = route.data['requiereGerente'];
+        if (requiereGerente && !this.authService.esGerente) {
+            this.router.navigate(['/dashboard']);
+            return false;
+        }
+
         return true;
     }
 }

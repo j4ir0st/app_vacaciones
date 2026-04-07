@@ -7,7 +7,7 @@ interface ElementoMenu {
     ruta: string;
     etiqueta: string;
     icono: string;
-    soloAprobador?: boolean; // Solo visible para jefes/gerentes
+    soloAprobador?: boolean; // Visible para jefes/gerentes
 }
 
 @Component({

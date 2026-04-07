@@ -1,0 +1,197 @@
+<div class="stepper-contenedor animate-in">
+    <!-- Indicador de Pasos -->
+    <div class="stepper-header" *ngIf="!exito">
+        <div class="paso-indicador" [class.paso-activo]="pasoActual >= 1">
+            <div class="paso-circulo">
+                <svg *ngIf="pasoActual > 1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span *ngIf="pasoActual <= 1">1</span>
+            </div>
+            <span class="paso-nombre">Credenciales</span>
+        </div>
+        <div class="paso-linea" [class.linea-activa]="pasoActual >= 2"></div>
+        <div class="paso-indicador" [class.paso-activo]="pasoActual >= 2">
+            <div class="paso-circulo">
+                <svg *ngIf="pasoActual > 2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span *ngIf="pasoActual <= 2">2</span>
+            </div>
+            <span class="paso-nombre">Personal</span>
+        </div>
+        <div class="paso-linea" [class.linea-activa]="pasoActual >= 3"></div>
+        <div class="paso-indicador" [class.paso-activo]="pasoActual >= 3">
+            <div class="paso-circulo">3</div>
+            <span class="paso-nombre">Extended</span>
+        </div>
+    </div>
+
+    <!-- Contenido de los Pasos -->
+    <div class="stepper-contenido" *ngIf="!exito">
+        <form [formGroup]="formulario">
+
+            <!-- PASO 1: CREDENCIALES -->
+            <div class="paso-panel" *ngIf="pasoActual === 1">
+                <h3 class="panel-titulo">Añadir Usuario</h3>
+                <p class="panel-subt">Primero, ingrese un nombre de usuario y contraseña.</p>
+
+                <div class="form-campo">
+                    <label>Nombre de usuario:</label>
+                    <div class="input-with-loader">
+                        <input type="text" formControlName="username" placeholder="Escriba un nombre de usuario..."
+                            autocomplete="new-password"
+                            [class.input-error]="formulario.get('username')?.touched && (formulario.get('username')?.invalid || formulario.get('username')?.hasError('usernameTomado'))" />
+                        <div class="loader-inner" *ngIf="formulario.get('username')?.pending"></div>
+                    </div>
+                    <div class="valid-hint error" *ngIf="formulario.get('username')?.hasError('usernameTomado')">
+                        Este nombre de usuario ya existe en el sistema.
+                    </div>
+                    <div class="valid-hint" *ngIf="!formulario.get('username')?.hasError('usernameTomado')">
+                        Requerido. 150 carácteres como máximo. Únicamente letras, dígitos y &#64;/./+/-/_
+                    </div>
+                </div>
+
+                <div class="form-campo">
+                    <label>Contraseña:</label>
+                    <input type="password" formControlName="password" placeholder="Mínimo 8 caracteres"
+                        autocomplete="new-password" />
+                    <div class="valid-hint">
+                        Su contraseña no puede ser una clave utilizada comúnmente ni completamente numérica.
+                    </div>
+                </div>
+
+                <div class="form-campo">
+                    <label>Contraseña (confirmación):</label>
+                    <input type="password" formControlName="password_confirm" placeholder="Repita la contraseña"
+                        autocomplete="new-password" />
+                    <div class="valid-hint error"
+                        *ngIf="formulario.get('password_confirm')?.touched && formulario.hasError('noCoincide')">
+                        Las contraseñas no coinciden.
+                    </div>
+                </div>
+            </div>
+
+            <!-- PASO 2: INFORMACIÓN PERSONAL -->
+            <div class="paso-panel" *ngIf="pasoActual === 2">
+                <h3 class="panel-titulo">Información Personal</h3>
+                <p class="panel-subt">Datos básicos del nuevo colaborador</p>
+
+                <div class="form-fila grid-2">
+                    <div class="form-campo">
+                        <label>Nombre(s):</label>
+                        <input type="text" formControlName="first_name" placeholder="Ej: Arturo" />
+                    </div>
+                    <div class="form-campo">
+                        <label>Apellidos:</label>
+                        <input type="text" formControlName="last_name" placeholder="Ej: Alarcon Ortiz" />
+                    </div>
+                </div>
+
+                <div class="form-campo">
+                    <label>Dirección de correo electrónico:</label>
+                    <input type="email" formControlName="email" placeholder="usuario@surgicorperu.com" />
+                </div>
+
+                <div class="form-campo">
+                    <label>Fecha de Alta (Lectura):</label>
+                    <input type="text" [value]="fechaAltaVisual" readonly class="input-locked" />
+                </div>
+            </div>
+
+            <!-- PASO 3: DATOS EXTENDIDOS -->
+            <div class="paso-panel" *ngIf="pasoActual === 3">
+                <h3 class="panel-titulo">Datos de Empresa</h3>
+                <p class="panel-subt">Complete la asignación del colaborador a la organización</p>
+
+                <div class="form-fila grid-2">
+                    <div class="form-campo">
+                        <label>Área:</label>
+                        <select formControlName="area_id">
+                            <option value="">Seleccione un Área...</option>
+                            <option *ngFor="let a of areasDisponibles" [value]="a.url">{{ a.nombre }}</option>
+                        </select>
+                    </div>
+                    <div class="form-campo">
+                        <label>Puesto:</label>
+                        <select formControlName="puesto_id">
+                            <option value="">Seleccione un Puesto...</option>
+                            <option *ngFor="let p of puestosDisponibles" [value]="p.url">{{ p.nombre }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-fila grid-2">
+                    <div class="form-campo">
+                        <label>Empresa:</label>
+                        <select formControlName="empr_id">
+                            <option value="">Seleccione una Empresa...</option>
+                            <option *ngFor="let e of empresasDisponibles" [value]="e.empresa">{{ e.empresa }}</option>
+                        </select>
+                    </div>
+                    <div class="form-campo">
+                        <label>Fecha de Ingreso:</label>
+                        <input type="date" formControlName="fecha_ingreso" />
+                    </div>
+                </div>
+
+                <div class="form-campo">
+                    <label>Avatar / Foto de Perfil:</label>
+                    <div class="avatar-upload-container">
+                        <div class="avatar-preview-box" (click)="fileInput.click()">
+                            <img *ngIf="avatarPreview" [src]="avatarPreview" />
+                            <div *ngIf="!avatarPreview" class="avatar-placeholder">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span>Subir Foto</span>
+                            </div>
+                        </div>
+                        <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*"
+                            style="display: none;" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mensajes de control -->
+            <div class="alert-error" *ngIf="error">{{ error }}</div>
+        </form>
+    </div>
+
+    <!-- Footer de Navegación -->
+    <div class="stepper-footer" *ngIf="!exito">
+        <button class="btn-secundario" (click)="pasoActual === 1 ? cancelarAsistente() : anteriorPaso()">
+            {{ pasoActual === 1 ? 'Cancelar' : 'Anterior' }}
+        </button>
+
+        <button class="btn-primario" *ngIf="pasoActual < totalPasos" (click)="siguientePaso()"
+            [disabled]="!pasoValido || formulario.get('username')?.pending">
+            Siguiente
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+            </svg>
+        </button>
+
+        <button class="btn-exito" *ngIf="pasoActual === totalPasos" (click)="guardarUsuario()"
+            [disabled]="cargando || formulario.invalid">
+            <span *ngIf="!cargando">Crear Usuario</span>
+            <span *ngIf="cargando">Procesando...</span>
+        </button>
+    </div>
+
+    <!-- MENSAJE DE ÉXITO -->
+    <div class="exito-panel" *ngIf="exito">
+        <div class="exito-icono">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+        </div>
+        <h2>¡Usuario Creado con Éxito!</h2>
+        <p>El nuevo colaborador ha sido registrado y cuenta con los permisos necesarios para el módulo de vacaciones.
+        </p>
+
+        <button class="btn-primario" (click)="finalizar()">Volver a Usuarios</button>
+    </div>
+</div>

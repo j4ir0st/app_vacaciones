@@ -92,7 +92,7 @@ export class NuevaSolicitudComponent implements OnInit {
             this.recalcularAlCambiarDias(this.formulario.get('dias')?.value);
         });
 
-        this.formulario.get('dias')?.valueChanges.subscribe((val) => {
+        this.formulario.get('dias')?.valueChanges.subscribe((val: number) => {
             this.recalcularAlCambiarDias(val);
         });
     }
@@ -151,7 +151,7 @@ export class NuevaSolicitudComponent implements OnInit {
                 // ya el filtro 'Else' se encargó de traer solo su área.
                 this.cargandoUsuarios = false;
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error cargando usuarios filtrados:', err);
                 this.cargandoUsuarios = false;
             }
@@ -211,25 +211,44 @@ export class NuevaSolicitudComponent implements OnInit {
     enviarSolicitud(): void {
         if (this.formulario.invalid || this.diasCalculados === 0) return;
 
-        this.procesandoDetalle = true;
         this.cargando = true;
         this.error = '';
 
         const datos = this.formulario.value;
         const esGerente = this.authService.esGerente;
-        // Si el solicitante es jefe o gerente, la solicitud se marca como Aprobada (AP) por defecto
-        const estado = this.authService.esJefeOGerente ? 'AP' : 'PD';
+        const esAprobador = this.authService.esAprobador;
+        const fechaActual = new Date().toISOString();
+        const urlUsuario = this.usuarioActual?.url || '';
+
+        // Lógica de auto-aprobación por niveles
+        let estado = 'PD';
+        let jefe_id = null;
+        let fecha_jefe = null;
+        let gerente_id = null;
+        let fecha_gerente = null;
+
+        if (esGerente) {
+            estado = 'AP';
+            jefe_id = urlUsuario;
+            fecha_jefe = fechaActual;
+            gerente_id = urlUsuario;
+            fecha_gerente = fechaActual;
+        } else if (esAprobador) {
+            estado = 'AS';
+            jefe_id = urlUsuario;
+            fecha_jefe = fechaActual;
+        }
 
         const payload = {
             ...datos,
             total_periodo: this.diasCalculados,
-            fecha_solicitud: new Date().toISOString(),
+            fecha_solicitud: fechaActual,
             estado_solicitud: estado as any,
-            area_id: this.usuarioActual?.area_id?.url || '', // Enviamos la URL del área para consistencia en DRF
-            jefe_id: null,
-            fecha_jefe: null,
-            gerente_id: null,
-            fecha_gerente: null,
+            area_id: this.usuarioActual?.area_id?.url || '', // Se envía la URL del área para compatibilidad
+            jefe_id: jefe_id,
+            fecha_jefe: fecha_jefe,
+            gerente_id: gerente_id,
+            fecha_gerente: fecha_gerente,
             obs: ''
         };
 
@@ -238,7 +257,7 @@ export class NuevaSolicitudComponent implements OnInit {
                 this.cargando = false;
                 this.exito = true;
             },
-            error: (err) => {
+            error: (err: any) => {
                 this.cargando = false;
                 console.error('Error al crear solicitud:', err);
                 this.error = 'Error al crear la solicitud. Por favor, inténtelo de nuevo.';

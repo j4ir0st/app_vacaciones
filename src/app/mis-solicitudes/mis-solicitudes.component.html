@@ -19,16 +19,19 @@
             <button class="btn-filtro" [class.activo]="filtroEstado === 'Todos'" (click)="cambiarFiltro('Todos')">
                 Todos ({{ counts['Todos'] }})
             </button>
-            <button class="btn-filtro" [class.activo]="filtroEstado === 'Pendiente'" (click)="cambiarFiltro('Pendiente')">
+            <button class="btn-filtro" [class.activo]="filtroEstado === 'Pendiente'"
+                (click)="cambiarFiltro('Pendiente')">
                 Pendiente ({{ counts['Pendiente'] }})
             </button>
-            <button class="btn-filtro" [class.activo]="filtroEstado === 'Aprobado Supervisor'" (click)="cambiarFiltro('Aprobado Supervisor')">
+            <button class="btn-filtro" [class.activo]="filtroEstado === 'Aprobado Supervisor'"
+                (click)="cambiarFiltro('Aprobado Supervisor')">
                 Aprobado Supervisor ({{ counts['Aprobado Supervisor'] }})
             </button>
             <button class="btn-filtro" [class.activo]="filtroEstado === 'Aprobado'" (click)="cambiarFiltro('Aprobado')">
                 Aprobado ({{ counts['Aprobado'] }})
             </button>
-            <button class="btn-filtro" [class.activo]="filtroEstado === 'Rechazado'" (click)="cambiarFiltro('Rechazado')">
+            <button class="btn-filtro" [class.activo]="filtroEstado === 'Rechazado'"
+                (click)="cambiarFiltro('Rechazado')">
                 Rechazado ({{ counts['Rechazado'] }})
             </button>
         </div>
@@ -42,16 +45,18 @@
 
     <!-- Lista de solicitudes (Diseño tipo Card) -->
     <div class="solicitudes-lista" *ngIf="!solicitudDetalle && solicitudesFiltradas.length > 0">
-        <div class="solicitud-card animate-in cursor-pointer" *ngFor="let sol of solicitudesFiltradas" (click)="verDetalle(sol)">
+        <div class="solicitud-card animate-in cursor-pointer" *ngFor="let sol of solicitudesFiltradas"
+            (click)="verDetalle(sol)">
             <div class="card-status">
                 <span class="badge-label" [ngClass]="claseEstado(sol.estado_solicitud)">
                     {{ vacacionesService.obtenerLabelEstado(sol.estado_solicitud) }}
                 </span>
             </div>
-            
+
             <div class="card-main">
                 <div class="card-fechas">
-                    {{ vacacionesService.formatearFechaCorta(sol.fecha_inicio) }} - {{ vacacionesService.formatearFechaCorta(sol.fecha_final) }} | {{ sol.total_periodo }} día(s)
+                    {{ vacacionesService.formatearFechaCorta(sol.fecha_inicio) }} - {{
+                    vacacionesService.formatearFechaCorta(sol.fecha_final) }} | {{ sol.total_periodo }} día(s)
                 </div>
                 <div class="card-motivo" *ngIf="sol.motivo">
                     {{ sol.motivo }}
@@ -59,14 +64,19 @@
             </div>
 
             <div class="card-meta">
-                <div class="meta-fecha">Enviado el {{ sol.fecha_solicitud ? vacacionesService.formatearFecha(sol.fecha_solicitud) : vacacionesService.formatearFecha(sol.fecha_inicio) }}</div>
+                <div class="meta-fecha">Enviado el {{ sol.fecha_solicitud ?
+                    vacacionesService.formatearFecha(sol.fecha_solicitud) :
+                    vacacionesService.formatearFecha(sol.fecha_inicio) }}</div>
                 <div class="meta-hora">{{ sol.fecha_solicitud ? sol.fecha_solicitud.substring(11, 16) : '12:00' }}</div>
             </div>
 
             <div class="card-acciones">
-                <button *ngIf="sol.estado_solicitud === 'Pendiente'" class="btn-accion-cancelar" (click)="confirmarCancelacion(sol)">
+                <button *ngIf="sol.estado_solicitud === 'Pendiente'" class="btn-accion-cancelar"
+                    (click)="confirmarCancelacion(sol)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="15" y1="9" x2="9" y2="15" />
+                        <line x1="9" y1="9" x2="15" y2="15" />
                     </svg>
                 </button>
             </div>
@@ -79,14 +89,14 @@
         </div>
     </div>
 
-        <!-- Sin resultados -->
-        <div class="sin-solicitudes" *ngIf="!solicitudDetalle && solicitudesFiltradas.length === 0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-            </svg>
-            <p>No tienes solicitudes {{ filtroEstado !== 'Todos' ? 'con estado ' + filtroEstado : '' }}</p>
-        </div>
+    <!-- Sin resultados -->
+    <div class="sin-solicitudes" *ngIf="!solicitudDetalle && solicitudesFiltradas.length === 0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+        </svg>
+        <p>No tienes solicitudes {{ filtroEstado !== 'Todos' ? 'con estado ' + filtroEstado : '' }}</p>
+    </div>
 
     <!-- VISTA DETALLE (Integrada) -->
     <div class="detalle-container animate-in" *ngIf="solicitudDetalle">
@@ -106,17 +116,20 @@
                     <img *ngIf="authService.usuarioActual?.avatar" [src]="authService.usuarioActual?.avatar"
                         [alt]="authService.usuarioActual?.first_name" />
                     <span *ngIf="!authService.usuarioActual?.avatar" class="iniciales-lg">
-                        {{ authService.usuarioActual?.first_name?.substring(0, 1)?.toUpperCase() }}{{ authService.usuarioActual?.last_name?.substring(0, 1)?.toUpperCase() }}
+                        {{ authService.usuarioActual?.first_name?.substring(0, 1)?.toUpperCase() }}{{
+                        authService.usuarioActual?.last_name?.substring(0, 1)?.toUpperCase() }}
                     </span>
                 </div>
                 <div class="usuario-info-lg">
-                    <span class="nombre-empleado-lg">{{ authService.usuarioActual?.first_name }} {{ authService.usuarioActual?.last_name }}</span>
-                    <span class="badge-role">{{ authService.usuarioActual?.area_puesto?.puesto_nombre || authService.usuarioActual?.puesto_id?.nombre || 'Usuario' }}</span>
+                    <span class="nombre-empleado-lg">{{ authService.usuarioActual?.first_name }} {{
+                        authService.usuarioActual?.last_name }}</span>
+                    <span class="badge-role">{{ authService.usuarioActual?.area_puesto?.puesto_nombre ||
+                        authService.usuarioActual?.puesto_id?.nombre || 'Usuario' }}</span>
                 </div>
             </div>
 
             <div class="detalle-estado">
-                <span class="badge-estado badge-outline" [ngClass]="claseEstado(solicitudDetalle.estado_solicitud)">
+                <span class="badge-label" [ngClass]="claseEstado(solicitudDetalle.estado_solicitud)">
                     {{ vacacionesService.obtenerLabelEstado(solicitudDetalle.estado_solicitud) | uppercase }}
                 </span>
             </div>

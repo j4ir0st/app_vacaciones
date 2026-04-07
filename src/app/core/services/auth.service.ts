@@ -143,7 +143,7 @@ export class AuthService {
         const u = this.usuarioActual;
         if (!u) return [];
 
-        const areaUser = (u.area_puesto?.area_nombre || u.area_id?.nombre || u.area || '').trim();
+        const areaUser = (u.area_id?.nombre || '').trim();
         const areaLower = areaUser.toLowerCase();
         const nombreUser = `${u.first_name} ${u.last_name}`.trim().toLowerCase();
         const username = u.username?.toLowerCase() || '';
@@ -153,10 +153,10 @@ export class AuthService {
             // Caso especial: Gerencia de Operaciones (ve múltiples áreas de logística/facturación)
             if (areaLower === 'operaciones') {
                 return ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa"];
-            } 
-            
+            }
+
             // Caso especial: Katherine Lewis (ve áreas administrativas/soporte)
-            if (username === 'klewis' || username === 'klewism' || nombreUser.includes('katherine lewis')) {
+            if (username === 'klewis' || nombreUser.includes('katherine lewis')) {
                 return ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
             }
 

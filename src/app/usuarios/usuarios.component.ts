@@ -7,6 +7,8 @@ import { VacacionesService } from '../core/services/vacaciones.service';
 import { RefreshService } from '../core/services/refresh.service';
 import { Usuario } from '../core/models/usuario.model';
 import { environment } from '../../environments/environment';
+import { CrearUsuarioComponent } from './crear-usuario/crear-usuario.component';
+import { ViewChild } from '@angular/core';
 
 @Component({
     selector: 'app-usuarios',
@@ -20,6 +22,10 @@ export class UsuariosComponent implements OnInit {
     textoBusqueda = '';
     usuarioADesactivar: Usuario | null = null;
     proximaPagina: string | null = null;
+
+    // Estado del modal de creación
+    mostrarModalCrear = false;
+    @ViewChild(CrearUsuarioComponent) compCrearUsuario?: CrearUsuarioComponent;
 
     constructor(
         public authService: AuthService,
@@ -156,8 +162,26 @@ export class UsuariosComponent implements OnInit {
         return (usuario.first_name?.[0] || '') + (usuario.last_name?.[0] || '');
     }
 
-    irACrearUsuario(): void {
-        console.log('Navegando a creación de usuario...');
-        // TODO: Implementar navegación o abrir modal según requerimiento futuro
+    /**
+     * Gestión del Modal de Creación
+     */
+    abrirModalCrear(): void {
+        this.mostrarModalCrear = true;
+    }
+
+    intentarCerrarModal(): void {
+        // Si el usuario ha avanzado más allá del primer paso, pedimos confirmación
+        if (this.compCrearUsuario && this.compCrearUsuario.pasoActual > 1 && !this.compCrearUsuario.exito) {
+            if (window.confirm('¿Está seguro que desea salir? Se perderán los datos que no se hayan guardado.')) {
+                this.mostrarModalCrear = false;
+            }
+        } else {
+            this.mostrarModalCrear = false;
+        }
+    }
+
+    onUsuarioCreado(): void {
+        this.mostrarModalCrear = false;
+        this.cargarDatos(true); // Refrescamos la lista forzando bypass de caché
     }
 }

@@ -71,7 +71,7 @@ export class ReportesComponent implements OnInit {
                 this.todasLasFilas = usuariosPermitidos.map(usuario => ({
                     nombre: `${usuario.first_name} ${usuario.last_name}`.trim() || usuario.username,
                     username: usuario.username,
-                    area: usuario.area_id?.nombre || usuario.area || 'Sin Área',
+                    area: usuario.area_id?.nombre || 'Sin Área',
                     fechaIngreso: usuario.fecha_ingreso,
                     totalAcumulado: 0,
                     diasUtilizados: 0,
@@ -105,10 +105,10 @@ export class ReportesComponent implements OnInit {
             concatMap(u => {
                 // Filtramos por el ID numérico proporcionado por el backend
                 const params = `&usuario_id=${u.id}`;
-                
+
                 // Construimos la URL inicial con el filtro de usuario
                 const urlInicial = `${this.solicitudService.URL_SOLICITUDES}${params}`;
-                
+
                 return this.solicitudService.obtenerSolicitudes(urlInicial).pipe(
                     // Lógica para obtener todas las páginas de solicitudes del usuario específico
                     expand((resp: any) => resp.next ? this.solicitudService.obtenerSolicitudes(resp.next + params) : EMPTY),

@@ -4,7 +4,6 @@
 
 .pagina-admin {
     padding: 0.4rem 0.4rem;
-    max-width: 1200px;
     margin: 0 auto;
     overflow: hidden;
 }
@@ -299,7 +298,6 @@
     border-radius: 12px;
     padding: 20px 25px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-    margin-bottom: 200px;
     min-height: calc(100vh - 280px);
 }
 

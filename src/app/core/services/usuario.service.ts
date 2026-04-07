@@ -82,7 +82,7 @@ export class UsuarioService {
     }
 
     // Ajusta la URL para usar el proxy en lugar del dominio absoluto (evita CORS)
-    private fixUrl(url: string): string {
+    public fixUrl(url: string): string {
         if (!url) return '';
         if (url.startsWith('http')) {
             return url.replace(/^https?:\/\/[^\/]+/, environment.apiUrl);
@@ -108,5 +108,51 @@ export class UsuarioService {
     // Obtiene el nombre completo de un usuario
     nombreCompleto(usuario: Usuario): string {
         return `${usuario.first_name} ${usuario.last_name}`.trim() || usuario.username;
+    }
+
+    /**
+     * Verifica asíncronamente si un username existe.
+     */
+    verificarUsername(username: string): Observable<boolean> {
+        return this.http.get<any>(`${this.URL_USUARIOS}&username=${encodeURIComponent(username)}`).pipe(
+            map(resp => {
+                const results = Array.isArray(resp) ? resp : (resp.results || []);
+                return results.some((u: any) => u.username.toLowerCase() === username.toLowerCase());
+            })
+        );
+    }
+
+    /**
+     * Obtiene la lista de Puestos desde el endpoint EU_Puesto.
+     */
+    obtenerPuestosRaw(): Observable<any[]> {
+        return this.http.get<any>(`${environment.apiUrl}/EU_Puesto/?format=json`).pipe(
+            map(resp => Array.isArray(resp) ? resp : (resp.results || []))
+        );
+    }
+
+    /**
+     * Obtiene la lista de Áreas desde el endpoint EU_Area.
+     */
+    obtenerAreasRaw(): Observable<any[]> {
+        return this.http.get<any>(`${environment.apiUrl}/EU_Area/?format=json`).pipe(
+            map(resp => Array.isArray(resp) ? resp : (resp.results || []))
+        );
+    }
+
+    /**
+     * Obtiene la lista de Empresas desde el endpoint Empresa.
+     */
+    obtenerEmpresas(): Observable<any[]> {
+        return this.http.get<any>(`${environment.apiUrl}/Empresa/?format=json`).pipe(
+            map(resp => Array.isArray(resp) ? resp : (resp.results || []))
+        );
+    }
+
+    /**
+     * Crea un usuario completo enviando datos multipart/form-data.
+     */
+    crearUsuarioCompleto(datos: FormData): Observable<any> {
+        return this.http.post<any>(this.URL_USUARIOS, datos);
     }
 }

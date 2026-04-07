@@ -11,7 +11,7 @@
         <div class="filtros">
             <button *ngFor="let opt of opcionesFiltroAdmin" class="btn-filtro" [class.activo]="filtroEstado === opt"
                 (click)="cambiarFiltroEstado(opt)">
-                {{ opt }} ({{ counts[opt] }})
+                {{ opt }} ({{ conteos[opt] }})
             </button>
         </div>
     </div>

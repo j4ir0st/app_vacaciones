@@ -10,7 +10,7 @@ import { SolicitudVacaciones, EstadoSolicitud } from '../core/models/solicitud-v
 import { Usuario } from '../core/models/usuario.model';
 import { environment } from '../../environments/environment';
 
-type FiltroAdmin = 'Pendiente' | 'Aprobado Supervisor' | 'Aprobado' | 'Rechazado';
+type FiltroAdministrador = 'Pendiente' | 'Aprobado Supervisor' | 'Aprobado' | 'Rechazado';
 
 interface FilaSolicitud extends SolicitudVacaciones {
     nombreUsuario: string;
@@ -32,11 +32,11 @@ export class AprobacionesComponent implements OnInit {
     // Datos de solicitudes
     todasSolicitudes: FilaSolicitud[] = [];
     solicitudesFiltradas: FilaSolicitud[] = [];
-    filtroEstado: FiltroAdmin = 'Pendiente';
-    opcionesFiltroAdmin: FiltroAdmin[] = ['Pendiente', 'Aprobado Supervisor', 'Aprobado', 'Rechazado'];
+    filtroEstado: FiltroAdministrador = 'Pendiente';
+    opcionesFiltroAdmin: FiltroAdministrador[] = ['Pendiente', 'Aprobado Supervisor', 'Aprobado', 'Rechazado'];
 
-    // Contadores para los botones de filtro
-    counts = {
+    // Conteos para los botones de filtro
+    conteos = {
         'Pendiente': 0,
         'Aprobado Supervisor': 0,
         'Aprobado': 0,
@@ -79,112 +79,168 @@ export class AprobacionesComponent implements OnInit {
         });
     }
 
+    /**
+     * Carga las solicitudes y usuarios desde el servidor aplicando los filtros de área.
+     */
     cargarDatos(): void {
-        const user = this.authService.usuarioActual;
-        if (!user) return;
+        const usuarioActual = this.authService.usuarioActual;
+        if (!usuarioActual) return;
 
         this.cargandoSolicitudes = true;
 
-        const urlSolicitudes = `${environment.apiUrl}/SolicitudVacaciones/?format=json${this.obtenerFiltroAreaBackend()}`;
+        const filtroAdicional = this.obtenerFiltroAreaBackend();
+        const urlSolicitudes = `${environment.apiUrl}/SolicitudVacaciones/?format=json${filtroAdicional}`;
 
-        const reqSolicitudes = this.solicitudService.obtenerSolicitudes(urlSolicitudes).pipe(
+        // Obtención recursiva de solicitudes (DRF paginación 60 registros)
+        const peticionSolicitudes = this.solicitudService.obtenerSolicitudes(urlSolicitudes).pipe(
             expand((resp: any) => {
-                return resp.next ? this.solicitudService.obtenerSolicitudes(resp.next) : EMPTY
+                if (!resp.next) return EMPTY;
+                // Nos aseguramos de que el link de 'next' mantenga los filtros si el backend no los incluye
+                let proximaUrl = resp.next;
+                if (!proximaUrl.includes('area_nombre') && filtroAdicional) {
+                    proximaUrl += filtroAdicional;
+                }
+                return this.solicitudService.obtenerSolicitudes(proximaUrl);
             }),
             map((resp: any) => Array.isArray(resp) ? resp : (resp.results || [])),
-            reduce((acc: any[], curr: any[]) => acc.concat(curr), [])
+            reduce((acumulado: any[], actual: any[]) => acumulado.concat(actual), [])
         );
 
-        const reqUsuarios = this.usuarioService.obtenerUsuarios().pipe(
-            expand((resp: any) => {
-                return resp.next ? this.usuarioService.obtenerUsuarios(resp.next) : EMPTY
-            }),
+        // Obtención de usuarios para cruce de información
+        const peticionUsuarios = this.usuarioService.obtenerUsuarios().pipe(
+            expand((resp: any) => resp.next ? this.usuarioService.obtenerUsuarios(resp.next) : EMPTY),
             map((resp: any) => Array.isArray(resp) ? resp : (resp.results || [])),
-            reduce((acc: any[], curr: any[]) => acc.concat(curr), [])
+            reduce((acumulado: any[], actual: any[]) => acumulado.concat(actual), [])
         );
 
-        forkJoin([reqSolicitudes, reqUsuarios]).subscribe({
+        forkJoin([peticionSolicitudes, peticionUsuarios]).subscribe({
             next: ([listaSolicitudes, listaUsuarios]: [any[], any[]]) => {
-                this.todasSolicitudes = listaSolicitudes.map((s: SolicitudVacaciones): FilaSolicitud => {
-                    const idParaComparar = typeof s.usuario_id === 'string' ? s.usuario_id : '';
-                    const solUrlLimpia = idParaComparar.replace(/\/$/, '').toLowerCase();
-                    const usu = listaUsuarios.find((u: Usuario) => {
-                        const uUrlLimpia = (u.url || '').replace(/\/$/, '').toLowerCase();
-                        // Si usuario_id es objeto, confiamos en que el backend ya filtró o usamos los datos del objeto
-                        if (typeof s.usuario_id === 'object') return true; 
-                        return solUrlLimpia === uUrlLimpia || solUrlLimpia.endsWith(uUrlLimpia) || uUrlLimpia.endsWith(solUrlLimpia);
-                    });
-
-                    const uInfo = typeof s.usuario_id === 'object' ? s.usuario_id : null;
-
-                    return {
-                        ...s,
-                        nombreUsuario: uInfo?.fullname || (usu
-                            ? `${usu.first_name} ${usu.last_name}`.trim() || usu.username
-                            : 'Usuario Desconocido'),
-                        avatarUsuario: this.solicitudService.obtenerUrlAvatar(uInfo?.avatar || usu?.avatar),
-                        areaNombre: (s as any).area_id || usu?.area_id?.nombre || usu?.area || '',
-                        puestoNombre: usu?.puesto_id?.nombre || 'Usuario'
-                    };
-                }).sort((a: FilaSolicitud, b: FilaSolicitud) => (b.fecha_solicitud || '').localeCompare(a.fecha_solicitud || '') * -1);
+                this.todasSolicitudes = listaSolicitudes.map((sol: SolicitudVacaciones): FilaSolicitud => {
+                    return this.mapearSolicitud(sol, listaUsuarios);
+                }).sort((a: FilaSolicitud, b: FilaSolicitud) => {
+                    // Orden descendente por fecha de solicitud (las más recientes primero)
+                    return (b.fecha_solicitud || '').localeCompare(a.fecha_solicitud || '');
+                });
 
                 this.aplicarFiltroSolicitudes();
                 this.cargandoSolicitudes = false;
             },
-            error: (err: any) => {
-                console.error('Error cargando solicitudes:', err);
+            error: (error: any) => {
+                console.error('Error cargando solicitudes:', error);
                 this.cargandoSolicitudes = false;
             }
         });
     }
 
+    /**
+     * Mapea una solicitud cruda del backend al formato de fila con información de usuario extendida.
+     */
+    private mapearSolicitud(sol: SolicitudVacaciones, usuarios: Usuario[]): FilaSolicitud {
+        // Identificación del usuario y su área
+        let nombreUsuario = 'Usuario';
+        let areaUsuario = 'Sin Área';
+        let puestoUsuario = 'Usuario';
+        const urlUsuarioEnSolicitud = typeof sol.usuario_id === 'string' ? sol.usuario_id : '';
 
+        // Prioridad 1: Información serializada directamente en el objeto usuario_id (Frontend/Backend optimizado)
+        const infoUsuarioObj = (typeof sol.usuario_id === 'object' && sol.usuario_id !== null) ? (sol.usuario_id as any) : null;
+        
+        if (infoUsuarioObj) {
+            nombreUsuario = infoUsuarioObj.fullname || nombreUsuario;
+            areaUsuario = infoUsuarioObj.area || areaUsuario;
+            puestoUsuario = infoUsuarioObj.puesto || puestoUsuario;
+        }
+
+        // Prioridad 2: Buscar en la lista de usuarios completa si falta información o es solo una URL
+        if (areaUsuario === 'Sin Área' || nombreUsuario === 'Usuario') {
+            const usuarioEncontrado = usuarios.find(u => {
+                if (!urlUsuarioEnSolicitud) return false;
+                const uUrl = u.url?.toLowerCase().replace(/\/$/, '') || '';
+                const solUrl = urlUsuarioEnSolicitud.toLowerCase().replace(/\/$/, '') || '';
+                return uUrl === solUrl || uUrl.endsWith(solUrl) || solUrl.endsWith(uUrl);
+            });
+
+            if (usuarioEncontrado) {
+                if (nombreUsuario === 'Usuario') {
+                    nombreUsuario = `${usuarioEncontrado.first_name} ${usuarioEncontrado.last_name}`.trim() || usuarioEncontrado.username;
+                }
+                if (areaUsuario === 'Sin Área') {
+                    areaUsuario = usuarioEncontrado.area_id?.nombre || usuarioEncontrado.area || 'Sin Área';
+                }
+                if (puestoUsuario === 'Usuario') {
+                    puestoUsuario = usuarioEncontrado.puesto_id?.nombre || 'Usuario';
+                }
+            }
+        }
+
+        // Si el backend envía el nombre del área directamente en el campo raíz por compatibilidad
+        const areaOriginal = typeof sol.area_id === 'string' && !sol.area_id.includes('/') ? sol.area_id : (sol as any).area_nombre;
+        const areaFinal = areaOriginal || areaUsuario;
+
+        return {
+            ...sol,
+            nombreUsuario: nombreUsuario,
+            avatarUsuario: this.solicitudService.obtenerUrlAvatar(infoUsuarioObj?.avatar || ''),
+            areaNombre: areaFinal,
+            puestoNombre: puestoUsuario
+        };
+    }
+
+
+    /**
+     * Define los parámetros de filtro por área para la consulta al backend.
+     */
     private obtenerFiltroAreaBackend(): string {
-        const user = this.authService.usuarioActual;
-        if (!user) return '';
+        const usuarioActual = this.authService.usuarioActual;
+        if (!usuarioActual) return '';
 
-        const areaUser = (user.area_puesto?.area_nombre || user.area_id?.nombre || user.area || '').trim().toLowerCase();
-        const nombreUser = `${user.first_name} ${user.last_name}`.trim().toLowerCase();
-        const username = user.username?.toLowerCase() || '';
+        const areaUsuario = (usuarioActual.area_id?.nombre || '').trim().toLowerCase();
+        const nombreUsuario = `${usuarioActual.first_name} ${usuarioActual.last_name}`.trim().toLowerCase();
+        const username = usuarioActual.username?.toLowerCase() || '';
 
         let areas: string[] = [];
 
-        // Usamos la lógica centralizada del AuthService para determinar permisos
         if (this.authService.esAprobador) {
-            if (areaUser === 'operaciones') {
-                // Lista exacta según fórmula PowerApps para Operaciones
+            if (areaUsuario === 'operaciones') {
                 areas = ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa"];
-            } else if (username === 'klewis' || username === 'klewism' || nombreUser.includes('katherine lewis')) {
-                // Caso Katherine Lewis (coincide con fórmula heredada)
+            } else if (username === 'klewis' || username === 'klewism' || nombreUsuario.includes('katherine lewis')) {
                 areas = ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
             } else {
-                areas = [user.area_puesto?.area_nombre || user.area_id?.nombre || user.area || ''];
+                areas = [usuarioActual.area_id?.nombre || ''];
             }
         } else {
-            areas = [user.area_puesto?.area_nombre || user.area_id?.nombre || user.area || ''];
+            areas = [usuarioActual.area_id?.nombre || ''];
         }
 
         const areasFiltradas = areas.filter(a => a).map(a => a.trim());
-        return areasFiltradas.length > 0 ? `&area_nombre=${encodeURIComponent(areasFiltradas.join(','))}` : '';
+        const filtroArea = areasFiltradas.length > 0 ? `&area_nombre=${encodeURIComponent(areasFiltradas.join(','))}` : '';
+        
+        return `${filtroArea}&estado_solicitud=`;
     }
 
+    /**
+     * Aplica el filtro en memoria basado en el estado seleccionado en los botones.
+     */
     aplicarFiltroSolicitudes(): void {
-        this.recalcularCounts(this.todasSolicitudes);
+        this.recalcularConteos(this.todasSolicitudes);
 
-        const mapFiltroACodigo: Record<string, string> = {
+        const mapaFiltroACodigo: Record<string, string> = {
             'Pendiente': 'PD',
             'Aprobado Supervisor': 'AS',
             'Aprobado': 'AP',
             'Rechazado': 'RC'
         };
-        const codigoBuscado = mapFiltroACodigo[this.filtroEstado];
+        const codigoBuscado = mapaFiltroACodigo[this.filtroEstado];
         this.solicitudesFiltradas = this.todasSolicitudes.filter(
-            (s: FilaSolicitud) => this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud) === codigoBuscado
+            (sol: FilaSolicitud) => this.vacacionesService.obtenerCodigoEstado(sol.estado_solicitud) === codigoBuscado
         );
     }
 
-    recalcularCounts(solicitudes: FilaSolicitud[]): void {
-        this.counts = {
+    /**
+     * Calcula los conteos de cada estado para mostrar en los botones de filtro.
+     */
+    recalcularConteos(solicitudes: FilaSolicitud[]): void {
+        this.conteos = {
             'Pendiente': solicitudes.filter(s => this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud) === 'PD').length,
             'Aprobado Supervisor': solicitudes.filter(s => this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud) === 'AS').length,
             'Aprobado': solicitudes.filter(s => this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud) === 'AP').length,
@@ -192,11 +248,9 @@ export class AprobacionesComponent implements OnInit {
         };
     }
 
-    cambiarFiltroEstado(estado: FiltroAdmin): void {
-        this.filtroEstado = estado;
-        this.aplicarFiltroSolicitudes();
-    }
-
+    /**
+     * Gestión de Vista Detalle
+     */
     verDetalle(solicitud: FilaSolicitud): void {
         this.solicitudDetalle = solicitud;
         this.observacionDetalle = solicitud.obs || '';
@@ -207,36 +261,46 @@ export class AprobacionesComponent implements OnInit {
         this.observacionDetalle = '';
     }
 
+    /**
+     * Procesa la aprobación o rechazo de una solicitud.
+     */
     procesarDetalle(accion: 'aprobar' | 'rechazar', vieneDeFirma: boolean = false): void {
         if (!this.solicitudDetalle?.url) return;
 
-        const user = this.authService.usuarioActual;
-        if (!user) return;
+        const usuarioActual = this.authService.usuarioActual;
+        if (!usuarioActual) return;
 
         this.procesandoDetalle = true;
         const esGerente = this.authService.esGerente;
 
         let nuevoEstado: string = 'RC';
         let payloadAuditoria: any = { obs: this.observacionDetalle };
-        const nowIso = new Date().toISOString();
+        const fechaActualIso = new Date().toISOString();
 
         if (accion === 'aprobar') {
             if (esGerente) {
                 nuevoEstado = 'AP';
-                payloadAuditoria['gerente_id'] = user.url;
-                payloadAuditoria['fecha_gerente'] = nowIso;
+                payloadAuditoria['gerente_id'] = usuarioActual.url;
+                payloadAuditoria['fecha_gerente'] = fechaActualIso;
+                
+                // Si la solicitud aún no tiene firma de jefe (ej. salto de paso), el gerente firma por ambos para completar la auditoría
+                if (!this.solicitudDetalle.jefe_id) {
+                    payloadAuditoria['jefe_id'] = usuarioActual.url;
+                    payloadAuditoria['fecha_jefe'] = fechaActualIso;
+                }
             } else {
                 nuevoEstado = 'AS';
-                payloadAuditoria['jefe_id'] = user.url;
-                payloadAuditoria['fecha_jefe'] = nowIso;
+                payloadAuditoria['jefe_id'] = usuarioActual.url;
+                payloadAuditoria['fecha_jefe'] = fechaActualIso;
             }
         } else {
+            // Caso de rechazo (Se registra quién rechazó)
             if (esGerente) {
-                payloadAuditoria['gerente_id'] = user.url;
-                payloadAuditoria['fecha_gerente'] = nowIso;
+                payloadAuditoria['gerente_id'] = usuarioActual.url;
+                payloadAuditoria['fecha_gerente'] = fechaActualIso;
             } else {
-                payloadAuditoria['jefe_id'] = user.url;
-                payloadAuditoria['fecha_jefe'] = nowIso;
+                payloadAuditoria['jefe_id'] = usuarioActual.url;
+                payloadAuditoria['fecha_jefe'] = fechaActualIso;
             }
         }
 
@@ -250,15 +314,8 @@ export class AprobacionesComponent implements OnInit {
                         this.rechazoExitoso = true;
                     } else if (accion === 'aprobar') {
                         if (esGerente && vieneDeFirma) {
-                            // Solo si venimos de 'firmarYEnviar', procedemos a notificar y cerrar
                             this.ejecutarNotificacionFinal();
-                            // usuario_id puede ser un objeto o un string
-                            const solUrlRaw = typeof this.solicitudDetalle?.usuario_id === 'string' ? this.solicitudDetalle.usuario_id : '';
-                            const solUrl = solUrlRaw.toLowerCase().replace(/\/$/, '');
-                            const userUrl = (user.url || '').toLowerCase().replace(/\/$/, '');
-                            const esMismoUsuario = solUrl === userUrl || solUrl.endsWith(userUrl) || userUrl.endsWith(solUrl) || (typeof this.solicitudDetalle?.usuario_id === 'object');
                         } else if (esGerente) {
-                            // Este caso ya no debería ocurrir por el cambio en ejecutarAprobacion
                             this.procesandoDetalle = false;
                             this.modoPreviewPDF = true;
                             this.fechaFirma = new Date();
@@ -272,13 +329,16 @@ export class AprobacionesComponent implements OnInit {
                         this.cargarDatos();
                     }
                 },
-                error: (err) => {
-                    console.error('Error al procesar detalle', err);
+                error: (error) => {
+                    console.error('Error al procesar detalle:', error);
                     this.procesandoDetalle = false;
                 }
             });
     }
 
+    /**
+     * Flujo de Rechazo
+     */
     confirmarRechazo(): void {
         this.mostrandoConfirmacionRechazo = true;
     }
@@ -296,6 +356,14 @@ export class AprobacionesComponent implements OnInit {
         this.errorRechazo = '';
         this.mostrandoConfirmacionRechazo = false;
         this.procesarDetalle('rechazar');
+    }
+
+    /**
+     * Flujo de Aprobación
+     */
+    cambiarFiltroEstado(estado: FiltroAdministrador): void {
+        this.filtroEstado = estado;
+        this.aplicarFiltroSolicitudes();
     }
 
     retornarDeExito(): void {
@@ -318,20 +386,21 @@ export class AprobacionesComponent implements OnInit {
 
     ejecutarAprobacion(): void {
         this.mostrandoConfirmacionAprobacion = false;
-        
-        const user = this.authService.usuarioActual;
-        const puesto = (user?.area_puesto?.puesto_nombre || user?.puesto_id?.nombre || '').trim().toLowerCase();
-        
-        if (puesto === 'gerente') {
-            // Caso Gerente: Solo transición local a Vista Previa (sin PATCH aún)
+
+        const usuarioActual = this.authService.usuarioActual;
+        const nombrePuesto = (usuarioActual?.puesto_id?.nombre || '').trim().toLowerCase();
+
+        if (nombrePuesto === 'gerente') {
             this.modoPreviewPDF = true;
             this.fechaFirma = new Date();
         } else {
-            // Caso Supervisor/Jefe: Aprobación directa en BD
             this.procesarDetalle('aprobar');
         }
     }
 
+    /**
+     * Gestión de Firma y Notificaciones (Rol Gerente)
+     */
     cancelarPreview(): void {
         this.modoPreviewPDF = false;
         this.cerrarDetalle();
@@ -339,59 +408,60 @@ export class AprobacionesComponent implements OnInit {
     }
 
     firmarYEnviar(): void {
-        // Al firmar, recién ejecutamos el PATCH de aprobación y luego el POST de notificación
         this.procesarDetalle('aprobar', true);
     }
 
     private ejecutarNotificacionFinal(): void {
         if (!this.solicitudDetalle?.url) return;
-        
+
         this.solicitudService.enviarNotificacion(this.solicitudDetalle.url).subscribe({
             next: () => {
                 this.procesandoDetalle = false;
                 this.modoPreviewPDF = false;
                 this.aprobacionExitosaGerente = true;
             },
-            error: (err) => {
+            error: (error) => {
                 this.procesandoDetalle = false;
-                console.error('Error al enviar notificación:', err);
+                console.error('Error al enviar notificación:', error);
                 alert('La solicitud fue aprobada pero hubo un error al enviar el correo de notificación.');
-                // Aun con error de correo, la solicitud ya quedó aprobada en BD
                 this.modoPreviewPDF = false;
                 this.aprobacionExitosaGerente = true;
             }
         });
     }
 
+    /**
+     * Descarga de Documentos y Utilidades
+     */
     descargarDocumento(): void {
         if (!this.solicitudDetalle?.url) return;
-        
+
         this.solicitudService.descargarPDF(this.solicitudDetalle.url).subscribe({
-            next: (blob) => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                const urlParts = this.solicitudDetalle?.url.split('/') || [];
-                const id = urlParts.filter(p => p).pop() || 'documento';
-                a.download = `Solicitud_Vacaciones_${id}.pdf`;
-                a.click();
-                window.URL.revokeObjectURL(url);
+            next: (datosBlob) => {
+                const urlDescarga = window.URL.createObjectURL(datosBlob);
+                const elementoLink = document.createElement('a');
+                elementoLink.href = urlDescarga;
+                const partesUrl = this.solicitudDetalle?.url.split('/') || [];
+                const idSolicitud = partesUrl.filter(p => p).pop() || 'documento';
+                elementoLink.download = `Solicitud_Vacaciones_${idSolicitud}.pdf`;
+                elementoLink.click();
+                window.URL.revokeObjectURL(urlDescarga);
             },
-            error: (err) => {
-                console.error('Error al descargar PDF:', err);
+            error: (error) => {
+                console.error('Error al descargar PDF:', error);
                 alert('No se pudo descargar el documento en este momento.');
             }
         });
     }
 
     claseEstado(estado: EstadoSolicitud): string {
-        const codigo = this.vacacionesService.obtenerCodigoEstado(estado);
-        const clases: Record<string, string> = {
+        const codigoEstado = this.vacacionesService.obtenerCodigoEstado(estado);
+        const clasesCSS: Record<string, string> = {
             'AP': 'estado-aprobado',
             'PD': 'estado-pendiente',
             'RC': 'estado-rechazado',
             'AS': 'estado-supervisor'
         };
-        return clases[codigo] || '';
+        return clasesCSS[codigoEstado] || '';
     }
 }

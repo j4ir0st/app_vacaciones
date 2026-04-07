@@ -5,6 +5,9 @@
 .dashboard {
     position: relative;
     min-height: 200px;
+    height: calc(100vh - 110px);
+    padding: 0.4rem 0.4rem;
+    margin: 0 auto;
 }
 
 /* Loader */
@@ -33,6 +36,7 @@
 /* Fila de widgets */
 .widgets-fila {
     display: grid;
+    height: calc(50vh - 80px);
     grid-template-columns: repeat(3, 1fr);
     gap: 1.2rem;
     margin-bottom: 1.2rem;
@@ -205,6 +209,7 @@
 /* Fila inferior */
 .fila-inferior {
     display: grid;
+    height: calc(50vh - 80px);
     grid-template-columns: 1.8fr 1fr;
     gap: 1.2rem;
 }
@@ -253,7 +258,7 @@
 
 /* Lista de próximas vacaciones */
 .wrap-scroll-lista {
-    max-height: 350px !important;
+    height: calc(50vh - 140px);
     overflow-y: auto !important;
     padding-right: 5px;
 }
