@@ -5,13 +5,22 @@
                 <h1>Administración de Usuarios</h1>
                 <p class="subtitulo">Gestión de usuarios y accesos</p>
             </div>
-            <button class="btn-nuevo-usuario" *ngIf="esGerente" (click)="abrirModalCrear()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-plus">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                <span>Nuevo Usuario</span>
-            </button>
+            <div class="header-acciones">
+                <div class="filtro-activos">
+                    <span class="filtro-label">Mostrar Usuarios Activos:</span>
+                    <label class="switch">
+                        <input type="checkbox" [(ngModel)]="mostrarSoloActivos">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <button class="btn-nuevo-usuario" *ngIf="esGerente" (click)="abrirModalCrear()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-plus">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Nuevo Usuario</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -57,13 +66,12 @@
                         <label>Ingreso</label>
                         <span>{{ vacacionesService.formatearFechaCompleta(u.fecha_ingreso) }}</span>
                     </div>
-                </div>
-
-                <div class="usuario-acciones" *ngIf="esGerente">
-                    <button class="btn-toggle-estado" [class.btn-activar]="!u.is_active"
-                        (click)="iniciarDesactivacion(u)">
-                        {{ u.is_active ? 'Desactivar' : 'Activar' }}
-                    </button>
+                    <div class="usuario-acciones" *ngIf="esGerente">
+                        <button class="btn-toggle-estado" [class.btn-activar]="!u.is_active"
+                            (click)="iniciarDesactivacion(u)">
+                            {{ u.is_active ? 'Desactivar' : 'Activar' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -84,21 +92,21 @@
 
         <div class="modal-body">
             <p *ngIf="usuarioADesactivar.is_active">
-                ¿Está seguro de que desea desactivar a <strong>{{ usuarioADesactivar.first_name }} {{ usuarioADesactivar.last_name }}</strong>? 
+                ¿Está seguro de que desea desactivar a <strong>{{ usuarioADesactivar.first_name }} {{
+                    usuarioADesactivar.last_name }}</strong>?
                 Este usuario no podrá acceder al sistema hasta que sea reactivado.
             </p>
             <p *ngIf="!usuarioADesactivar.is_active">
-                ¿Está seguro de que desea activar a <strong>{{ usuarioADesactivar.first_name }} {{ usuarioADesactivar.last_name }}</strong>? 
+                ¿Está seguro de que desea activar a <strong>{{ usuarioADesactivar.first_name }} {{
+                    usuarioADesactivar.last_name }}</strong>?
                 El colaborador recuperará el acceso inmediato a la plataforma.
             </p>
         </div>
 
         <div class="modal-footer">
             <button class="btn-cancelar-modal" (click)="usuarioADesactivar = null">Cancelar</button>
-            <button 
-                [class.btn-rechazar-modal]="usuarioADesactivar.is_active"
-                [class.btn-aprobar-modal]="!usuarioADesactivar.is_active" 
-                (click)="cambiarEstadoUsuario()">
+            <button [class.btn-rechazar-modal]="usuarioADesactivar.is_active"
+                [class.btn-aprobar-modal]="!usuarioADesactivar.is_active" (click)="cambiarEstadoUsuario()">
                 {{ usuarioADesactivar.is_active ? 'Desactivar' : 'Activar' }}
             </button>
         </div>

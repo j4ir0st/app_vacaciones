@@ -21,21 +21,30 @@ export class UsuarioService {
      * Obtiene todos los usuarios usando recursividad para manejar la paginación de DRF.
      * Implementa una caché de 24 horas.
      */
-    obtenerUsuariosTodo(forzarRefresco: boolean = false): Observable<Usuario[]> {
+    obtenerUsuariosTodo(forzarRefresco: boolean = false, soloActivos: boolean = false): Observable<Usuario[]> {
         const ahora = Date.now();
         const cacheExpirada = ahora - this.ultimaActualizacion > this.TTL_CACHE;
 
-        if (!forzarRefresco && this.usuariosCache && !cacheExpirada) {
+        // Si pedimos solo activos, ignoramos la caché general por ahora para asegurar precisión del backend
+        if (!forzarRefresco && !soloActivos && this.usuariosCache && !cacheExpirada) {
             return of(this.usuariosCache);
         }
 
-        return this.http.get<any>(this.URL_USUARIOS).pipe(
+        let url = this.URL_USUARIOS;
+        if (soloActivos) {
+            url += '&is_active=true';
+        }
+
+        return this.http.get<any>(url).pipe(
             expand((resp: any) => resp.next ? this.http.get<any>(this.fixUrl(resp.next)) : EMPTY),
             map((resp: any) => Array.isArray(resp) ? resp : (resp.results || [])),
             reduce((acc: Usuario[], curr: Usuario[]) => acc.concat(curr), []),
             tap(usuarios => {
-                this.usuariosCache = usuarios;
-                this.ultimaActualizacion = Date.now();
+                // Solo cacheamos si es la lista completa (no solo activos)
+                if (!soloActivos) {
+                    this.usuariosCache = usuarios;
+                    this.ultimaActualizacion = Date.now();
+                }
             })
         );
     }

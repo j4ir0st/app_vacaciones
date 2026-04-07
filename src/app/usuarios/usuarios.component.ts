@@ -27,6 +27,9 @@ export class UsuariosComponent implements OnInit {
     mostrarModalCrear = false;
     @ViewChild(CrearUsuarioComponent) compCrearUsuario?: CrearUsuarioComponent;
 
+    // Filtro de usuarios activos
+    mostrarSoloActivos = true;
+
     constructor(
         public authService: AuthService,
         private usuarioService: UsuarioService,
@@ -119,9 +122,18 @@ export class UsuariosComponent implements OnInit {
     }
 
     get usuariosFiltrados(): Usuario[] {
-        if (!this.textoBusqueda.trim()) return this.usuarios;
+        let filtrados = this.usuarios;
+
+        // 1. Filtro por estado activo (en memoria)
+        if (this.mostrarSoloActivos) {
+            filtrados = filtrados.filter(u => u.is_active);
+        }
+
+        // 2. Filtro por texto de búsqueda
+        if (!this.textoBusqueda.trim()) return filtrados;
+        
         const busq = this.textoBusqueda.toLowerCase();
-        return this.usuarios.filter(u =>
+        return filtrados.filter(u =>
             `${u.first_name} ${u.last_name} ${u.username} ${u.area_id?.nombre || u.area}`.toLowerCase().includes(busq)
         );
     }

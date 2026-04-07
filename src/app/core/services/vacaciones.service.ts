@@ -44,18 +44,18 @@ export class VacacionesService {
 
         // 5. DiasTruncos (Resto de días acumulados en el año actual, ajustado si se tomó de más)
         const remanenteAnual = diasAcumuladosReferencia % 30;
-        let diasTruncos = 0;
+        let diasTruncosCalc = 0;
         if (diasPendientesPotencial > 0) {
-            diasTruncos = remanenteAnual;
+            diasTruncosCalc = remanenteAnual;
         } else {
-            diasTruncos = remanenteAnual + diasPendientesPotencial;
+            diasTruncosCalc = remanenteAnual + diasPendientesPotencial;
         }
 
         return {
             diasAcumulados: diasAcumuladosReferencia,
             diasTomados,
-            diasPendientes: diasPendientesPotencial,
-            diasTruncos: Math.max(0, diasTruncos),
+            diasPendientes: Math.max(0, diasPendientesPotencial),
+            diasTruncos: Math.max(0, diasTruncosCalc),
             solicitudesAprobadas: solicitudesAprobadas.length,
             solicitudesPendientes: solicitudesPendientes.length,
             solicitudesRechazadas: solicitudesRechazadas.length,

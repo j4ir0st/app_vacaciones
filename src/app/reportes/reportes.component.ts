@@ -55,8 +55,8 @@ export class ReportesComponent implements OnInit {
         this.cargando = true;
         this.todasLasFilas = [];
 
-        // 1. Obtenemos todos los usuarios (aprovecha la caché de 24h)
-        this.usuarioService.obtenerUsuariosTodo().subscribe({
+        // 1. Obtenemos todos los usuarios activos (filtro backend is_active=true)
+        this.usuarioService.obtenerUsuariosTodo(false, true).subscribe({
             next: (listaUsuarios: Usuario[]) => {
                 const usuarioActual = this.authService.usuarioActual;
                 if (!usuarioActual) {

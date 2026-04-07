@@ -297,13 +297,13 @@
 }
 
 .color-amarillo-pendiente {
-    background-color: #fffbeb;
+    background-color: #fff5ac;
     /* Amarillo muy suave */
     border-left: 5px solid #fbbf24;
 }
 
 .color-rojo-rechazado {
-    background-color: #fef2f2;
+    background-color: #fecaca;
     /* Rojo muy suave */
     border-left: 5px solid #ef4444;
 }
