@@ -144,7 +144,7 @@ export class AprobacionesComponent implements OnInit {
 
         // Prioridad 1: Información serializada directamente en el objeto usuario_id (Frontend/Backend optimizado)
         const infoUsuarioObj = (typeof sol.usuario_id === 'object' && sol.usuario_id !== null) ? (sol.usuario_id as any) : null;
-        
+
         if (infoUsuarioObj) {
             nombreUsuario = infoUsuarioObj.fullname || nombreUsuario;
             areaUsuario = infoUsuarioObj.area || areaUsuario;
@@ -194,16 +194,18 @@ export class AprobacionesComponent implements OnInit {
         const usuarioActual = this.authService.usuarioActual;
         if (!usuarioActual) return '';
 
-        const areaUsuario = (usuarioActual.area_id?.nombre || '').trim().toLowerCase();
+        const puestoUsuario = (usuarioActual.puesto_id?.nombre || '').trim().toLowerCase();
+        const areaUsuario = (usuarioActual.area_id?.nombre || '').toLowerCase();
         const nombreUsuario = `${usuarioActual.first_name} ${usuarioActual.last_name}`.trim().toLowerCase();
         const username = usuarioActual.username?.toLowerCase() || '';
+        const esGerenteOJefe = puestoUsuario.includes('gerente') || puestoUsuario.includes('jefe');
 
         let areas: string[] = [];
 
-        if (this.authService.esAprobador) {
+        if (esGerenteOJefe) {
             if (areaUsuario === 'operaciones') {
                 areas = ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa"];
-            } else if (username === 'klewis' || username === 'klewism' || nombreUsuario.includes('katherine lewis')) {
+            } else if (username === 'klewis' || nombreUsuario.includes('katherine lewis')) {
                 areas = ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
             } else {
                 areas = [usuarioActual.area_id?.nombre || ''];
@@ -214,8 +216,8 @@ export class AprobacionesComponent implements OnInit {
 
         const areasFiltradas = areas.filter(a => a).map(a => a.trim());
         const filtroArea = areasFiltradas.length > 0 ? `&area_nombre=${encodeURIComponent(areasFiltradas.join(','))}` : '';
-        
-        return `${filtroArea}&estado_solicitud=`;
+
+        return filtroArea;
     }
 
     /**
@@ -282,7 +284,7 @@ export class AprobacionesComponent implements OnInit {
                 nuevoEstado = 'AP';
                 payloadAuditoria['gerente_id'] = usuarioActual.url;
                 payloadAuditoria['fecha_gerente'] = fechaActualIso;
-                
+
                 // Si la solicitud aún no tiene firma de jefe (ej. salto de paso), el gerente firma por ambos para completar la auditoría
                 if (!this.solicitudDetalle.jefe_id) {
                     payloadAuditoria['jefe_id'] = usuarioActual.url;
