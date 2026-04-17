@@ -152,7 +152,7 @@ export class AuthService {
         if (this.esAprobador) {
             // Caso especial: Gerencia de Operaciones (ve múltiples áreas de logística/facturación)
             if (areaLower === 'operaciones') {
-                return ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa"];
+                return ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa", "Operaciones"];
             }
 
             // Caso especial: Katherine Lewis (ve áreas administrativas/soporte)

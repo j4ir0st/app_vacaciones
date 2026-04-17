@@ -31,6 +31,8 @@ export class NuevaSolicitudComponent implements OnInit {
     // Usuarios para selección (Jefes/Gerentes)
     usuarios: Usuario[] = [];
     cargandoUsuarios = false;
+    textoBusquedaUsuario = '';
+    mostrarResultados = false;
 
     get usuarioActual() {
         return this.authService.usuarioActual;
@@ -39,6 +41,20 @@ export class NuevaSolicitudComponent implements OnInit {
     // Determina si el formulario ha sido modificado
     get esSucio(): boolean {
         return this.formulario?.dirty || false;
+    }
+
+    // Filtra la lista de usuarios activos según el texto ingresado en el buscador
+    get usuariosFiltrados(): Usuario[] {
+        const busqueda = this.textoBusquedaUsuario.toLowerCase().trim();
+        // Solo mostramos usuarios activos
+        const usuariosActivos = this.usuarios.filter(u => u.is_active);
+
+        if (!busqueda) return usuariosActivos;
+
+        return usuariosActivos.filter(u => {
+            const nombreCompleto = `${u.first_name} ${u.last_name}`.toLowerCase();
+            return nombreCompleto.includes(busqueda);
+        });
     }
 
     // Fecha mínima para la solicitud (vacía para permitir regularización de fechas pasadas)
@@ -130,7 +146,7 @@ export class NuevaSolicitudComponent implements OnInit {
         if (this.authService.esAprobador) {
             if (areaOriginal === 'Operaciones') {
                 // Usuarios de Operaciones ven áreas operativas específicas
-                areasAFiltar = ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa"];
+                areasAFiltar = ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa", "Operaciones"];
             } else if (username === 'klewis' || username === 'klewism' || nombreUser.toLowerCase().includes('katherine lewis')) {
                 // Caso específico para Katherine Lewis (acceso multi-área)
                 areasAFiltar = ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
@@ -198,13 +214,21 @@ export class NuevaSolicitudComponent implements OnInit {
         }
     }
 
+    // Actualiza el colaborador en el formulario y cierra los resultados de búsqueda
+    seleccionarUsuario(u: any): void {
+        this.formulario.get('usuario_id')?.setValue(u.url);
+        this.textoBusquedaUsuario = ''; // Limpiar búsqueda al seleccionar
+        this.mostrarResultados = false;
+    }
+
     // Obtiene el nombre completo del colaborador seleccionado para mostrarlo en el resumen
     getNombreUsuarioSeleccionado(): string {
         const urlVal = this.formulario.get('usuario_id')?.value;
+        if (!urlVal) return 'Sin seleccionar';
         if (urlVal === this.usuarioActual?.url) return this.authService.nombreCompleto;
 
         const user = this.usuarios.find(u => u.url === urlVal);
-        return user ? this.usuarioService.nombreCompleto(user) : 'Cargando...';
+        return user ? `${user.first_name} ${user.last_name}` : 'Usuario';
     }
 
     // Envía la solicitud de vacaciones a la API del servidor
@@ -239,12 +263,24 @@ export class NuevaSolicitudComponent implements OnInit {
             fecha_jefe = fechaActual;
         }
 
+        // Determinación del Área de la Solicitud (Debe ser la del seleccionado, no la del logueado)
+        let urlAreaReal = '';
+        const selectedUrl = datos.usuario_id;
+
+        if (selectedUrl === this.usuarioActual?.url) {
+            urlAreaReal = this.usuarioActual?.area_id?.url || '';
+        } else {
+            // Buscamos al usuario en la lista cargada para obtener su área real
+            const selectedUser = this.usuarios.find(u => u.url === selectedUrl);
+            urlAreaReal = selectedUser?.area_id?.url || this.usuarioActual?.area_id?.url || '';
+        }
+
         const payload = {
             ...datos,
             total_periodo: this.diasCalculados,
             fecha_solicitud: fechaActual,
             estado_solicitud: estado as any,
-            area_id: this.usuarioActual?.area_id?.url || '', // Se envía la URL del área para compatibilidad
+            area_id: urlAreaReal,
             jefe_id: jefe_id,
             fecha_jefe: fecha_jefe,
             gerente_id: gerente_id,
@@ -271,5 +307,16 @@ export class NuevaSolicitudComponent implements OnInit {
     // Emite el evento de finalización para cerrar el modal o refrescar la vista
     finalizar(): void {
         this.solicitudCreada.emit();
+    }
+
+    // Genera las iniciales de un nombre para el avatar genérico
+    obtenerIniciales(nombre: string): string {
+        if (!nombre) return 'U';
+        return nombre.split(' ')
+            .filter(n => n)
+            .map(n => n[0])
+            .join('')
+            .substring(0, 2)
+            .toUpperCase();
     }
 }

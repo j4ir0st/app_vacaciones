@@ -212,7 +212,7 @@ export class ReportesComponent implements OnInit {
             if (area === 'operaciones') {
                 const areasOperaciones = [
                     'distribución', 'atenciones', 'almacenes', 'facturación',
-                    'desarrollo software', 'logística inversa'
+                    'desarrollo software', 'logística inversa', 'operaciones'
                 ];
                 return lista.filter(u => {
                     const areaU = (u.area_id?.nombre || '').toLowerCase();

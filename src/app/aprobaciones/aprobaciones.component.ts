@@ -204,7 +204,7 @@ export class AprobacionesComponent implements OnInit {
 
         if (esGerenteOJefe) {
             if (areaUsuario === 'operaciones') {
-                areas = ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa"];
+                areas = ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa", "Operaciones"];
             } else if (username === 'klewis' || nombreUsuario.includes('katherine lewis')) {
                 areas = ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
             } else {

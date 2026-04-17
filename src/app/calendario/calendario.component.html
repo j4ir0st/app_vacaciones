@@ -20,15 +20,60 @@
             </div>
         </div>
 
+        <!-- Combobox de Usuario con buscador -->
         <div class="filtro-grupo">
-            <div class="select-wrapper">
-                <select [(ngModel)]="usuarioSeleccionado" (change)="onUsuarioChange()">
-                    <option value="">Filtrar por Usuario</option>
-                    <option *ngFor="let usu of usuariosParaDropdown" [value]="usu.url">
-                        {{ usu.first_name }} {{ usu.last_name }}
-                    </option>
-                </select>
+            <div class="combobox-contenedor" [class.abierto]="mostrarResultadosUsuario">
+                <div class="combobox-control" (click)="mostrarResultadosUsuario = !mostrarResultadosUsuario">
+                    <div class="seleccion-actual" *ngIf="!mostrarResultadosUsuario">
+                        <span class="nombre-sel" [class.placeholder]="!usuarioSeleccionado">{{ getNombreUsuarioSeleccionado() }}</span>
+                    </div>
+                    <input type="text" #txtBusquedaCal *ngIf="mostrarResultadosUsuario"
+                        [(ngModel)]="textoBusquedaUsuario"
+                        (click)="$event.stopPropagation()"
+                        (keyup.enter)="txtBusquedaCal.blur()"
+                        placeholder="Escriba para buscar..."
+                        class="input-busqueda-usuario" autofocus>
+
+                    <div class="combobox-iconos">
+                        <!-- Botón limpiar selección -->
+                        <svg *ngIf="usuarioSeleccionado && !mostrarResultadosUsuario"
+                            (click)="$event.stopPropagation(); limpiarSeleccionUsuario()"
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            class="icon-clear">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                            class="icon-chevron">
+                            <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Lista de resultados -->
+                <div class="combobox-dropdown" *ngIf="mostrarResultadosUsuario">
+                    <div class="dropdown-item" *ngFor="let u of usuariosBuscados"
+                        (click)="seleccionarUsuarioCombobox(u)">
+                        <div class="item-avatar">
+                            <img *ngIf="u.avatar" [src]="u.avatar" alt="Avatar" />
+                            <span *ngIf="!u.avatar" class="iniciales">{{ obtenerIniciales(u.first_name + ' ' + u.last_name) }}</span>
+                        </div>
+                        <div class="item-info">
+                            <span class="item-nombre">{{ u.first_name }} {{ u.last_name }}</span>
+                            <span class="item-area">{{ u.area_id.nombre }}</span>
+                        </div>
+                    </div>
+
+                    <div class="dropdown-vacio" *ngIf="usuariosBuscados.length === 0 && textoBusquedaUsuario">
+                        No se encontraron resultados
+                    </div>
+                    <div class="dropdown-vacio" *ngIf="usuariosBuscados.length === 0 && !textoBusquedaUsuario">
+                        No hay usuarios en esta área
+                    </div>
+                </div>
             </div>
+            <!-- Backdrop para cerrar al hacer clic fuera -->
+            <div class="combobox-overlay" *ngIf="mostrarResultadosUsuario" (click)="mostrarResultadosUsuario = false"></div>
         </div>
 
         <button class="btn-refrescar" (click)="limpiarFiltros()" title="Limpiar filtros">

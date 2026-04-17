@@ -70,9 +70,14 @@ export class UsuarioService {
     }
 
     // Obtiene usuarios filtrando por nombre de área (puede recibir varios nombres separados por comas)
+    // Implementa recursividad para manejar la paginación y filtra solo usuarios activos.
     obtenerUsuariosPorNombreArea(nombresArea: string): Observable<Usuario[]> {
-        return this.http.get<any>(`${this.URL_USUARIOS}&area_nombre=${encodeURIComponent(nombresArea)}`).pipe(
-            map(resp => Array.isArray(resp) ? resp : (resp.results || []))
+        const url = `${this.URL_USUARIOS}&area_nombre=${encodeURIComponent(nombresArea)}&is_active=true`;
+
+        return this.http.get<any>(url).pipe(
+            expand((resp: any) => resp.next ? this.http.get<any>(this.fixUrl(resp.next)) : EMPTY),
+            map((resp: any) => Array.isArray(resp) ? resp : (resp.results || [])),
+            reduce((acc: Usuario[], curr: Usuario[]) => acc.concat(curr), [])
         );
     }
 

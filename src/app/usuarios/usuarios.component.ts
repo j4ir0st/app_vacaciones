@@ -99,7 +99,7 @@ export class UsuariosComponent implements OnInit {
             if (area === 'operaciones') {
                 const areasOperaciones = [
                     'distribución', 'atenciones', 'almacenes', 'facturación',
-                    'desarrollo software', 'logística inversa'
+                    'desarrollo software', 'logística inversa', 'operaciones'
                 ];
                 return lista.filter(u => {
                     const areaU = (u.area_id?.nombre || '').toLowerCase();
@@ -131,7 +131,7 @@ export class UsuariosComponent implements OnInit {
 
         // 2. Filtro por texto de búsqueda
         if (!this.textoBusqueda.trim()) return filtrados;
-        
+
         const busq = this.textoBusqueda.toLowerCase();
         return filtrados.filter(u =>
             `${u.first_name} ${u.last_name} ${u.username} ${u.area_id?.nombre || u.area}`.toLowerCase().includes(busq)

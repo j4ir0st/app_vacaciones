@@ -64,12 +64,16 @@ export class CalendarioComponent implements OnInit {
     // Detalle del evento seleccionado
     eventoSeleccionado: any = null;
 
+    // Combobox de usuario
+    textoBusquedaUsuario = '';
+    mostrarResultadosUsuario = false;
+
     constructor(
         private solicitudService: SolicitudService,
         private usuarioService: UsuarioService,
         public vacacionesService: VacacionesService,
         private areaService: AreaService,
-        private authService: AuthService
+        public authService: AuthService
     ) { }
 
     ngOnInit(): void {
@@ -158,6 +162,82 @@ export class CalendarioComponent implements OnInit {
         });
     }
 
+    // Getter para el combobox buscador de usuarios (filtra por nombre/apellido y área activa)
+    get usuariosBuscados(): Usuario[] {
+        const base = this.usuariosParaDropdown.filter(u => u.is_active);
+        const busqueda = this.textoBusquedaUsuario.toLowerCase().trim();
+        if (!busqueda) return base;
+        return base.filter(u => {
+            const nombreCompleto = `${u.first_name} ${u.last_name}`.toLowerCase();
+            return nombreCompleto.includes(busqueda);
+        });
+    }
+
+    // Obtiene el nombre del usuario seleccionado para mostrar en el Combobox
+    getNombreUsuarioSeleccionado(): string {
+        if (!this.usuarioSeleccionado) return 'Filtrar por Usuario';
+        const user = this.usuariosFiltrados.find(u => u.url === this.usuarioSeleccionado);
+        return user ? `${user.first_name} ${user.last_name}` : 'Filtrar por Usuario';
+    }
+
+    // Selecciona un usuario del combobox
+    seleccionarUsuarioCombobox(u: any): void {
+        this.usuarioSeleccionado = u.url || '';
+        this.textoBusquedaUsuario = '';
+        this.mostrarResultadosUsuario = false;
+        this.actualizarCalendario();
+    }
+
+    // Limpia la selección de usuario
+    limpiarSeleccionUsuario(): void {
+        this.usuarioSeleccionado = '';
+        this.textoBusquedaUsuario = '';
+        this.mostrarResultadosUsuario = false;
+        this.actualizarCalendario();
+    }
+
+    // Genera iniciales para el avatar
+    obtenerIniciales(nombre: string): string {
+        if (!nombre) return 'U';
+        return nombre.split(' ')
+            .filter(n => n)
+            .map(n => n[0])
+            .join('')
+            .substring(0, 2)
+            .toUpperCase();
+    }
+
+    // Resuelve el nombre del área a partir del usuario asociado a la solicitud
+    private resolverAreaDeSolicitud(s: SolicitudVacaciones): string {
+        // Intentar resolver por el usuario de la solicitud
+        if (typeof s.usuario_id === 'string') {
+            const usuario = this.todosUsuarios.find(u => u.url === s.usuario_id);
+            if (usuario) {
+                return (usuario.area_id?.nombre || usuario.area || '').trim().toLowerCase();
+            }
+        } else if (s.usuario_id && typeof s.usuario_id === 'object') {
+            const nombreCompleto = (s.usuario_id.fullname || '').trim().toLowerCase();
+            const usuario = this.todosUsuarios.find(u =>
+                `${u.first_name} ${u.last_name}`.trim().toLowerCase() === nombreCompleto
+            );
+            if (usuario) {
+                return (usuario.area_id?.nombre || usuario.area || '').trim().toLowerCase();
+            }
+        }
+
+        // Fallback: intentar resolver el area_id como URL de área
+        if (typeof s.area_id === 'string') {
+            const areaObj = this.todasAreas.find(a => a.url === s.area_id);
+            if (areaObj) {
+                return areaObj.nombre.trim().toLowerCase();
+            }
+            // Si no es URL, podría ser el nombre directo
+            return s.area_id.trim().toLowerCase();
+        }
+
+        return '';
+    }
+
     // Filtra y actualiza los eventos en el calendario
     actualizarCalendario(): void {
         const mapaUsuarios = new Map<string, Usuario>(this.todosUsuarios.map(u => [u.url, u]));
@@ -181,12 +261,11 @@ export class CalendarioComponent implements OnInit {
                 const areaFiltro = (this.areaSeleccionada || '').trim().toLowerCase();
                 const usuarioFiltro = this.usuarioSeleccionado || '';
 
-                // Identificar área de la solicitud
-                const areaSoliRaw = typeof s.area_id === 'string' ? s.area_id : (s as any).area_nombre || '';
-                const areaFinal = areaSoliRaw.trim().toLowerCase();
-
-                // 2. Filtro por Área (si hay una seleccionada)
-                if (areaFiltro && areaFinal !== areaFiltro) return false;
+                // 2. Filtro por Área: resolver el nombre del área desde el usuario de la solicitud
+                if (areaFiltro) {
+                    const areaSolicitud = this.resolverAreaDeSolicitud(s);
+                    if (areaSolicitud !== areaFiltro) return false;
+                }
 
                 // 3. Filtro por Usuario (si hay uno seleccionado)
                 if (usuarioFiltro) {
@@ -261,6 +340,8 @@ export class CalendarioComponent implements OnInit {
     // Eventos de cambio en filtros
     onAreaChange(): void {
         this.usuarioSeleccionado = ''; // Resetear usuario al cambiar área
+        this.textoBusquedaUsuario = '';
+        this.mostrarResultadosUsuario = false;
         this.actualizarCalendario();
     }
 
@@ -271,6 +352,8 @@ export class CalendarioComponent implements OnInit {
     limpiarFiltros(): void {
         this.areaSeleccionada = this.areasFiltradas.length === 1 ? this.areasFiltradas[0] : '';
         this.usuarioSeleccionado = '';
+        this.textoBusquedaUsuario = '';
+        this.mostrarResultadosUsuario = false;
         this.cargarEventos(); // Recargar todo del servidor
     }
 

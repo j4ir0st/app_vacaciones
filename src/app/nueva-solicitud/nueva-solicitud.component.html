@@ -30,24 +30,69 @@
     <!-- Contenido de los Pasos -->
     <div class="stepper-contenido" *ngIf="!exito">
         <form [formGroup]="formulario">
-            
+
             <!-- PASO 1: DATOS PRINCIPALES -->
             <div class="paso-panel" *ngIf="pasoActual === 1">
                 <h3 class="panel-titulo">Tipo Solicitud y Fechas</h3>
                 <p class="panel-subt">Seleccione el tipo de licencia y el rango de fechas</p>
 
-                <!-- Selección de Usuario (Solo Jefes/Gerentes) -->
+                <!-- Selección de Usuario (Buscador Inteligente / Combobox) -->
                 <div class="form-campo" *ngIf="authService.esJefeOGerente">
                     <label>Usuario a Solicitar</label>
-                    <div class="select-wrapper">
-                        <select formControlName="usuario_id" [class.cargando]="cargandoUsuarios">
-                            <option [value]="usuarioActual?.url">Mí mismo ({{ authService.nombreCompleto }})</option>
-                            <option *ngFor="let u of usuarios" [value]="u.url">
-                                {{ u.first_name }} {{ u.last_name }}
-                            </option>
-                        </select>
-                        <div class="loader-chico" *ngIf="cargandoUsuarios"></div>
+                    <div class="combobox-contenedor" [class.abierto]="mostrarResultados">
+                        <!-- Campo de visualización / búsqueda -->
+                        <div class="combobox-control" (click)="mostrarResultados = !mostrarResultados">
+                            <div class="seleccion-actual" *ngIf="!mostrarResultados">
+                                <span class="nombre-sel">{{ getNombreUsuarioSeleccionado() }}</span>
+                            </div>
+                            <input type="text" #txtBusqueda *ngIf="mostrarResultados" [(ngModel)]="textoBusquedaUsuario"
+                                [ngModelOptions]="{standalone: true}" (keyup.enter)="txtBusqueda.blur()"
+                                (click)="$event.stopPropagation()" placeholder="Escriba para buscar..."
+                                class="input-busqueda-usuario" autofocus>
+
+                            <div class="combobox-iconos">
+                                <div class="loader-chico-inline" *ngIf="cargandoUsuarios"></div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                    class="icon-chevron">
+                                    <polyline points="6 9 12 15 18 9" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Lista de resultados -->
+                        <div class="combobox-dropdown" *ngIf="mostrarResultados">
+                            <!-- Opción "Mí mismo" siempre visible al inicio si no hay búsqueda intensa -->
+                            <div class="dropdown-item" *ngIf="!textoBusquedaUsuario"
+                                (click)="seleccionarUsuario({url: usuarioActual?.url || ''})">
+                                <div class="item-avatar">
+                                    <span class="iniciales">{{ obtenerIniciales(authService.nombreCompleto) }}</span>
+                                </div>
+                                <div class="item-info">
+                                    <span class="item-nombre">Yo ({{ authService.nombreCompleto }})</span>
+                                    <span class="item-area">{{ usuarioActual?.area_id?.nombre }}</span>
+                                </div>
+                            </div>
+
+                            <div class="dropdown-item" *ngFor="let u of usuariosFiltrados"
+                                (click)="seleccionarUsuario(u)">
+                                <div class="item-avatar">
+                                    <img *ngIf="u.avatar" [src]="u.avatar" alt="Avatar" />
+                                    <span *ngIf="!u.avatar" class="iniciales">{{ obtenerIniciales(u.first_name + ' ' +
+                                        u.last_name) }}</span>
+                                </div>
+                                <div class="item-info">
+                                    <span class="item-nombre">{{ u.first_name }} {{ u.last_name }}</span>
+                                    <span class="item-area">{{ u.area_id.nombre }}</span>
+                                </div>
+                            </div>
+
+                            <div class="dropdown-vacio" *ngIf="usuariosFiltrados.length === 0 && textoBusquedaUsuario">
+                                No se encontraron resultados
+                            </div>
+                        </div>
                     </div>
+                    <!-- Backdrop para cerrar al hacer clic fuera -->
+                    <div class="combobox-overlay" *ngIf="mostrarResultados" (click)="mostrarResultados = false"></div>
                 </div>
 
                 <div class="form-campo">
@@ -86,7 +131,7 @@
                 <p class="panel-subt">Explique brevemente la razón de su pedido</p>
 
                 <div class="form-campo">
-                    <textarea formControlName="motivo" rows="5" 
+                    <textarea formControlName="motivo" rows="5"
                         placeholder="Ej: Vacaciones familiares programadas..."></textarea>
                     <div class="valid-hint" *ngIf="formulario.get('motivo')?.value?.length < 5">
                         Mínimo 5 caracteres requeridos
@@ -106,12 +151,13 @@
                     </div>
                     <div class="resumen-item">
                         <label>Tipo</label>
-                        <span>{{ formulario.get('tipo_solicitud')?.value === 'AT' ? 'Vacaciones Autorizadas' : 'Adelanto' }}</span>
+                        <span>{{ formulario.get('tipo_solicitud')?.value === 'AT' ? 'Vacaciones Autorizadas' :
+                            'Adelanto' }}</span>
                     </div>
                     <div class="resumen-item">
                         <label>Periodo</label>
-                        <span>{{ formulario.get('fecha_inicio')?.value | date:'dd/MM/yyyy' }} - 
-                              {{ formulario.get('fecha_final')?.value | date:'dd/MM/yyyy' }}</span>
+                        <span>{{ formulario.get('fecha_inicio')?.value | date:'dd/MM/yyyy' }} -
+                            {{ formulario.get('fecha_final')?.value | date:'dd/MM/yyyy' }}</span>
                     </div>
                     <div class="resumen-item">
                         <label>Total Días</label>
@@ -124,13 +170,18 @@
                 </div>
 
                 <div class="info-proceso">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10" />
                         <path d="M12 16v-4" />
                         <path d="M12 8h.01" />
                     </svg>
-                    <p *ngIf="!authService.esJefeOGerente">Al enviar, su solicitud quedará en estado <strong>Pendiente</strong> a la espera de aprobación de su jefe directo.</p>
-                    <p *ngIf="authService.esJefeOGerente">Al ser jefe/gerente, su solicitud se registrará como <strong>Aprobada</strong> automáticamente.</p>
+                    <p *ngIf="!authService.esJefeOGerente">Al enviar, su solicitud quedará en estado
+                        <strong>Pendiente</strong> a la espera de aprobación de su jefe directo.
+                    </p>
+                    <p *ngIf="authService.esJefeOGerente">Al ser jefe/gerente, su solicitud se registrará como
+                        <strong>Aprobada</strong> automáticamente.
+                    </p>
                 </div>
             </div>
 
@@ -144,9 +195,8 @@
         <button class="btn-secundario" (click)="pasoActual === 1 ? cancelar.emit() : anteriorPaso()">
             {{ pasoActual === 1 ? 'Cancelar' : 'Anterior' }}
         </button>
-        
-        <button class="btn-primario" *ngIf="pasoActual < totalPasos" 
-            (click)="siguientePaso()" [disabled]="!pasoValido">
+
+        <button class="btn-primario" *ngIf="pasoActual < totalPasos" (click)="siguientePaso()" [disabled]="!pasoValido">
             Siguiente
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="5" y1="12" x2="19" y2="12" />
@@ -169,8 +219,9 @@
             </svg>
         </div>
         <h2>¡Solicitud Enviada con Éxito!</h2>
-        <p>Su solicitud ha sido registrada correctamente. Puede hacer seguimiento de su estado en el panel principal.</p>
-        
+        <p>Su solicitud ha sido registrada correctamente. Puede hacer seguimiento de su estado en el panel principal.
+        </p>
+
         <div class="pasos-siguientes">
             <h4>¿Qué sucederá después?</h4>
             <ol>
@@ -182,4 +233,4 @@
 
         <button class="btn-primario" (click)="finalizar()">Volver al Panel</button>
     </div>
-</div>
+</div>

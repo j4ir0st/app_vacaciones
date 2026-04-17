@@ -280,3 +280,188 @@
     color: #333;
     font-weight: 500;
 }
+
+/* ========================================
+   Combobox / Buscador de Usuarios (Calendario)
+   ======================================== */
+.combobox-contenedor {
+    position: relative;
+    z-index: 1001;
+}
+
+.combobox-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid #eef0f2;
+    border-radius: 10px;
+    background: #f8fafb;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    min-height: 48px;
+}
+
+.combobox-contenedor.abierto .combobox-control {
+    border-color: #c41e3a;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
+}
+
+.seleccion-actual {
+    flex: 1;
+}
+
+.nombre-sel {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.nombre-sel.placeholder {
+    font-weight: 400;
+    color: #4a5568;
+}
+
+.input-busqueda-usuario {
+    flex: 1;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 0 0 6px !important;
+    font-size: 0.95rem !important;
+    color: #1e293b !important;
+    box-shadow: none !important;
+    font-family: inherit;
+}
+
+.input-busqueda-usuario:focus {
+    outline: none !important;
+}
+
+.combobox-iconos {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #94a3b8;
+}
+
+.icon-chevron {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.3s ease;
+}
+
+.combobox-contenedor.abierto .icon-chevron {
+    transform: rotate(180deg);
+    color: #c41e3a;
+}
+
+.icon-clear {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+
+.icon-clear:hover {
+    color: #c41e3a;
+}
+
+/* Dropdown de Resultados */
+.combobox-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 100%;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    max-height: 280px;
+    overflow-y: auto;
+    animation: dropdownSlide 0.25s ease-out;
+    z-index: 1002;
+}
+
+@keyframes dropdownSlide {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-item {
+    padding: 0.7rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background: #f8fafc;
+}
+
+.item-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #eff6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.item-avatar .iniciales {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #3b82f6;
+}
+
+.item-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.item-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-nombre {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+.item-area {
+    font-size: 0.72rem;
+    color: #94a3b8;
+}
+
+.dropdown-vacio {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+/* Overlay / Backdrop */
+.combobox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    background: transparent;
+}
