@@ -123,6 +123,46 @@
                         <span class="dias-count">{{ diasCalculados }} día(s) solicitado(s)</span>
                     </div>
                 </div>
+
+                <!-- Verificando conflictos -->
+                <div class="conflictos-verificando" *ngIf="verificandoConflictos">
+                    <div class="spinner-mini-inline"></div>
+                    <span>Verificando disponibilidad de fechas...</span>
+                </div>
+
+                <!-- Alerta de Conflictos de Fechas -->
+                <div class="conflictos-alerta" *ngIf="conflictosFechas.length > 0 && !conflictosAceptados">
+                    <div class="conflictos-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                        <strong>Conflicto de Fechas Detectado</strong>
+                    </div>
+                    <div class="conflictos-lista">
+                        <div class="conflicto-item" *ngFor="let c of conflictosFechas">
+                            <span class="conflicto-nombre">{{ c.nombre }}</span>
+                            <span class="conflicto-detalle">({{ c.area }} - {{ c.puesto }})</span>
+                            <span class="conflicto-estado">tiene una solicitud <strong>{{ c.estado }}</strong></span>
+                            <span class="conflicto-fechas">del {{ c.fechaInicio }} al {{ c.fechaFinal }}</span>
+                        </div>
+                    </div>
+                    <p class="conflictos-pregunta">¿Desea continuar con la solicitud a pesar de estos conflictos?</p>
+                    <button class="btn-aceptar-conflicto" (click)="aceptarConflictos()">
+                        Sí, continuar de todas formas
+                    </button>
+                </div>
+
+                <!-- Conflictos aceptados (pequeño aviso) -->
+                <div class="conflictos-aceptados" *ngIf="conflictosFechas.length > 0 && conflictosAceptados">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                        <line x1="12" y1="9" x2="12" y2="13" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    <span>Se registrará un aviso de conflicto en las observaciones de esta solicitud.</span>
+                </div>
             </div>
 
             <!-- PASO 2: MOTIVO -->

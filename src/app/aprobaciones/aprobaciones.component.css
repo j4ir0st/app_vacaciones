@@ -29,6 +29,65 @@
     margin-top: 0.25rem;
 }
 
+/* Buscador en el header */
+.header-busqueda {
+    display: flex;
+    align-items: center;
+}
+
+.input-busqueda-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #f8fafb;
+    border: 1.5px solid #eef0f2;
+    border-radius: 10px;
+    padding: 0 0.75rem;
+    min-width: 280px;
+    transition: all 0.2s ease;
+}
+
+.input-busqueda-wrapper:focus-within {
+    border-color: #c41e3a;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
+}
+
+.icono-busqueda {
+    width: 18px;
+    height: 18px;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.input-busqueda-aprobaciones {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 0.65rem 0.6rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+    color: #1e293b;
+    outline: none;
+}
+
+.input-busqueda-aprobaciones::placeholder {
+    color: #94a3b8;
+}
+
+.icono-limpiar {
+    width: 16px;
+    height: 16px;
+    color: #94a3b8;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.2s;
+}
+
+.icono-limpiar:hover {
+    color: #c41e3a;
+}
+
 .filtros-container {
     background: #f1f5f9;
     padding: 0.4rem;
@@ -412,6 +471,15 @@
     font-size: 13.5px;
 }
 
+.titulo-cronologia {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #334155;
+    margin: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
 .input-observacion {
     width: 100%;
     min-height: 70px;
@@ -498,6 +566,13 @@
 .step-date {
     font-size: 12px;
     color: #64748b;
+}
+
+.step-firmante {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #475569;
+    font-style: italic;
 }
 
 /* Footer Acciones */

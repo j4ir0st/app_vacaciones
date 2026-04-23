@@ -43,6 +43,9 @@ export class AprobacionesComponent implements OnInit {
         'Rechazado': 0
     };
 
+    // Buscador de texto para filtrar solicitudes por nombre
+    textoBusqueda = '';
+
     // Estado para la Vista Detalle
     solicitudDetalle: FilaSolicitud | null = null;
     observacionDetalle: string = '';
@@ -65,7 +68,7 @@ export class AprobacionesComponent implements OnInit {
     constructor(
         public authService: AuthService,
         private solicitudService: SolicitudService,
-        private usuarioService: UsuarioService,
+        public usuarioService: UsuarioService,
         public vacacionesService: VacacionesService,
         private refreshService: RefreshService
     ) { }
@@ -115,6 +118,9 @@ export class AprobacionesComponent implements OnInit {
 
         forkJoin([peticionSolicitudes, peticionUsuarios]).subscribe({
             next: ([listaSolicitudes, listaUsuarios]: [any[], any[]]) => {
+                // Construir mapa de usuarios para resolver nombres de firmantes
+                this.usuarioService.construirMapaUsuarios(listaUsuarios);
+
                 this.todasSolicitudes = listaSolicitudes.map((sol: SolicitudVacaciones): FilaSolicitud => {
                     return this.mapearSolicitud(sol, listaUsuarios);
                 }).sort((a: FilaSolicitud, b: FilaSolicitud) => {
@@ -233,9 +239,19 @@ export class AprobacionesComponent implements OnInit {
             'Rechazado': 'RC'
         };
         const codigoBuscado = mapaFiltroACodigo[this.filtroEstado];
-        this.solicitudesFiltradas = this.todasSolicitudes.filter(
+        let filtradas = this.todasSolicitudes.filter(
             (sol: FilaSolicitud) => this.vacacionesService.obtenerCodigoEstado(sol.estado_solicitud) === codigoBuscado
         );
+
+        // Filtro por texto de búsqueda (nombre o apellido)
+        const busq = this.textoBusqueda.toLowerCase().trim();
+        if (busq) {
+            filtradas = filtradas.filter(sol =>
+                sol.nombreUsuario.toLowerCase().includes(busq)
+            );
+        }
+
+        this.solicitudesFiltradas = filtradas;
     }
 
     /**
@@ -465,5 +481,30 @@ export class AprobacionesComponent implements OnInit {
             'AS': 'estado-supervisor'
         };
         return clasesCSS[codigoEstado] || '';
+    }
+
+    /**
+     * Determina si un gerente puede rechazar una solicitud ya aprobada.
+     * Solo si: es gerente, la solicitud está aprobada (AP) y la fecha de inicio es futura.
+     */
+    puedeRechazarAprobada(): boolean {
+        if (!this.solicitudDetalle) return false;
+        if (!this.authService.esGerente) return false;
+        const codigoEstado = this.vacacionesService.obtenerCodigoEstado(this.solicitudDetalle.estado_solicitud);
+        if (codigoEstado !== 'AP') return false;
+
+        // Solo permitir si la fecha de inicio es mayor al día actual
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const fechaInicio = new Date(this.solicitudDetalle.fecha_inicio);
+        fechaInicio.setHours(0, 0, 0, 0);
+        return fechaInicio > hoy;
+    }
+
+    /**
+     * Aplicar filtro reactivo al escribir en el buscador.
+     */
+    onBusquedaChange(): void {
+        this.aplicarFiltroSolicitudes();
     }
 }

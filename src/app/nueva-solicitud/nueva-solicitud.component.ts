@@ -1,10 +1,13 @@
 import { Component, Output, EventEmitter, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { EMPTY } from 'rxjs';
+import { expand, map, reduce } from 'rxjs/operators';
 import { AuthService } from '../core/services/auth.service';
 import { SolicitudService } from '../core/services/solicitud.service';
 import { VacacionesService } from '../core/services/vacaciones.service';
 import { UsuarioService } from '../core/services/usuario.service';
 import { Usuario } from '../core/models/usuario.model';
+import { SolicitudVacaciones } from '../core/models/solicitud-vacaciones.model';
 
 @Component({
     selector: 'app-nueva-solicitud',
@@ -33,6 +36,11 @@ export class NuevaSolicitudComponent implements OnInit {
     cargandoUsuarios = false;
     textoBusquedaUsuario = '';
     mostrarResultados = false;
+
+    // Conflictos de fechas
+    conflictosFechas: { nombre: string; area: string; puesto: string; estado: string; fechaInicio: string; fechaFinal: string }[] = [];
+    verificandoConflictos = false;
+    conflictosAceptados = false;
 
     get usuarioActual() {
         return this.authService.usuarioActual;
@@ -67,7 +75,10 @@ export class NuevaSolicitudComponent implements OnInit {
         if (this.pasoActual === 1) {
             const f = this.formulario.value;
             // Validamos que tenga fechas y días mayores a 0
-            return !!f.fecha_inicio && !!f.fecha_final && this.diasCalculados > 0 && !!f.usuario_id;
+            const camposOk = !!f.fecha_inicio && !!f.fecha_final && this.diasCalculados > 0 && !!f.usuario_id;
+            // Bloquear si hay conflictos sin aceptar (excepto gerentes que no ven conflictos)
+            if (camposOk && this.conflictosFechas.length > 0 && !this.conflictosAceptados) return false;
+            return camposOk;
         }
         if (this.pasoActual === 2) {
             return (this.formulario.get('motivo')?.value || '').length >= 5;
@@ -106,10 +117,14 @@ export class NuevaSolicitudComponent implements OnInit {
         // Suscripciones para cálculos automáticos unidireccionales
         this.formulario.get('fecha_inicio')?.valueChanges.subscribe(() => {
             this.recalcularAlCambiarDias(this.formulario.get('dias')?.value);
+            this.conflictosAceptados = false;
+            this.verificarConflictosFechas();
         });
 
         this.formulario.get('dias')?.valueChanges.subscribe((val: number) => {
             this.recalcularAlCambiarDias(val);
+            this.conflictosAceptados = false;
+            this.verificarConflictosFechas();
         });
     }
 
@@ -285,7 +300,7 @@ export class NuevaSolicitudComponent implements OnInit {
             fecha_jefe: fecha_jefe,
             gerente_id: gerente_id,
             fecha_gerente: fecha_gerente,
-            obs: ''
+            obs: this.generarMensajeConflictos()
         };
 
         this.solicitudService.crearSolicitud(payload).subscribe({
@@ -319,4 +334,116 @@ export class NuevaSolicitudComponent implements OnInit {
             .substring(0, 2)
             .toUpperCase();
     }
-}
+
+    // Verifica si hay solicitudes de la misma área que se solapen con las fechas seleccionadas
+    private verificarConflictosFechas(): void {
+        const fechaInicio = this.formulario.get('fecha_inicio')?.value;
+        const fechaFinal = this.formulario.get('fecha_final')?.value;
+
+        // No verificar si no hay fechas completas o si es gerente
+        if (!fechaInicio || !fechaFinal || this.authService.esGerente) {
+            this.conflictosFechas = [];
+            return;
+        }
+
+        // Obtener el área del usuario seleccionado
+        const selectedUrl = this.formulario.get('usuario_id')?.value;
+        let areaNombre = '';
+        if (selectedUrl === this.usuarioActual?.url) {
+            areaNombre = this.usuarioActual?.area_id?.nombre || '';
+        } else {
+            const selectedUser = this.usuarios.find(u => u.url === selectedUrl);
+            areaNombre = selectedUser?.area_id?.nombre || this.usuarioActual?.area_id?.nombre || '';
+        }
+
+        if (!areaNombre) return;
+
+        this.verificandoConflictos = true;
+
+        // Consultar solicitudes del área en el backend
+        const urlSolicitudes = `${this.solicitudService.URL_SOLICITUDES}&area_nombre=${encodeURIComponent(areaNombre)}`;
+        this.solicitudService.obtenerSolicitudes(urlSolicitudes).pipe(
+            expand((resp: any) => resp.next ? this.solicitudService.obtenerSolicitudes(resp.next) : EMPTY),
+            map((resp: any) => Array.isArray(resp) ? resp : (resp.results || [])),
+            reduce((acc: any[], curr: any[]) => acc.concat(curr), [])
+        ).subscribe({
+            next: (solicitudes: SolicitudVacaciones[]) => {
+                this.verificandoConflictos = false;
+                this.detectarConflictos(solicitudes, fechaInicio, fechaFinal, selectedUrl);
+            },
+            error: () => {
+                this.verificandoConflictos = false;
+            }
+        });
+    }
+
+    // Detecta conflictos de solapamiento de fechas con solicitudes existentes
+    private detectarConflictos(solicitudes: SolicitudVacaciones[], inicio: string, fin: string, urlSolicitante: string): void {
+        const fechaIni = new Date(inicio + 'T00:00:00');
+        const fechaFin = new Date(fin + 'T23:59:59');
+
+        const estadosAVerificar = ['AP', 'AS', 'PD'];
+
+        this.conflictosFechas = solicitudes
+            .filter(s => {
+                // Solo verificar estados relevantes
+                const codigoEstado = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
+                if (!estadosAVerificar.includes(codigoEstado)) return false;
+
+                // No comparar con las solicitudes del propio usuario que está solicitando
+                const urlUsuarioSoli = typeof s.usuario_id === 'string' ? s.usuario_id : '';
+                if (urlUsuarioSoli === urlSolicitante) return false;
+
+                // Verificar solapamiento de fechas
+                const solInicio = new Date(s.fecha_inicio + 'T00:00:00');
+                const solFin = new Date(s.fecha_final + 'T23:59:59');
+                return fechaIni <= solFin && fechaFin >= solInicio;
+            })
+            .map(s => {
+                let nombre = 'Usuario';
+                let area = '';
+                let puesto = '';
+                const codigoEstado = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
+
+                if (typeof s.usuario_id === 'object' && s.usuario_id) {
+                    nombre = (s.usuario_id as any).fullname || 'Usuario';
+                    area = (s.usuario_id as any).area || '';
+                    puesto = (s.usuario_id as any).puesto || '';
+                } else if (typeof s.usuario_id === 'string') {
+                    // Buscar en la lista de usuarios cargados
+                    const usr = this.usuarios.find(u => u.url === s.usuario_id);
+                    if (usr) {
+                        nombre = `${usr.first_name} ${usr.last_name}`.trim();
+                        area = usr.area_id?.nombre || usr.area || '';
+                        puesto = usr.puesto_id?.nombre || '';
+                    }
+                }
+
+                const etiquetaEstado = codigoEstado === 'AP' ? 'aprobada' :
+                    codigoEstado === 'AS' ? 'aprobada por supervisor' : 'pendiente';
+
+                return {
+                    nombre,
+                    area,
+                    puesto,
+                    estado: etiquetaEstado,
+                    fechaInicio: s.fecha_inicio,
+                    fechaFinal: s.fecha_final
+                };
+            });
+    }
+
+    // Genera el mensaje de sistema para el campo obs cuando hay conflictos
+    private generarMensajeConflictos(): string {
+        if (this.conflictosFechas.length === 0) return '';
+
+        return this.conflictosFechas.map(c =>
+            `System Message: Ya existe ${c.nombre} (${c.area} - ${c.puesto}) que tiene una solicitud ${c.estado} para las fechas ${c.fechaInicio} al ${c.fechaFinal}.`
+        ).join(' | ');
+    }
+
+    // Acepta los conflictos detectados y permite continuar
+    aceptarConflictos(): void {
+        this.conflictosAceptados = true;
+    }
+}

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { SolicitudVacaciones, EstadoSolicitud, ResumenVacaciones } from '../models/solicitud-vacaciones.model';
 
-export type { ResumenVacaciones }; 
+export type { ResumenVacaciones };
 
 @Injectable({
     providedIn: 'root'
@@ -19,7 +19,7 @@ export class VacacionesService {
 
         const hoy = new Date();
         const ingreso = new Date(fechaIngreso);
-        
+
         // 1. MesesCumplidos
         let mesesCompletos = (hoy.getFullYear() - ingreso.getFullYear()) * 12 + (hoy.getMonth() - ingreso.getMonth());
         if (hoy.getDate() < ingreso.getDate()) {
@@ -34,7 +34,7 @@ export class VacacionesService {
         const solicitudesAprobadas = solicitudes.filter(s => this.obtenerCodigoEstado(s.estado_solicitud) === 'AP');
         const solicitudesPendientes = solicitudes.filter(s => this.obtenerCodigoEstado(s.estado_solicitud) === 'PD');
         const solicitudesRechazadas = solicitudes.filter(s => this.obtenerCodigoEstado(s.estado_solicitud) === 'RC');
-        
+
         const diasTomados = solicitudesAprobadas.reduce((total, s) => total + (s.total_periodo || 0), 0);
 
         // 4. DiasPendientes (Días de años completos menos lo gozado)
@@ -80,10 +80,10 @@ export class VacacionesService {
         return fechaCalculada;
     }
 
-    // Formatea una fecha en español (ej: "12 marzo")
+    // Formatea una fecha en español (ej: "12 marzo 2026")
     formatearFecha(fecha: string): string {
         if (!fecha) return '';
-        const opciones: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', timeZone: 'UTC' };
+        const opciones: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' };
         // Si ya es una fecha ISO completa (contiene T), no le agregamos el sufijo de medianoche UTC
         const dateObj = fecha.includes('T') ? new Date(fecha) : new Date(fecha + 'T00:00:00Z');
         return dateObj.toLocaleDateString('es-PE', opciones);

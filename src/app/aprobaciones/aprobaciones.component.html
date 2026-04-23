@@ -4,6 +4,21 @@
             <h2>Aprobación de Solicitudes</h2>
             <p class="subtitulo">Revise y gestione las solicitudes de vacaciones de los usuarios.</p>
         </div>
+        <div class="header-busqueda">
+            <div class="input-busqueda-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icono-busqueda">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input type="text" [(ngModel)]="textoBusqueda" (input)="onBusquedaChange()"
+                    placeholder="Buscar por nombre o apellido..." class="input-busqueda-aprobaciones">
+                <svg *ngIf="textoBusqueda" (click)="textoBusqueda = ''; onBusquedaChange()" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" class="icono-limpiar">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </div>
+        </div>
     </div>
 
     <!-- Filtros de Estado -->
@@ -43,7 +58,7 @@
             <div class="card-fechas">
                 <ng-container *ngIf="sol.fecha_inicio && sol.fecha_final; else sinFechasPeriodo">
                     {{ vacacionesService.formatearFechaCorta(sol.fecha_inicio) }} - {{
-                    vacacionesService.formatearFechaCorta(sol.fecha_final) }}, 2026<br><span
+                    vacacionesService.formatearFecha(sol.fecha_final) }}<br><span
                         style="color: #64748b; font-size: 0.85em;">{{ sol.total_periodo }}
                         día(s)</span>
                 </ng-container>
@@ -155,24 +170,23 @@
                         <label>Observaciones</label>
                         <textarea class="input-observacion" [(ngModel)]="observacionDetalle"
                             placeholder="Agregar comentarios o feedback acerca de esta solicitud"
-                            [disabled]="procesandoDetalle || (vacacionesService.obtenerCodigoEstado(solicitudDetalle.estado_solicitud) !== 'PD' && !(vacacionesService.obtenerCodigoEstado(solicitudDetalle.estado_solicitud) === 'AS' && authService.esGerente))"></textarea>
+                            [disabled]="procesandoDetalle || (vacacionesService.obtenerCodigoEstado(solicitudDetalle.estado_solicitud) !== 'PD' && !(vacacionesService.obtenerCodigoEstado(solicitudDetalle.estado_solicitud) === 'AS' && authService.esGerente) && !puedeRechazarAprobada())"></textarea>
                     </div>
                 </div>
             </div>
 
-            <!-- Cronología del Estatus -->
+            <!-- Cronología del Estado -->
             <div class="cronologia-container mt-20">
-                <h4 class="titulo-cronologia">Cronología del Estatus</h4>
-                <div class="timeline">
+                <h4 class="titulo-cronologia">Cronología del Estado</h4>
+                <div class="timeline mt-10">
                     <div class="timeline-step completado step-enviado">
                         <div class="step-icon"></div>
                         <div class="step-content">
                             <span class="step-title">Solicitud enviada</span>
                             <span class="step-date" *ngIf="solicitudDetalle.fecha_solicitud">{{
+                                usuarioService.resolverNombreSolicitante(solicitudDetalle) }} - {{
                                 vacacionesService.formatearFecha(solicitudDetalle.fecha_solicitud) }} {{
                                 solicitudDetalle.fecha_solicitud.substring(11, 16) }}</span>
-                            <span class="step-date" *ngIf="!solicitudDetalle.fecha_solicitud">{{
-                                vacacionesService.formatearFecha(solicitudDetalle.fecha_inicio) }}</span>
                         </div>
                     </div>
                     <div class="timeline-step step-supervisor" [class.completado]="solicitudDetalle.fecha_jefe">
@@ -183,6 +197,7 @@
                             <span class="step-title" *ngIf="solicitudDetalle.fecha_jefe">Aprobado por el
                                 Supervisor</span>
                             <span class="step-date" *ngIf="solicitudDetalle.fecha_jefe">{{
+                                usuarioService.resolverNombrePorUrl(solicitudDetalle.jefe_id) }} - {{
                                 vacacionesService.formatearFecha(solicitudDetalle.fecha_jefe) }} {{
                                 solicitudDetalle.fecha_jefe.substring(11, 16) }}</span>
                             <span class="step-date" *ngIf="!solicitudDetalle.fecha_jefe">Pendiente</span>
@@ -196,6 +211,7 @@
                             <span class="step-title" *ngIf="solicitudDetalle.fecha_gerente">Aprobado por el
                                 Gerente</span>
                             <span class="step-date" *ngIf="solicitudDetalle.fecha_gerente">{{
+                                usuarioService.resolverNombrePorUrl(solicitudDetalle.gerente_id) }} - {{
                                 vacacionesService.formatearFecha(solicitudDetalle.fecha_gerente) }} {{
                                 solicitudDetalle.fecha_gerente.substring(11, 16) }}</span>
                             <span class="step-date" *ngIf="!solicitudDetalle.fecha_gerente">Pendiente</span>
@@ -217,6 +233,16 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <polyline points="20 6 9 17 4 12" />
                     </svg> Aprobar
+                </button>
+            </div>
+
+            <!-- Botón Rechazar para Gerente en solicitudes Aprobadas con fecha futura -->
+            <div class="detalle-footer-acciones" *ngIf="!rechazoExitoso && puedeRechazarAprobada()">
+                <button class="btn-outline-danger" [disabled]="procesandoDetalle" (click)="confirmarRechazo()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg> Rechazar Solicitud Aprobada
                 </button>
             </div>
         </ng-container>

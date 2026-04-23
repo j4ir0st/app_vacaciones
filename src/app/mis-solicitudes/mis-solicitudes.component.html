@@ -56,7 +56,7 @@
             <div class="card-main">
                 <div class="card-fechas">
                     {{ vacacionesService.formatearFechaCorta(sol.fecha_inicio) }} - {{
-                    vacacionesService.formatearFechaCorta(sol.fecha_final) }} | {{ sol.total_periodo }} día(s)
+                    vacacionesService.formatearFecha(sol.fecha_final) }} | {{ sol.total_periodo }} día(s)
                 </div>
                 <div class="card-motivo" *ngIf="sol.motivo">
                     {{ sol.motivo }}
@@ -177,13 +177,14 @@
 
         <!-- Cronología del Estatus -->
         <div class="cronologia-container mt-20">
-            <h4 class="titulo-cronologia">Cronología del Estatus</h4>
+            <h4 class="titulo-cronologia">Cronología del Estado</h4>
             <div class="timeline">
                 <div class="timeline-step completado step-enviado">
                     <div class="step-icon"></div>
                     <div class="step-content">
                         <span class="step-title">Solicitud enviada</span>
                         <span class="step-date" *ngIf="solicitudDetalle.fecha_solicitud">{{
+                            usuarioService.resolverNombreSolicitante(solicitudDetalle) }} - {{
                             vacacionesService.formatearFecha(solicitudDetalle.fecha_solicitud) }} {{
                             solicitudDetalle.fecha_solicitud.substring(11, 16) }}</span>
                         <span class="step-date" *ngIf="!solicitudDetalle.fecha_solicitud">{{
@@ -198,6 +199,7 @@
                         <span class="step-title" *ngIf="solicitudDetalle.fecha_jefe">Aprobado por el
                             Supervisor</span>
                         <span class="step-date" *ngIf="solicitudDetalle.fecha_jefe">{{
+                            usuarioService.resolverNombrePorUrl(solicitudDetalle.jefe_id) }} - {{
                             vacacionesService.formatearFecha(solicitudDetalle.fecha_jefe) }} {{
                             solicitudDetalle.fecha_jefe.substring(11, 16) }}</span>
                         <span class="step-date" *ngIf="!solicitudDetalle.fecha_jefe">Pendiente</span>
@@ -211,6 +213,7 @@
                         <span class="step-title" *ngIf="solicitudDetalle.fecha_gerente">Aprobado por el
                             Gerente</span>
                         <span class="step-date" *ngIf="solicitudDetalle.fecha_gerente">{{
+                            usuarioService.resolverNombrePorUrl(solicitudDetalle.gerente_id) }} - {{
                             vacacionesService.formatearFecha(solicitudDetalle.fecha_gerente) }} {{
                             solicitudDetalle.fecha_gerente.substring(11, 16) }}</span>
                         <span class="step-date" *ngIf="!solicitudDetalle.fecha_gerente">Pendiente</span>

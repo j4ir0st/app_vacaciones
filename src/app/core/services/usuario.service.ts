@@ -169,4 +169,64 @@ export class UsuarioService {
     crearUsuarioCompleto(datos: FormData): Observable<any> {
         return this.http.post<any>(this.URL_USUARIOS, datos);
     }
+
+    // ========================================
+    // Resolución de Nombres de Firmantes
+    // ========================================
+
+    // Mapa interno para resolver URLs de usuarios a nombres completos
+    private mapaUsuarios: Map<string, Usuario> = new Map();
+    private mapaInicializado = false;
+
+    /**
+     * Construye el mapa de resolución de usuarios desde una lista.
+     * Debe llamarse una vez desde cada componente que necesite resolver nombres.
+     */
+    construirMapaUsuarios(usuarios: Usuario[]): void {
+        this.mapaUsuarios.clear();
+        usuarios.forEach(u => {
+            if (u.url) {
+                this.mapaUsuarios.set(u.url.replace(/\/$/, ''), u);
+            }
+        });
+        this.mapaInicializado = true;
+    }
+
+    /**
+     * Inicializa el mapa cargando todos los usuarios del backend.
+     * Solo lo hace si el mapa está vacío (lazy initialization).
+     */
+    inicializarMapa(): Observable<Usuario[]> {
+        if (this.mapaInicializado && this.mapaUsuarios.size > 0) {
+            return of(Array.from(this.mapaUsuarios.values()));
+        }
+
+        return this.obtenerUsuariosTodo().pipe(
+            tap(usuarios => this.construirMapaUsuarios(usuarios))
+        );
+    }
+
+    /**
+     * Resuelve el nombre completo de un usuario a partir de su URL (jefe_id, gerente_id, etc.).
+     */
+    resolverNombrePorUrl(url: string | null | undefined): string {
+        if (!url) return '';
+        const urlNormalizada = url.replace(/\/$/, '');
+        const usuario = this.mapaUsuarios.get(urlNormalizada);
+        return usuario ? `${usuario.first_name} ${usuario.last_name}`.trim() : '';
+    }
+
+    /**
+     * Resuelve el nombre del solicitante (usuario_id puede ser string URL o objeto).
+     */
+    resolverNombreSolicitante(solicitud: any): string {
+        if (!solicitud) return '';
+        if (typeof solicitud.usuario_id === 'object' && solicitud.usuario_id?.fullname) {
+            return solicitud.usuario_id.fullname;
+        }
+        if (typeof solicitud.usuario_id === 'string') {
+            return this.resolverNombrePorUrl(solicitud.usuario_id);
+        }
+        return solicitud.nombreUsuario || '';
+    }
 }

@@ -5,6 +5,7 @@ import { expand, map, catchError, switchMap, tap } from 'rxjs/operators';
 import { AuthService } from '../core/services/auth.service';
 import { SolicitudService } from '../core/services/solicitud.service';
 import { VacacionesService } from '../core/services/vacaciones.service';
+import { UsuarioService } from '../core/services/usuario.service';
 import { RefreshService } from '../core/services/refresh.service';
 import { SolicitudVacaciones, EstadoSolicitud } from '../core/models/solicitud-vacaciones.model';
 import { NuevaSolicitudComponent } from '../nueva-solicitud/nueva-solicitud.component';
@@ -44,11 +45,15 @@ export class MisSolicitudesComponent implements OnInit, OnDestroy {
         public authService: AuthService,
         private solicitudService: SolicitudService,
         public vacacionesService: VacacionesService,
+        public usuarioService: UsuarioService,
         private refreshService: RefreshService,
         private route: ActivatedRoute
     ) { }
 
     ngOnInit(): void {
+        // Inicializar mapa de usuarios para resolver nombres de firmantes
+        this.usuarioService.inicializarMapa().subscribe();
+
         this.refreshSub = timer(0, 300000).pipe(
             switchMap(() => {
                 this.cargando = true;
