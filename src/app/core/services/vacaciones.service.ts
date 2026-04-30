@@ -104,11 +104,36 @@ export class VacacionesService {
 
     formatearFechaCompleta(fecha: string): string {
         if (!fecha) return '';
-        const d = new Date(fecha.includes('T') ? fecha : fecha + 'T00:00:00Z');
-        const dia = String(d.getUTCDate()).padStart(2, '0');
-        const mes = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const anio = d.getUTCFullYear();
+        const d = new Date(fecha.includes('T') ? fecha : fecha + 'T00:00:00');
+        const dia = String(d.getDate()).padStart(2, '0');
+        const mes = String(d.getMonth() + 1).padStart(2, '0');
+        const anio = d.getFullYear();
         return `${dia}/${mes}/${anio}`;
+    }
+
+    // Nuevo: dd/mm/yyyy hh:mm:ss (am/pm)
+    // Se ignora el offset del backend para tratar la hora como local directa
+    formatearFechaHora(fecha: string): string {
+        if (!fecha) return '';
+        
+        // Extraemos solo la parte YYYY-MM-DDTHH:mm:ss ignorando milisegundos y offset
+        const match = fecha.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/);
+        const fechaLimpia = match ? match[1] : fecha;
+        
+        const d = new Date(fechaLimpia);
+        const dia = String(d.getDate()).padStart(2, '0');
+        const mes = String(d.getMonth() + 1).padStart(2, '0');
+        const anio = d.getFullYear();
+        
+        let horas = d.getHours();
+        const ampm = horas >= 12 ? 'pm' : 'am';
+        horas = horas % 12;
+        horas = horas ? horas : 12; 
+        const hStr = String(horas).padStart(2, '0');
+        const mStr = String(d.getMinutes()).padStart(2, '0');
+        const sStr = String(d.getSeconds()).padStart(2, '0');
+
+        return `${dia}/${mes}/${anio} ${hStr}:${mStr}:${sStr} (${ampm})`;
     }
 
     obtenerCodigoEstado(estado: EstadoSolicitud | undefined): string {
@@ -121,5 +146,19 @@ export class VacacionesService {
         if (!estado) return '';
         if (typeof estado === 'string') return estado;
         return Object.values(estado)[0] || '';
+    }
+
+    /**
+     * Verifica si una fecha en formato YYYY-MM-DD es posterior a la fecha actual (hoy).
+     * @param fecha Cadena de fecha en formato ISO (YYYY-MM-DD)
+     * @returns true si la fecha es estrictamente mayor que hoy
+     */
+    esFechaFutura(fecha: string): boolean {
+        if (!fecha) return false;
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        // Usamos T00:00:00 para asegurar que se interprete en la zona horaria local o consistente
+        const fInicio = new Date(fecha + 'T00:00:00');
+        return fInicio > hoy;
     }
 }

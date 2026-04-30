@@ -1,53 +1,98 @@
 <div class="pagina-reportes">
-    <div class="pagina-header">
-        <div class="header-info">
-            <h2>Reporte de Vacaciones</h2>
-            <p class="subtitulo">Consolidado de días pendientes y acumulados por colaborador.</p>
+    <div class="interfaz-filtros" *ngIf="!filaSeleccionada">
+        <div class="pagina-header">
+            <div class="header-info">
+                <h2>Reporte de Vacaciones</h2>
+                <p class="subtitulo">Consolidado de días pendientes y acumulados por colaborador.</p>
+            </div>
+            <button class="btn-descargar" (click)="descargarReporte()"
+                [disabled]="cargando || filasFiltradas.length === 0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Descargar Reporte
+            </button>
         </div>
-        <button class="btn-descargar" (click)="descargarReporte()" [disabled]="cargando || filasFiltradas.length === 0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Descargar Reporte
-        </button>
-    </div>
 
-    <div class="filtros-reporte">
-        <div class="campo-filtro">
-            <label>Colaborador</label>
-            <div class="select-wrapper">
-                <select [(ngModel)]="usuarioSeleccionado">
-                    <option value="">Todos los colaboradores</option>
-                    <option *ngFor="let u of usuariosParaFiltro" [value]="u.username">
-                        {{ u.nombre }}
-                    </option>
-                </select>
+        <div class="filtros-reporte">
+            <div class="campo-filtro">
+                <label>Colaborador</label>
+                <div class="combobox-contenedor" [class.abierto]="mostrarResultadosUsuario">
+                    <div class="combobox-control" (click)="mostrarResultadosUsuario = !mostrarResultadosUsuario">
+                        <div class="seleccion-actual" *ngIf="!mostrarResultadosUsuario">
+                            <span class="nombre-sel" [class.placeholder]="!usuarioSeleccionado">{{
+                                getNombreUsuarioSeleccionado() }}</span>
+                        </div>
+                        <input type="text" #txtBusquedaRep *ngIf="mostrarResultadosUsuario"
+                            [(ngModel)]="textoBusquedaUsuario" (click)="$event.stopPropagation()"
+                            (keyup.enter)="txtBusquedaRep.blur()" placeholder="Escriba para buscar..."
+                            class="input-busqueda-usuario" autofocus>
+
+                        <div class="combobox-iconos">
+                            <svg *ngIf="usuarioSeleccionado && !mostrarResultadosUsuario"
+                                (click)="$event.stopPropagation(); limpiarSeleccionUsuario()" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2.5" class="icon-clear">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                class="icon-chevron">
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Lista de resultados -->
+                    <div class="combobox-dropdown" *ngIf="mostrarResultadosUsuario">
+                        <div class="dropdown-item" *ngFor="let u of usuariosBuscados"
+                            (click)="seleccionarUsuarioCombobox(u)">
+                            <div class="item-avatar">
+                                <img *ngIf="u.avatar" [src]="u.avatar" alt="Avatar" />
+                                <span *ngIf="!u.avatar" class="iniciales">{{ obtenerIniciales(u.first_name + ' ' +
+                                    u.last_name) }}</span>
+                            </div>
+                            <div class="item-info">
+                                <span class="item-nombre">{{ u.first_name }} {{ u.last_name }}</span>
+                                <span class="item-area">{{ u.area_id?.nombre || u.area }} - {{ u.puesto_id?.nombre
+                                    }}</span>
+                            </div>
+                        </div>
+                        <div class="dropdown-vacio" *ngIf="usuariosBuscados.length === 0">
+                            No se encontraron resultados
+                        </div>
+                    </div>
+                </div>
+                <!-- Backdrop para cerrar al hacer clic fuera -->
+                <div class="combobox-overlay" *ngIf="mostrarResultadosUsuario"
+                    (click)="mostrarResultadosUsuario = false">
+                </div>
             </div>
-        </div>
-        <div class="campo-filtro">
-            <label>Área</label>
-            <div class="select-wrapper">
-                <select [(ngModel)]="filtroArea">
-                    <option value="">Todas las áreas</option>
-                    <option *ngFor="let area of areasDisponibles" [value]="area">{{ area }}</option>
-                </select>
+            <div class="campo-filtro">
+                <label>Área</label>
+                <div class="select-wrapper">
+                    <select [(ngModel)]="filtroArea">
+                        <option value="">Todas las áreas</option>
+                        <option *ngFor="let area of areasDisponibles" [value]="area">{{ area }}</option>
+                    </select>
+                </div>
             </div>
+            <button class="btn-reset" (click)="resetearFiltros()" title="Limpiar filtros">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <polyline points="3 3 3 8 8 8" />
+                </svg>
+            </button>
+            <button class="btn-refrescar" (click)="refrescar()" title="Refrescar datos" [class.girando]="cargando">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 4v6h-6" />
+                    <path d="M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+            </button>
         </div>
-        <button class="btn-reset" (click)="resetearFiltros()" title="Limpiar filtros">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                <polyline points="3 3 3 8 8 8"/>
-            </svg>
-        </button>
-        <button class="btn-refrescar" (click)="refrescar()" title="Refrescar datos" [class.girando]="cargando">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M23 4v6h-6" />
-                <path d="M1 20v-6h6" />
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
-        </button>
     </div>
 
     <!-- Loader superior (opcional, ahora preferimos ver la tabla cargando) -->
@@ -55,11 +100,11 @@
         <div class="spinner-shimmer"></div>
         <p class="txt-cargando">Localizando colaboradores permitidos...</p>
     </div>
-
-    <!-- Contenedor con Scroll Personalizado (Visible siempre que existan filas) -->
-    <div class="reportes-lista-container" *ngIf="todasLasFilas.length > 0">
+    <!-- Contenedor con Scroll Personalizado (Visible siempre que existan filas y NO haya una seleccionada) -->
+    <div class="reportes-lista-container" *ngIf="todasLasFilas.length > 0 && !filaSeleccionada">
         <div class="reportes-lista">
-            <div class="reporte-card animate-in" *ngFor="let fila of filasFiltradas" [ngClass]="fila.claseColor">
+            <div class="reporte-card animate-in cursor-pointer" *ngFor="let fila of filasFiltradas"
+                [ngClass]="fila.claseColor" (click)="verDetalle(fila)">
                 <div class="card-usuario">
                     <div class="usuario-main">
                         <span class="nombre-empleado">{{ fila.nombre }}</span>
@@ -70,14 +115,15 @@
                 <div class="card-metricas">
                     <div class="metrica">
                         <label>Ingreso</label>
-                        <span class="valor" style="font-size: 0.85rem;">{{ vacacionesService.formatearFechaCompleta(fila.fechaIngreso) }}</span>
+                        <span class="valor" style="font-size: 0.85rem;">{{
+                            vacacionesService.formatearFechaCompleta(fila.fechaIngreso) }}</span>
                     </div>
                     <div class="metrica">
                         <label>Acumulado</label>
                         <span class="valor">{{ fila.totalAcumulado | number:'1.1-1' }}</span>
                     </div>
                     <div class="metrica">
-                        <label>Utilizados</label>
+                        <label>Gozados</label>
                         <span class="valor">{{ fila.diasUtilizados }}</span>
                     </div>
                     <div class="metrica">
@@ -109,5 +155,69 @@
             </div>
         </div>
     </div>
-</div>
 
+    <!-- VISTA DETALLE DE USUARIO (Reportes) -->
+    <div class="detalle-usuario-reporte animate-in" *ngIf="filaSeleccionada">
+        <div class="detalle-toolbar-slim">
+            <button class="btn-atras-slim" (click)="cerrarDetalle()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                </svg>
+                atrás <span class="txt-bold">Regresar a la Galería</span>
+            </button>
+        </div>
+
+        <div class="detalle-header mt-10">
+            <div class="celda-usuario">
+                <div class="avatar-lg-circular">
+                    <span class="iniciales-lg">{{ obtenerIniciales(filaSeleccionada.nombre) }}</span>
+                </div>
+                <div class="usuario-info-lg">
+                    <span class="nombre-empleado-lg">{{ filaSeleccionada.nombre }}</span>
+                    <span class="badge-area-puesto-slim">
+                        {{ filaSeleccionada.area }} - {{ filaSeleccionada.puesto }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="detalle-acciones-header">
+                <button class="btn-descargar-detalle" (click)="descargarDetallesFila(filaSeleccionada)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Descargar Detalles
+                </button>
+            </div>
+        </div>
+
+        <div class="historial-solicitudes-container mt-20">
+            <h4 class="titulo-seccion">Historial de Solicitudes</h4>
+            <div class="galeria-solicitudes-mini">
+                <div class="solicitud-card-mini" *ngFor="let sol of filaSeleccionada.solicitudes">
+                    <div class="mini-status">
+                        <span class="badge-label-mini" [ngClass]="claseEstado(sol.estado_solicitud)">
+                            {{ vacacionesService.obtenerLabelEstado(sol.estado_solicitud) }}
+                        </span>
+                    </div>
+                    <div class="mini-main">
+                        <div class="mini-fechas">
+                            {{ vacacionesService.formatearFechaCorta(sol.fecha_inicio) }} - {{
+                            vacacionesService.formatearFecha(sol.fecha_final) }} | {{ sol.total_periodo }} día(s)
+                        </div>
+                        <div class="mini-motivo" *ngIf="sol.motivo">{{ sol.motivo }}</div>
+                    </div>
+                    <div class="mini-meta">
+                        {{ sol.fecha_solicitud ? vacacionesService.formatearFecha(sol.fecha_solicitud) : 'S/F' }}
+                    </div>
+                </div>
+
+                <div class="sin-solicitudes-mini" *ngIf="filaSeleccionada.solicitudes.length === 0">
+                    <p>No se encontraron solicitudes registradas para este usuario.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

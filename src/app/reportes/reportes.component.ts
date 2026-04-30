@@ -12,6 +12,8 @@ interface FilaReporte {
     nombre: string;
     username: string;
     area: string;
+    puesto: string;
+    empresa: string;
     fechaIngreso: string;
     totalAcumulado: number;
     diasUtilizados: number;
@@ -20,6 +22,7 @@ interface FilaReporte {
     diasProgramados: number;
     claseColor: string;
     cargandoRow: boolean; // Flag para carga individual
+    solicitudes: SolicitudVacaciones[]; // Historial para el detalle
 }
 
 @Component({
@@ -35,7 +38,12 @@ export class ReportesComponent implements OnInit {
 
     todasLasFilas: FilaReporte[] = [];
     areasDisponibles: string[] = [];
-    usuariosParaFiltro: { nombre: string, username: string }[] = [];
+    filaSeleccionada: FilaReporte | null = null;
+
+    // Combobox de usuario con buscador
+    usuariosFiltrados: Usuario[] = [];
+    textoBusquedaUsuario = '';
+    mostrarResultadosUsuario = false;
 
     constructor(
         private authService: AuthService,
@@ -46,6 +54,7 @@ export class ReportesComponent implements OnInit {
 
     ngOnInit(): void {
         this.cargarDatos();
+        this.usuarioService.inicializarMapa().subscribe();
     }
 
     /**
@@ -72,6 +81,8 @@ export class ReportesComponent implements OnInit {
                     nombre: `${usuario.first_name} ${usuario.last_name}`.trim() || usuario.username,
                     username: usuario.username,
                     area: usuario.area_id?.nombre || 'Sin Área',
+                    puesto: usuario.puesto_id?.nombre || 'Sin Puesto',
+                    empresa: usuario.empr_id || 'Sin Empresa',
                     fechaIngreso: usuario.fecha_ingreso,
                     totalAcumulado: 0,
                     diasUtilizados: 0,
@@ -79,12 +90,13 @@ export class ReportesComponent implements OnInit {
                     diasPendientes: 0,
                     diasProgramados: 0,
                     claseColor: 'color-blanco',
-                    cargandoRow: true
+                    cargandoRow: true,
+                    solicitudes: []
                 })).sort((a, b) => a.nombre.localeCompare(b.nombre));
 
                 // Preparar filtros rápidos
                 this.areasDisponibles = Array.from(new Set(this.todasLasFilas.map(f => f.area))).sort();
-                this.usuariosParaFiltro = this.todasLasFilas.map(f => ({ nombre: f.nombre, username: f.username }));
+                this.usuariosFiltrados = usuariosPermitidos;
 
                 // 4. Iniciar la carga asíncrona de solicitudes para cada usuario
                 this.procesarCargaPorFila(usuariosPermitidos);
@@ -157,11 +169,12 @@ export class ReportesComponent implements OnInit {
 
         const resumen = this.vacacionesService.calcularResumen(usuario.fecha_ingreso, solicitudes);
 
-        // Días programados: Solicitudes en estado Pendiente (PD) o Aprobado Supervisor (AS)
+        // Días programados: Solicitudes Aprobadas (AP) o Aprobado Supervisor (AS) que aún no se han usado (futuras)
         const diasProgramados = solicitudes
             .filter(s => {
                 const cod = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
-                return cod === 'PD' || cod === 'AS';
+                const esEstadoValido = cod === 'AP' || cod === 'AS';
+                return esEstadoValido && this.vacacionesService.esFechaFutura(s.fecha_inicio);
             })
             .reduce((sum, s) => sum + (s.total_periodo || 0), 0);
 
@@ -178,11 +191,32 @@ export class ReportesComponent implements OnInit {
             totalAcumulado: resumen.diasAcumulados,
             diasUtilizados: resumen.diasTomados,
             diasTruncos: resumen.diasTruncos,
-            diasPendientes: resumen.diasPendientes,
             diasProgramados: diasProgramados,
             claseColor: claseColor,
-            cargandoRow: false
+            cargandoRow: false,
+            solicitudes: solicitudes
         };
+    }
+
+    verDetalle(fila: FilaReporte): void {
+        if (fila.cargandoRow) return;
+        this.filaSeleccionada = fila;
+    }
+
+    cerrarDetalle(): void {
+        this.filaSeleccionada = null;
+    }
+
+    claseEstado(estado: any): string {
+        const cod = this.vacacionesService.obtenerCodigoEstado(estado);
+        switch (cod) {
+            case 'AP': return 'status-aprobado';
+            case 'RC': return 'status-rechazado';
+            case 'PD': return 'status-pendiente';
+            case 'AS': return 'status-supervisor';
+            case 'CN': return 'status-cancelado';
+            default: return 'status-pendiente';
+        }
     }
 
     /**
@@ -242,13 +276,115 @@ export class ReportesComponent implements OnInit {
         });
     }
 
+    // Getter para el combobox buscador de usuarios (filtra por nombre/apellido y área activa)
+    get usuariosBuscados(): Usuario[] {
+        const busqueda = this.textoBusquedaUsuario.toLowerCase().trim();
+        // Filtrar por área si está seleccionada
+        let base = this.usuariosFiltrados;
+        if (this.filtroArea) {
+            base = base.filter(u => (u.area_id?.nombre || u.area) === this.filtroArea);
+        }
+
+        if (!busqueda) return base;
+        return base.filter(u => {
+            const nombreCompleto = `${u.first_name} ${u.last_name}`.toLowerCase();
+            return nombreCompleto.includes(busqueda);
+        });
+    }
+
+    // Obtiene el nombre del usuario seleccionado para mostrar en el Combobox
+    getNombreUsuarioSeleccionado(): string {
+        if (!this.usuarioSeleccionado) return 'Filtrar por Colaborador';
+        const user = this.usuariosFiltrados.find(u => u.username === this.usuarioSeleccionado);
+        return user ? `${user.first_name} ${user.last_name}` : 'Filtrar por Colaborador';
+    }
+
+    // Selecciona un usuario del combobox
+    seleccionarUsuarioCombobox(u: Usuario): void {
+        this.usuarioSeleccionado = u.username || '';
+        this.textoBusquedaUsuario = '';
+        this.mostrarResultadosUsuario = false;
+    }
+
+    // Limpia la selección de usuario
+    limpiarSeleccionUsuario(): void {
+        this.usuarioSeleccionado = '';
+        this.textoBusquedaUsuario = '';
+        this.mostrarResultadosUsuario = false;
+    }
+
+    // Genera iniciales para el avatar
+    obtenerIniciales(nombre: string): string {
+        if (!nombre) return 'U';
+        return nombre.split(' ')
+            .filter(n => n)
+            .map(n => n[0])
+            .join('')
+            .substring(0, 2)
+            .toUpperCase();
+    }
+
+    private obtenerNombreEmpresa(id: number): string {
+        const empresas: { [key: number]: string } = {
+            1: 'Surgicorp',
+            2: 'Surgivision',
+            3: 'Surgilab',
+            4: 'Surgimed'
+        };
+        return empresas[id] || 'N/A';
+    }
+
+    descargarDetallesFila(fila: FilaReporte): void {
+        if (!fila || fila.solicitudes.length === 0) return;
+
+        const cabeceras = [
+            'id_solicitud', 'fecha_solicitud', 'tipo_solicitud', 'estado_solicitud',
+            'jefe', 'fecha_jefe', 'gerente', 'fecha_gerente',
+            'fecha_inicio', 'fecha_final', 'total_periodo', 'motivo', 'observaciones'
+        ];
+
+        const registros = fila.solicitudes.map(sol => {
+            const tipoMap: Record<string, string> = { 'AT': 'Autorizado', 'AD': 'Adelanto' };
+            
+            const idSolicitud = sol.url?.split('?')[0].split('/').filter(x => x).pop() || '';
+            
+            return [
+                idSolicitud,
+                this.vacacionesService.formatearFechaHora(sol.fecha_solicitud || ''),
+                tipoMap[sol.tipo_solicitud || ''] || sol.tipo_solicitud || '',
+                this.vacacionesService.obtenerLabelEstado(sol.estado_solicitud),
+                this.usuarioService.resolverNombrePorUrl(sol.jefe_id),
+                this.vacacionesService.formatearFechaHora(sol.fecha_jefe || ''),
+                this.usuarioService.resolverNombrePorUrl(sol.gerente_id),
+                this.vacacionesService.formatearFechaHora(sol.fecha_gerente || ''),
+                this.vacacionesService.formatearFechaCompleta(sol.fecha_inicio || ''),
+                this.vacacionesService.formatearFechaCompleta(sol.fecha_final || ''),
+                sol.total_periodo.toString(),
+                (sol.motivo || '').replace(/;/g, '-').replace(/\n/g, ' '),
+                (sol.obs || '').replace(/;/g, '-').replace(/\n/g, ' ')
+            ];
+        });
+
+        const contenido = [cabeceras, ...registros].map(e => e.join(';')).join('\n');
+        const blob = new Blob(['\ufeff' + contenido], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Detalle_Vacaciones_${fila.nombre.replace(/ /g, '_')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     descargarReporte(): void {
         if (this.filasFiltradas.length === 0) return;
 
-        const cabeceras = ['Nombre', 'Área', 'Fecha Ingreso', 'Total Acumulado', 'Días Utilizados', 'Días Truncos', 'Días Pendientes', 'Días Programados'];
+        const cabeceras = ['Nombre', 'Área', 'Puesto', 'Empresa', 'Fecha Ingreso', 'Total Acumulado', 'Días Gozados', 'Días Truncos', 'Días Pendientes', 'Días Programados'];
         const registros = this.filasFiltradas.map(f => [
             f.nombre,
             f.area,
+            f.puesto,
+            f.empresa,
             f.fechaIngreso,
             f.totalAcumulado.toString().replace('.', ','),
             f.diasUtilizados.toString().replace('.', ','),

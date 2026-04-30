@@ -52,6 +52,21 @@ export class HeaderComponent {
         return (nombre + apellido).toUpperCase() || usuario.username[0].toUpperCase();
     }
 
+    // Obtiene el email del usuario
+    get emailUsuario(): string {
+        return this.authService.usuarioActual?.email || '';
+    }
+
+    // Obtiene la empresa del usuario
+    get empresaUsuario(): string {
+        return this.authService.usuarioActual?.empr_id || '';
+    }
+
+    // Verifica si el usuario es staff (Administrador)
+    get esAdmin(): boolean {
+        return this.authService.usuarioActual?.is_staff || false;
+    }
+
     alternarMenuPerfil(): void {
         this.menuPerfilAbierto = !this.menuPerfilAbierto;
     }

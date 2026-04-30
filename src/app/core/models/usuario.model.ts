@@ -17,7 +17,7 @@ export interface Usuario {
     area: string;         // Nombre del área (deprecated o para fallback)
     area_id: ObjetoSerializado;   // Objeto con URL y Nombre del área
     puesto_id: ObjetoSerializado; // Objeto con URL y Nombre del puesto
-    empr_id: number;      // ID de la empresa (Surgicorp maneja 4 empresas)
+    empr_id: string;      // ID de la empresa (Surgicorp maneja 4 empresas)
     fecha_ingreso: string; // Fecha de ingreso para cálculo de vacaciones
     avatar: string | null; // Foto de perfil opcional
     is_staff: boolean;    // Acceso al panel admin (NO modificar)

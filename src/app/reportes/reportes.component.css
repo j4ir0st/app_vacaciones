@@ -4,8 +4,8 @@
 
 .pagina-reportes {
     padding: 0.4rem 0.4rem;
-    margin: 0 auto;
-    height: calc(100vh - 110px);
+    margin: 0;
+    height: calc(100vh - 90px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -80,6 +80,507 @@
     border: 1px solid #e2e8f0;
 }
 
+/* ========================================
+   VISTA DETALLE (REPORTES) - REDISEÑO SLIM
+   ======================================== */
+.detalle-usuario-reporte {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    max-height: calc(100vh - 60px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.detalle-toolbar-slim {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.btn-atras-slim {
+    background: none;
+    border: none;
+    font-size: 0.85rem;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.btn-atras-slim:hover {
+    background: #f8fafc;
+    color: #c41e3a;
+}
+
+.btn-atras-slim svg {
+    width: 16px;
+    height: 16px;
+}
+
+.detalle-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.celda-usuario {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar-lg-circular {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    /* CIRCULAR */
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.avatar-lg-circular img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.usuario-info-lg {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.nombre-empleado-lg {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.1;
+}
+
+.badge-area-puesto-slim {
+    font-size: 0.78rem;
+    color: #64748b;
+    /* GRIS */
+    font-weight: 500;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: inline-block;
+    align-self: flex-start;
+}
+
+.btn-descargar-detalle {
+    background: #0d9488;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(13, 148, 136, 0.15);
+}
+
+.btn-descargar-detalle:hover {
+    background: #0f766e;
+    transform: translateY(-1px);
+}
+
+.btn-descargar-detalle svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ========================================
+   GALERIA DE SOLICITUDES MINI (Estilo Mis Solicitudes)
+   ======================================== */
+.historial-solicitudes-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    /* Importante para que el scroll funcione */
+}
+
+.titulo-seccion {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.galeria-solicitudes-mini {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+/* Scrollbar sutil para la galería */
+.galeria-solicitudes-mini::-webkit-scrollbar {
+    width: 6px;
+}
+
+.galeria-solicitudes-mini::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.galeria-solicitudes-mini::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.solicitud-card-mini {
+    background: white;
+    border: 1px solid #eef0f2;
+    border-radius: 10px;
+    padding: 12px 18px;
+    display: grid;
+    grid-template-columns: 100px 1fr 150px;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.2s;
+}
+
+.solicitud-card-mini:hover {
+    border-color: #c41e3a;
+    background: white;
+    box-shadow: 0 4px 12px rgba(196, 30, 58, 0.08);
+}
+
+.badge-label-mini {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: block;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+.mini-fechas {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.mini-dias {
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.mini-motivo {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 4px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.mini-meta {
+    text-align: right;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #94a3b8;
+}
+
+/* Colores de Estados (Copiados de Mis Solicitudes) */
+.status-pendiente {
+    background: #fff2e6;
+    color: #ea580c;
+    border-color: #fdba74;
+}
+
+.status-aprobado {
+    background: #f0fdf4;
+    color: #16a34a;
+    border-color: #86efac;
+}
+
+.status-rechazado {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+
+.status-supervisor {
+    background: #f0f9ff;
+    color: #0284c7;
+    border-color: #7dd3fc;
+}
+
+.status-cancelado {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #cbd5e1;
+}
+
+.sin-solicitudes-mini {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #94a3b8;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px dashed #e2e8f0;
+}
+
+.mt-10 {
+    margin-top: 10px;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+.txt-bold {
+    font-weight: 700;
+}
+
+@media (max-width: 850px) {
+    .solicitud-card-mini {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .mini-meta {
+        text-align: left;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 8px;
+    }
+
+    .detalle-header {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+/* ========================================
+   Combobox / Buscador de Usuarios
+   ======================================== */
+.combobox-contenedor {
+    position: relative;
+    z-index: 1001;
+}
+
+.combobox-control {
+    width: 100%;
+    padding: 0 1.2rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafb;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    height: 42px;
+}
+
+.combobox-control:hover {
+    border-color: #C41E3A;
+    background-color: white;
+}
+
+.combobox-contenedor.abierto .combobox-control {
+    border-color: #c41e3a;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
+}
+
+.seleccion-actual {
+    flex: 1;
+}
+
+.nombre-sel {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.nombre-sel.placeholder {
+    font-weight: 400;
+    color: #4a5568;
+}
+
+.input-busqueda-usuario {
+    flex: 1 !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 0 0 6px !important;
+    font-size: 0.95rem !important;
+    color: #1e293b !important;
+    box-shadow: none !important;
+    font-family: inherit;
+}
+
+.input-busqueda-usuario:focus {
+    outline: none !important;
+}
+
+.combobox-iconos {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #94a3b8;
+    margin-left: auto;
+}
+
+.icon-chevron {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.3s ease;
+}
+
+.combobox-contenedor.abierto .icon-chevron {
+    transform: rotate(180deg);
+    color: #c41e3a;
+}
+
+.icon-clear {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    color: #94a3b8;
+    transition: color 0.2s;
+}
+
+.icon-clear:hover {
+    color: #c41e3a;
+}
+
+/* Dropdown de Resultados */
+.combobox-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 100%;
+    min-width: 320px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    max-height: 280px;
+    overflow-y: auto;
+    animation: dropdownSlide 0.25s ease-out;
+    z-index: 1002;
+}
+
+@keyframes dropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-item {
+    padding: 0.7rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover {
+    background: #eef6ff;
+}
+
+.item-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #eff6ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.item-avatar .iniciales {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #3b82f6;
+}
+
+.item-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.item-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-nombre {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+.item-area {
+    font-size: 0.72rem;
+    color: #94a3b8;
+}
+
+.dropdown-vacio {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
+/* Overlay / Backdrop */
+.combobox-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+    background: transparent;
+}
+
 .campo-filtro {
     display: flex;
     flex-direction: column;
@@ -95,24 +596,53 @@
     letter-spacing: 0.5px;
 }
 
+.select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.select-wrapper::after {
+    content: '';
+    position: absolute;
+    right: 1.2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 6px;
+    background-color: #94a3b8;
+    clip-path: polygon(100% 0%, 0 0%, 50% 100%);
+    pointer-events: none;
+    transition: background-color 0.2s;
+}
+
+.select-wrapper:hover::after {
+    background-color: #c41e3a;
+}
+
 .select-wrapper select {
     width: 100%;
-    padding: 0.4rem 2.4rem 0.4rem 0.8rem;
+    padding: 0 2.5rem 0 1rem;
     border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    color: #334155;
-    background-color: #f8fafc;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #1e293b;
+    background-color: #f8fafb;
     cursor: pointer;
     outline: none;
     transition: all 0.2s;
+    height: 42px;
+    appearance: none;
+    -webkit-appearance: none;
 }
 
-.select-wrapper select:focus,
 .select-wrapper select:hover {
     border-color: #C41E3A;
     background-color: white;
-    /* box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1); */
+}
+
+.select-wrapper select option:hover {
+    background-color: #eef6ff !important;
 }
 
 .btn-refrescar,

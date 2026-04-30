@@ -59,3 +59,11 @@ Para evitar problemas de CORS y centralizar las llamadas a la API, se utiliza un
 
 ---
 © 2026 - Desarrollado por j4ir0st
+
+## 📝 Notas de Implementación
+
+### Lógica de Días Programados (Reportes)
+A partir del 30 de abril de 2026, la columna **Días Programados** en el módulo de reportes sigue la siguiente lógica:
+- Suma los días de solicitudes en estado **Aprobado (AP)** o **Aprobado Supervisor (AS)**.
+- Solo se consideran solicitudes cuya **fecha de inicio sea posterior a la fecha actual** (hoy).
+- Se excluyen las solicitudes en estado Pendiente (PD) de esta columna específica para reflejar solo días confirmados o en proceso avanzado de aprobación.
