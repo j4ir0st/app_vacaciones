@@ -35,15 +35,15 @@
 .btn-descargar {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     background-color: #0d9488;
     /* Teal moderno */
     color: white;
     border: none;
-    padding: 0.6rem 1.2rem;
+    padding: 0.5rem 0.8rem;
     border-radius: 8px;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     cursor: pointer;
     transition: all 0.2s;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -64,6 +64,21 @@
 .btn-descargar svg {
     width: 18px;
     height: 18px;
+}
+
+.header-acciones {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn-secundario {
+    background-color: #64748b; /* Slate moderno */
+}
+
+.btn-secundario:hover:not(:disabled) {
+    background-color: #475569;
+    box-shadow: 0 8px 15px rgba(100, 116, 139, 0.3);
 }
 
 /* Filtros */

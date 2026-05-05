@@ -191,6 +191,7 @@ export class ReportesComponent implements OnInit {
             totalAcumulado: resumen.diasAcumulados,
             diasUtilizados: resumen.diasTomados,
             diasTruncos: resumen.diasTruncos,
+            diasPendientes: resumen.diasPendientes,
             diasProgramados: diasProgramados,
             claseColor: claseColor,
             cargandoRow: false,
@@ -376,6 +377,22 @@ export class ReportesComponent implements OnInit {
         document.body.removeChild(link);
     }
 
+    private exportarCSV(cabeceras: string[], filas: any[][], nombreArchivo: string): void {
+        const contenidoCsv = [
+            cabeceras.join(';'),
+            ...filas.map(r => r.join(';'))
+        ].join('\n');
+
+        const blob = new Blob(['\ufeff' + contenidoCsv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     descargarReporte(): void {
         if (this.filasFiltradas.length === 0) return;
 
@@ -393,19 +410,42 @@ export class ReportesComponent implements OnInit {
             f.diasProgramados.toString().replace('.', ',')
         ]);
 
-        const contenidoCsv = [
-            cabeceras.join(';'),
-            ...registros.map(r => r.join(';'))
-        ].join('\n');
+        this.exportarCSV(cabeceras, registros, 'Reporte_Vacaciones_Completo');
+    }
 
-        const blob = new Blob(['\ufeff' + contenidoCsv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.setAttribute('href', url);
-        link.setAttribute('download', `Reporte_Vacaciones_${new Date().toISOString().slice(0, 10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    descargarReportePendientes(): void {
+        if (this.filasFiltradas.length === 0) return;
+
+        const cabeceras = ['Nombre', 'Área', 'Puesto', 'Empresa', 'Fecha Ingreso', 'Total Acumulado', 'Días Truncos', 'Días Pendientes'];
+        const registros = this.filasFiltradas.map(f => [
+            f.nombre,
+            f.area,
+            f.puesto,
+            f.empresa,
+            f.fechaIngreso,
+            f.totalAcumulado.toString().replace('.', ','),
+            f.diasTruncos.toString().replace('.', ','),
+            f.diasPendientes.toString().replace('.', ',')
+        ]);
+
+        this.exportarCSV(cabeceras, registros, 'Reporte_Vacaciones_Pendientes');
+    }
+
+    descargarReporteGozados(): void {
+        if (this.filasFiltradas.length === 0) return;
+
+        const cabeceras = ['Nombre', 'Área', 'Puesto', 'Empresa', 'Fecha Ingreso', 'Total Acumulado', 'Días Gozados'];
+        const registros = this.filasFiltradas.map(f => [
+            f.nombre,
+            f.area,
+            f.puesto,
+            f.empresa,
+            f.fechaIngreso,
+            f.totalAcumulado.toString().replace('.', ','),
+            f.diasUtilizados.toString().replace('.', ',')
+        ]);
+
+        this.exportarCSV(cabeceras, registros, 'Reporte_Vacaciones_Gozados');
     }
 
     resetearFiltros(): void {

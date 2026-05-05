@@ -2,6 +2,7 @@ import { Component, Output, EventEmitter } from '@angular/core';
 import { AuthService } from '../../core/services/auth.service';
 import { RefreshService } from '../../core/services/refresh.service';
 import { UsuarioService } from '../../core/services/usuario.service';
+import { environment } from '../../../environments/environment';
 import { Usuario } from '../../core/models/usuario.model';
 
 @Component({
@@ -15,6 +16,7 @@ export class HeaderComponent {
 
     // Controla visibilidad del dropdown de perfil
     menuPerfilAbierto = false;
+    apiUrl = environment.apiUrl;
 
     constructor(
         public authService: AuthService,
@@ -75,6 +77,15 @@ export class HeaderComponent {
         console.log('Limpiando caché y disparando refresco manual desde el logo...');
         this.usuarioService.limpiarCache();
         this.refreshService.triggerRefresh();
+    }
+
+    abrirAdmin(event: Event): void {
+        event.preventDefault();
+        event.stopPropagation();
+        const url = `${this.apiUrl}/admin/ServidorCaminitos/solicitudvacaciones/`;
+        console.log('Redirigiendo a administrador:', url);
+        window.open(url, '_blank');
+        this.menuPerfilAbierto = false;
     }
 
     cerrarSesion(): void {
