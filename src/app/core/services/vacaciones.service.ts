@@ -161,4 +161,66 @@ export class VacacionesService {
         const fInicio = new Date(fecha + 'T00:00:00');
         return fInicio > hoy;
     }
+
+    /**
+     * Calcula las sugerencias de programación de vacaciones (Prog. 1, 2, 3)
+     * basándose en los días pendientes y la fecha de ingreso.
+     */
+    calcularSugerenciasProgramacion(diasPendientes: number, fechaIngreso: string): { prog1: string, prog2: string, prog3: string } {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        // Validamos la fecha de ingreso
+        if (!fechaIngreso) return { prog1: '-', prog2: '-', prog3: '-' };
+
+        const fReferencia = hoy;
+
+        const fMas4Meses = new Date(hoy);
+        fMas4Meses.setMonth(fMas4Meses.getMonth() + 4);
+
+        const fMas6Meses = new Date(hoy);
+        fMas6Meses.setMonth(fMas6Meses.getMonth() + 6);
+
+        const fMas8Meses = new Date(hoy);
+        fMas8Meses.setMonth(fMas8Meses.getMonth() + 8);
+
+        const fMas1Anio = new Date(hoy);
+        fMas1Anio.setFullYear(fMas1Anio.getFullYear() + 1);
+
+        const formatear = (d: Date) => {
+            const dia = String(d.getDate()).padStart(2, '0');
+            const mes = String(d.getMonth() + 1).padStart(2, '0');
+            const anio = d.getFullYear();
+            return `${dia}/${mes}/${anio}`;
+        };
+
+        let prog1 = "-";
+        let prog2 = "-";
+        let prog3 = "-";
+
+        // TERCERA COLUMNA (Prog. 3)
+        if (diasPendientes > 0 && diasPendientes <= 15) {
+            prog3 = `Programar ${diasPendientes} dias entre el ${formatear(fReferencia)} y el ${formatear(fMas6Meses)}`;
+        } else if (diasPendientes > 15) {
+            const dias = diasPendientes <= 30 ? 15 : Math.floor(diasPendientes / 3);
+            const fInicio = diasPendientes <= 30 ? fMas6Meses : fMas8Meses;
+            prog3 = `Programar ${dias} dias entre el ${formatear(fInicio)} y el ${formatear(fMas1Anio)}`;
+        }
+
+        // SEGUNDA COLUMNA (Prog. 2)
+        if (diasPendientes > 15) {
+            const dias = diasPendientes <= 30 ? (diasPendientes - 15) : Math.floor(diasPendientes / 3);
+            const fInicio = diasPendientes <= 30 ? fReferencia : fMas4Meses;
+            const fFin = diasPendientes <= 30 ? fMas6Meses : fMas8Meses;
+            prog2 = `Programar ${dias} dias entre el ${formatear(fInicio)} y el ${formatear(fFin)}`;
+        }
+
+        // PRIMERA COLUMNA (Prog. 1)
+        if (diasPendientes > 30) {
+            const dias = Math.ceil(diasPendientes / 3);
+            prog1 = `Programar ${dias} dias entre el ${formatear(fReferencia)} y el ${formatear(fMas4Meses)}`;
+        }
+
+        return { prog1, prog2, prog3 };
+    }
 }

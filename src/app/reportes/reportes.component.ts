@@ -20,6 +20,9 @@ interface FilaReporte {
     diasTruncos: number;
     diasPendientes: number;
     diasProgramados: number;
+    prog1: string;
+    prog2: string;
+    prog3: string;
     claseColor: string;
     cargandoRow: boolean; // Flag para carga individual
     solicitudes: SolicitudVacaciones[]; // Historial para el detalle
@@ -89,6 +92,9 @@ export class ReportesComponent implements OnInit {
                     diasTruncos: 0,
                     diasPendientes: 0,
                     diasProgramados: 0,
+                    prog1: '-',
+                    prog2: '-',
+                    prog3: '-',
                     claseColor: 'color-blanco',
                     cargandoRow: true,
                     solicitudes: []
@@ -167,18 +173,25 @@ export class ReportesComponent implements OnInit {
         const index = this.todasLasFilas.findIndex(f => f.username === usuario.username);
         if (index === -1) return;
 
+        // 1. Calcular el resumen oficial (mantiene la lógica de Pendientes original que resta todo lo aprobado)
         const resumen = this.vacacionesService.calcularResumen(usuario.fecha_ingreso, solicitudes);
 
-        // Días programados: Solicitudes Aprobadas (AP) o Aprobado Supervisor (AS) que aún no se han usado (futuras)
-        const diasProgramados = solicitudes
-            .filter(s => {
-                const cod = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
-                const esEstadoValido = cod === 'AP' || cod === 'AS';
-                return esEstadoValido && this.vacacionesService.esFechaFutura(s.fecha_inicio);
-            })
+        // 2. Identificar solicitudes aprobadas para el desglose temporal
+        const solicitudesAprobadas = solicitudes.filter(s => {
+            const cod = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
+            return cod === 'AP' || cod === 'AS';
+        });
+
+        // 3. Separar por tiempo usando fecha_inicio
+        const diasProgramados = solicitudesAprobadas
+            .filter(s => this.vacacionesService.esFechaFutura(s.fecha_inicio))
             .reduce((sum, s) => sum + (s.total_periodo || 0), 0);
 
-        // Lógica de color según días pendientes
+        const diasGozados = solicitudesAprobadas
+            .filter(s => !this.vacacionesService.esFechaFutura(s.fecha_inicio))
+            .reduce((sum, s) => sum + (s.total_periodo || 0), 0);
+
+        // Lógica de color según días pendientes (mantenemos el original del resumen)
         let claseColor = 'color-blanco';
         if (resumen.diasPendientes >= 60) {
             claseColor = 'color-rojo-rechazado';
@@ -186,13 +199,18 @@ export class ReportesComponent implements OnInit {
             claseColor = 'color-amarillo-pendiente';
         }
 
+        const sugerencias = this.vacacionesService.calcularSugerenciasProgramacion(resumen.diasPendientes, usuario.fecha_ingreso);
+
         this.todasLasFilas[index] = {
             ...this.todasLasFilas[index],
             totalAcumulado: resumen.diasAcumulados,
-            diasUtilizados: resumen.diasTomados,
+            diasUtilizados: diasGozados, // Solo Gozados (<= hoy) en esta columna
             diasTruncos: resumen.diasTruncos,
-            diasPendientes: resumen.diasPendientes,
-            diasProgramados: diasProgramados,
+            diasPendientes: resumen.diasPendientes, // Mantenemos cálculo original (Resta todo)
+            diasProgramados: diasProgramados, // Solo Programados (> hoy)
+            prog1: sugerencias.prog1,
+            prog2: sugerencias.prog2,
+            prog3: sugerencias.prog3,
             claseColor: claseColor,
             cargandoRow: false,
             solicitudes: solicitudes
@@ -396,7 +414,7 @@ export class ReportesComponent implements OnInit {
     descargarReporte(): void {
         if (this.filasFiltradas.length === 0) return;
 
-        const cabeceras = ['Nombre', 'Área', 'Puesto', 'Empresa', 'Fecha Ingreso', 'Total Acumulado', 'Días Gozados', 'Días Truncos', 'Días Pendientes', 'Días Programados'];
+        const cabeceras = ['Nombre', 'Área', 'Puesto', 'Empresa', 'Fecha Ingreso', 'Total Acumulado', 'Días Gozados', 'Días Truncos', 'Días Pendientes', 'Días Programados', 'Prog. 1', 'Prog. 2', 'Prog. 3'];
         const registros = this.filasFiltradas.map(f => [
             f.nombre,
             f.area,
@@ -407,7 +425,10 @@ export class ReportesComponent implements OnInit {
             f.diasUtilizados.toString().replace('.', ','),
             f.diasTruncos.toString().replace('.', ','),
             f.diasPendientes.toString().replace('.', ','),
-            f.diasProgramados.toString().replace('.', ',')
+            f.diasProgramados.toString().replace('.', ','),
+            f.prog1,
+            f.prog2,
+            f.prog3
         ]);
 
         this.exportarCSV(cabeceras, registros, 'Reporte_Vacaciones_Completo');

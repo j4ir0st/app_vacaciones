@@ -67,3 +67,10 @@ A partir del 30 de abril de 2026, la columna **Días Programados** en el módulo
 - Suma los días de solicitudes en estado **Aprobado (AP)** o **Aprobado Supervisor (AS)**.
 - Solo se consideran solicitudes cuya **fecha de inicio sea posterior a la fecha actual** (hoy).
 - Se excluyen las solicitudes en estado Pendiente (PD) de esta columna específica para reflejar solo días confirmados o en proceso avanzado de aprobación.
+
+### Sugerencias de Programación (Prog. 1, 2, 3)
+Implementado el 7 de mayo de 2026, el reporte completo incluye tres nuevas columnas con sugerencias automáticas para programar días pendientes:
+- **Prog. 1**: Sugerencia de primer bloque de vacaciones (calculado para colaboradores con más de 30 días pendientes).
+- **Prog. 2**: Sugerencia de segundo bloque de vacaciones (calculado para colaboradores con más de 15 días pendientes).
+- **Prog. 3**: Sugerencia de tercer bloque de vacaciones (siempre presente si el saldo es > 0, ajusta la cantidad según el saldo pendiente).
+La lógica utiliza la fecha actual (**hoy**) como base y los días pendientes para calcular ventanas de tiempo (4, 6 y 8 meses) y cantidades de días sugeridos, facilitando la planificación anual inmediata.
