@@ -69,8 +69,10 @@ A partir del 30 de abril de 2026, la columna **Días Programados** en el módulo
 - Se excluyen las solicitudes en estado Pendiente (PD) de esta columna específica para reflejar solo días confirmados o en proceso avanzado de aprobación.
 
 ### Sugerencias de Programación (Prog. 1, 2, 3)
-Implementado el 7 de mayo de 2026, el reporte completo incluye tres nuevas columnas con sugerencias automáticas para programar días pendientes:
-- **Prog. 1**: Sugerencia de primer bloque de vacaciones (calculado para colaboradores con más de 30 días pendientes).
-- **Prog. 2**: Sugerencia de segundo bloque de vacaciones (calculado para colaboradores con más de 15 días pendientes).
-- **Prog. 3**: Sugerencia de tercer bloque de vacaciones (siempre presente si el saldo es > 0, ajusta la cantidad según el saldo pendiente).
-La lógica utiliza la fecha actual (**hoy**) como base y los días pendientes para calcular ventanas de tiempo (4, 6 y 8 meses) y cantidades de días sugeridos, facilitando la planificación anual inmediata.
+Implementado el 11 de mayo de 2026, el reporte completo incluye tres nuevas columnas con sugerencias automáticas para programar días pendientes basadas en una fecha límite de aniversario:
+- **Fecha Límite**: Es el aniversario de ingreso del colaborador en el año actual. Si ya pasó, se considera el del próximo año.
+- **Segmentación**: El tiempo restante desde hoy hasta la fecha límite se divide en partes iguales según la cantidad de bloques necesarios (1, 2 o 3).
+- **Prog. 1**: Primer bloque de tiempo (calculado si el saldo es > 30 días).
+- **Prog. 2**: Segundo bloque de tiempo (calculado si el saldo es > 15 días).
+- **Prog. 3**: Bloque final de tiempo (siempre presente si el saldo es > 0).
+La lógica optimiza la distribución de los días pendientes a lo largo del tiempo que le queda al colaborador antes de cumplir un nuevo año de servicios.

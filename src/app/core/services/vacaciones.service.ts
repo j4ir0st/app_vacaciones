@@ -171,21 +171,34 @@ export class VacacionesService {
         hoy.setHours(0, 0, 0, 0);
 
         // Validamos la fecha de ingreso
-        if (!fechaIngreso) return { prog1: '-', prog2: '-', prog3: '-' };
+        if (!fechaIngreso || diasPendientes <= 0) return { prog1: '-', prog2: '-', prog3: '-' };
 
-        const fReferencia = hoy;
+        // 1. Calcular Fecha Límite (Aniversario del año actual o siguiente)
+        const fIngreso = new Date(fechaIngreso + 'T00:00:00');
+        let fDeadline = new Date(fIngreso);
+        fDeadline.setFullYear(hoy.getFullYear());
+        fDeadline.setHours(0, 0, 0, 0);
 
-        const fMas4Meses = new Date(hoy);
-        fMas4Meses.setMonth(fMas4Meses.getMonth() + 4);
+        if (fDeadline < hoy) {
+            fDeadline.setFullYear(fDeadline.getFullYear() + 1);
+        }
 
-        const fMas6Meses = new Date(hoy);
-        fMas6Meses.setMonth(fMas6Meses.getMonth() + 6);
+        // 2. Determinar número de segmentos (n)
+        let n = 1;
+        if (diasPendientes > 30) {
+            n = 3;
+        } else if (diasPendientes > 15) {
+            n = 2;
+        }
 
-        const fMas8Meses = new Date(hoy);
-        fMas8Meses.setMonth(fMas8Meses.getMonth() + 8);
+        // 3. Calcular puntos de corte temporales
+        const diffMs = fDeadline.getTime() - hoy.getTime();
+        const intervalo = diffMs / n;
 
-        const fMas1Anio = new Date(hoy);
-        fMas1Anio.setFullYear(fMas1Anio.getFullYear() + 1);
+        const f0 = hoy;
+        const f1 = new Date(hoy.getTime() + intervalo);
+        const f2 = new Date(hoy.getTime() + 2 * intervalo);
+        const f3 = fDeadline;
 
         const formatear = (d: Date) => {
             const dia = String(d.getDate()).padStart(2, '0');
@@ -198,27 +211,23 @@ export class VacacionesService {
         let prog2 = "-";
         let prog3 = "-";
 
-        // TERCERA COLUMNA (Prog. 3)
-        if (diasPendientes > 0 && diasPendientes <= 15) {
-            prog3 = `Programar ${diasPendientes} dias entre el ${formatear(fReferencia)} y el ${formatear(fMas6Meses)}`;
-        } else if (diasPendientes > 15) {
-            const dias = diasPendientes <= 30 ? 15 : Math.floor(diasPendientes / 3);
-            const fInicio = diasPendientes <= 30 ? fMas6Meses : fMas8Meses;
-            prog3 = `Programar ${dias} dias entre el ${formatear(fInicio)} y el ${formatear(fMas1Anio)}`;
-        }
-
-        // SEGUNDA COLUMNA (Prog. 2)
-        if (diasPendientes > 15) {
-            const dias = diasPendientes <= 30 ? (diasPendientes - 15) : Math.floor(diasPendientes / 3);
-            const fInicio = diasPendientes <= 30 ? fReferencia : fMas4Meses;
-            const fFin = diasPendientes <= 30 ? fMas6Meses : fMas8Meses;
-            prog2 = `Programar ${dias} dias entre el ${formatear(fInicio)} y el ${formatear(fFin)}`;
-        }
-
-        // PRIMERA COLUMNA (Prog. 1)
-        if (diasPendientes > 30) {
-            const dias = Math.ceil(diasPendientes / 3);
-            prog1 = `Programar ${dias} dias entre el ${formatear(fReferencia)} y el ${formatear(fMas4Meses)}`;
+        if (n === 1) {
+            // Un solo bloque (Prog 3)
+            prog3 = `Programar ${diasPendientes} dias entre el ${formatear(f0)} y el ${formatear(f3)}`;
+        } else if (n === 2) {
+            // Dos bloques (Prog 2 y 3)
+            const diasP3 = 15;
+            const diasP2 = diasPendientes - 15;
+            prog2 = `Programar ${diasP2} dias entre el ${formatear(f0)} y el ${formatear(f1)}`;
+            prog3 = `Programar ${diasP3} dias entre el ${formatear(f1)} y el ${formatear(f3)}`;
+        } else if (n === 3) {
+            // Tres bloques (Prog 1, 2 y 3)
+            const diasP1 = Math.ceil(diasPendientes / 3);
+            const diasP2 = Math.floor(diasPendientes / 3);
+            const diasP3 = Math.floor(diasPendientes / 3);
+            prog1 = `Programar ${diasP1} dias entre el ${formatear(f0)} y el ${formatear(f1)}`;
+            prog2 = `Programar ${diasP2} dias entre el ${formatear(f1)} y el ${formatear(f2)}`;
+            prog3 = `Programar ${diasP3} dias entre el ${formatear(f2)} y el ${formatear(f3)}`;
         }
 
         return { prog1, prog2, prog3 };
