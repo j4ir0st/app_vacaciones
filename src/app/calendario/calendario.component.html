@@ -60,7 +60,7 @@
                         </div>
                         <div class="item-info">
                             <span class="item-nombre">{{ u.first_name }} {{ u.last_name }}</span>
-                            <span class="item-area">{{ u.area_id.nombre }}</span>
+                            <span class="item-area">{{ u.area_id?.nombre || 'Sin Área' }}</span>
                         </div>
                     </div>
 

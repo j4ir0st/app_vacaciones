@@ -155,13 +155,37 @@ export class NuevaSolicitudComponent implements OnInit {
         const username = user?.username?.toLowerCase() || '';
         const areaOriginal = (user?.area_id?.nombre || user?.area || '').trim();
 
+        // Áreas exclusivas del jefe de Operaciones (no visibles para magreda)
+        const areasOperaciones = ['Distribución', 'Atenciones', 'Almacenes', 'Facturación',
+            'Desarrollo Software', 'Logística Inversa', 'Operaciones'];
+
+        // Caso especial: magreda ve todos los usuarios excepto los de áreas de operaciones
+        if (username === 'magreda') {
+            this.usuarioService.obtenerUsuariosTodo().subscribe({
+                next: (lista: Usuario[]) => {
+                    const areasOperacionesNorm = areasOperaciones.map(a => a.toLowerCase());
+                    this.usuarios = lista.filter(u =>
+                        u.is_active &&
+                        u.area_id != null &&
+                        !areasOperacionesNorm.includes((u.area_id.nombre || '').toLowerCase())
+                    );
+                    this.cargandoUsuarios = false;
+                },
+                error: (err: any) => {
+                    console.error('Error cargando usuarios para magreda:', err);
+                    this.cargandoUsuarios = false;
+                }
+            });
+            return;
+        }
+
         let areasAFiltar: string[] = [];
 
         // Lógica de filtrado compleja para Jefes y Gerentes
         if (this.authService.esAprobador) {
             if (areaOriginal === 'Operaciones') {
                 // Usuarios de Operaciones ven áreas operativas específicas
-                areasAFiltar = ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa", "Operaciones"];
+                areasAFiltar = areasOperaciones;
             } else if (username === 'klewis' || username === 'klewism' || nombreUser.toLowerCase().includes('katherine lewis')) {
                 // Caso específico para Katherine Lewis (acceso multi-área)
                 areasAFiltar = ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
@@ -178,7 +202,7 @@ export class NuevaSolicitudComponent implements OnInit {
         this.usuarioService.obtenerUsuariosPorNombreArea(nombresArea).subscribe({
             next: (res: any) => {
                 this.usuarios = res || [];
-                // Si el usuario actual es gerente de un área específica (ej. Software), 
+                // Si el usuario actual es gerente de un área específica (ej. Software),
                 // ya el filtro 'Else' se encargó de traer solo su área.
                 this.cargandoUsuarios = false;
             },

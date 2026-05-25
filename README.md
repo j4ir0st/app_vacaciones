@@ -76,3 +76,9 @@ Implementado el 11 de mayo de 2026, el reporte completo incluye tres nuevas colu
 - **Prog. 2**: Segundo bloque de tiempo (calculado si el saldo es > 15 días).
 - **Prog. 3**: Bloque final de tiempo (siempre presente si el saldo es > 0).
 La lógica optimiza la distribución de los días pendientes a lo largo del tiempo que le queda al colaborador antes de cumplir un nuevo año de servicios.
+
+### Control de Acceso Global y Restricciones de Aprobación (Jefe de Recursos Humanos)
+Implementado el 25 de mayo de 2026, se incorpora un esquema de permisos global para la Jefatura de Recursos Humanos (usuario `magreda`):
+- **Acceso Total**: El usuario `magreda` hereda privilegios elevados de Gerente administrativo y visualiza a todos los usuarios, saldos de vacaciones, reportes globales y el calendario de todas las áreas de la compañía. Se implementa mediante un token virtual de áreas visibles `['*']` centralizado en `AuthService`.
+- **Restricción de Operaciones**: Por políticas internas de negocio, `magreda` **no** tiene permitido aprobar ni rechazar solicitudes pertenecientes al área de **Operaciones** (y sus sub-áreas como Distribución, Atenciones, Almacenes, Facturación, Desarrollo Software y Logística Inversa). Las acciones de aprobación de estas áreas están bloqueadas y se muestra un banner de advertencia premium en la vista de detalle indicando que estas solicitudes son competencia exclusiva de la Jefatura/Gerencia de Operaciones.
+- **Gestión de Colaboradores**: Se le permite registrar colaboradores en cualquier área del sistema y realizar la activación/desactivación de usuarios globales.

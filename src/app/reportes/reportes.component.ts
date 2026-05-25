@@ -242,6 +242,11 @@ export class ReportesComponent implements OnInit {
      * Implementa la lógica de PowerApps para filtrar usuarios visibles.
      */
     private filtrarUsuariosSegunRol(autor: Usuario, lista: Usuario[]): Usuario[] {
+        const username = autor.username?.toLowerCase() || '';
+        if (username === 'magreda') {
+            return lista;
+        }
+
         const puesto = (autor.puesto_id?.nombre || '').toLowerCase();
         const area = (autor.area_id?.nombre || '').toLowerCase();
         const esGerenteOJefe = puesto.includes('gerente') || puesto.includes('jefe');

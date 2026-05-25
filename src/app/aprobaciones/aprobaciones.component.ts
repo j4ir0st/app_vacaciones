@@ -200,10 +200,14 @@ export class AprobacionesComponent implements OnInit {
         const usuarioActual = this.authService.usuarioActual;
         if (!usuarioActual) return '';
 
+        const username = usuarioActual.username?.toLowerCase() || '';
+        if (username === 'magreda') {
+            return '';
+        }
+
         const puestoUsuario = (usuarioActual.puesto_id?.nombre || '').trim().toLowerCase();
         const areaUsuario = (usuarioActual.area_id?.nombre || '').toLowerCase();
         const nombreUsuario = `${usuarioActual.first_name} ${usuarioActual.last_name}`.trim().toLowerCase();
-        const username = usuarioActual.username?.toLowerCase() || '';
         const esGerenteOJefe = puestoUsuario.includes('gerente') || puestoUsuario.includes('jefe');
 
         let areas: string[] = [];
@@ -224,6 +228,14 @@ export class AprobacionesComponent implements OnInit {
         const filtroArea = areasFiltradas.length > 0 ? `&area_nombre=${encodeURIComponent(areasFiltradas.join(','))}` : '';
 
         return filtroArea;
+    }
+
+    /**
+     * Determina si el usuario actual tiene permitido aprobar la solicitud detallada.
+     */
+    puedeAprobarSolicitud(sol: FilaSolicitud | null): boolean {
+        if (!sol) return false;
+        return this.authService.puedeAprobarEnArea(sol.areaNombre);
     }
 
     /**

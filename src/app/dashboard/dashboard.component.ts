@@ -95,8 +95,9 @@ export class DashboardComponent implements OnInit {
 
         // 2. Cargar próximas vacaciones filtradas por áreas permitidas
         const areasRaw = this.authService.getAreasVisibles();
+        const esAccesoTotal = areasRaw.includes('*');
         const areasPermitidas = areasRaw.map(a => a.toLowerCase());
-        const filtrosAreas = this.solicitudService.obtenerFiltroArea(areasRaw);
+        const filtrosAreas = esAccesoTotal ? {} : this.solicitudService.obtenerFiltroArea(areasRaw);
 
         this.solicitudService.obtenerSolicitudes(this.solicitudService.URL_SOLICITUDES, filtrosAreas).subscribe(resp => {
             const items = Array.isArray(resp) ? resp : (resp.results || []);
@@ -110,6 +111,8 @@ export class DashboardComponent implements OnInit {
                     if (!esVigente) return false;
 
                     // Filtro por área: el usuario solo ve vacaciones de sus áreas permitidas
+                    if (esAccesoTotal) return true;
+
                     // Manejamos area_id tanto si viene como string (nombre) u objeto ({nombre})
                     const areaObj = s.area_id;
                     const areaNombre = (typeof areaObj === 'object' ? areaObj?.nombre : areaObj) || '';

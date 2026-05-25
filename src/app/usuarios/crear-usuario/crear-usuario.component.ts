@@ -86,9 +86,13 @@ export class CrearUsuarioComponent implements OnInit {
             const usuarioActual = this.authService.usuarioActual;
             if (usuarioActual) {
                 const nombresPermitidos = this.authService.getAreasVisibles().map(n => n.toLowerCase());
-                this.areasDisponibles = todasLasAreas.filter(a =>
-                    nombresPermitidos.includes((a.nombre || '').toLowerCase())
-                );
+                if (nombresPermitidos.includes('*')) {
+                    this.areasDisponibles = todasLasAreas;
+                } else {
+                    this.areasDisponibles = todasLasAreas.filter(a =>
+                        nombresPermitidos.includes((a.nombre || '').toLowerCase())
+                    );
+                }
 
                 // Auto-selección si solo hay una opción disponible
                 if (this.areasDisponibles.length === 1) {

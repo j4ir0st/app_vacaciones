@@ -96,7 +96,12 @@ export class CalendarioComponent implements OnInit {
 
     private configurarFiltrosIniciales(): void {
         // Usar la lógica centralizada de permisos para el calendario
-        this.areasFiltradas = this.authService.getAreasVisibles();
+        const areasVisibles = this.authService.getAreasVisibles();
+        if (areasVisibles.includes('*')) {
+            this.areasFiltradas = this.todasAreas.map(a => a.nombre);
+        } else {
+            this.areasFiltradas = areasVisibles;
+        }
 
         // Si solo hay un área, seleccionarla por defecto
         if (this.areasFiltradas.length === 1) {
@@ -108,7 +113,8 @@ export class CalendarioComponent implements OnInit {
     }
 
     private cargarUsuariosYSolicitudes(): void {
-        const areasQuery = this.areasFiltradas.join(',');
+        const esAccesoTotal = this.authService.getAreasVisibles().includes('*');
+        const areasQuery = esAccesoTotal ? '' : this.areasFiltradas.join(',');
 
         // 1. Cargar Usuarios Filtrados por Área
         this.usuarioService.obtenerUsuariosPorNombreArea(areasQuery).subscribe({
@@ -116,7 +122,9 @@ export class CalendarioComponent implements OnInit {
                 this.todosUsuarios = Array.isArray(usuariosRes) ? usuariosRes : ((usuariosRes as any).results || []);
                 
                 const usuActual = this.authService.usuarioActual;
-                if (usuActual && this.authService.nombreCompleto === 'Katherine Lewis') {
+                if (esAccesoTotal) {
+                    this.usuariosFiltrados = this.todosUsuarios;
+                } else if (usuActual && this.authService.nombreCompleto === 'Katherine Lewis') {
                      this.usuariosFiltrados = this.todosUsuarios.filter(u => 
                         this.areasFiltradas.includes(u.area_id?.nombre || u.area)
                     );
@@ -133,7 +141,8 @@ export class CalendarioComponent implements OnInit {
 
     private cargarTodasLasSolicitudes(): void {
         const areasVisibles = this.authService.getAreasVisibles();
-        const paramsArea = this.solicitudService.obtenerFiltroArea(areasVisibles);
+        const esAccesoTotal = areasVisibles.includes('*');
+        const paramsArea = esAccesoTotal ? {} : this.solicitudService.obtenerFiltroArea(areasVisibles);
 
         this.solicitudService.obtenerSolicitudes(this.solicitudService.URL_SOLICITUDES, paramsArea).pipe(
             expand(resp => resp.next ? this.solicitudService.obtenerSolicitudes(resp.next) : EMPTY),

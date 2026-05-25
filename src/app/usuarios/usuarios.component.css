@@ -626,3 +626,10 @@ input:checked + .slider:before {
     width: 18px;
     height: 18px;
 }
+
+/* Cabecera del modal asistente: X alineada a la derecha con margen */
+.cabecera-modal-asistente {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.75rem 0.75rem 0;
+}

@@ -115,6 +115,9 @@ export class AuthService {
         const u = this.usuarioActual;
         if (!u) return false;
 
+        const username = u.username?.toLowerCase() || '';
+        if (username === 'magreda') return true;
+
         const grupos = u.groups ?? [];
         const tieneGrupo = grupos.some(g => GRUPOS_APROBADORES.includes(g));
 
@@ -133,6 +136,8 @@ export class AuthService {
     get esGerente(): boolean {
         const u = this.usuarioActual;
         if (!u) return false;
+        const username = u.username?.toLowerCase() || '';
+        if (username === 'magreda') return true;
         const puesto = (u.area_puesto?.puesto_nombre || u.puesto_id?.nombre || '').toLowerCase();
         return puesto.includes('gerente') || (u.groups ?? []).some(g => g.toLowerCase() === 'gerentes');
     }
@@ -143,10 +148,14 @@ export class AuthService {
         const u = this.usuarioActual;
         if (!u) return [];
 
+        const username = u.username?.toLowerCase() || '';
+        if (username === 'magreda') {
+            return ['*'];
+        }
+
         const areaUser = (u.area_id?.nombre || '').trim();
         const areaLower = areaUser.toLowerCase();
         const nombreUser = `${u.first_name} ${u.last_name}`.trim().toLowerCase();
-        const username = u.username?.toLowerCase() || '';
 
         // Si es Rol Aprobador (Jete/Gerente)
         if (this.esAprobador) {
@@ -166,6 +175,29 @@ export class AuthService {
 
         // Usuario normal: Solo ve su propia área
         return [areaUser];
+    }
+
+    // Verifica si el usuario actual tiene permitido aprobar una solicitud en un área específica
+    puedeAprobarEnArea(areaNombre: string): boolean {
+        const u = this.usuarioActual;
+        if (!u) return false;
+
+        const username = u.username?.toLowerCase() || '';
+        const areaNormalizada = (areaNombre || '').trim().toLowerCase();
+
+        // Áreas de operaciones
+        const areasOperaciones = ["distribución", "atenciones", "almacenes", "facturación", "desarrollo software", "logística inversa", "operaciones"];
+
+        // magreda no puede aprobar en las áreas de operaciones
+        if (username === 'magreda') {
+            return !areasOperaciones.includes(areaNormalizada);
+        }
+
+        // Para otros aprobadores, pueden aprobar si el área está dentro de sus áreas visibles
+        const areasVisibles = this.getAreasVisibles().map(a => a.toLowerCase());
+        if (areasVisibles.includes('*')) return true;
+
+        return areasVisibles.includes(areaNormalizada);
     }
 
     // Refresca el token de acceso usando el refresh token

@@ -76,6 +76,14 @@ export class UsuariosComponent implements OnInit {
      * Lógica de visibilidad heredada de Reportes.
      */
     private filtrarUsuariosSegunRol(autor: Usuario, lista: Usuario[]): Usuario[] {
+        // Solo se muestran colaboradores con área asignada (excluye cuentas de sistema sin perfil)
+        const conArea = lista.filter(u => u.area_id != null);
+
+        const username = autor.username?.toLowerCase() || '';
+        if (username === 'magreda') {
+            return conArea;
+        }
+
         const puesto = (autor.puesto_id?.nombre || '').toLowerCase();
         const area = (autor.area_id?.nombre || '').toLowerCase();
         const esGerenteOJefe = puesto.includes('gerente') || puesto.includes('jefe');
@@ -89,10 +97,7 @@ export class UsuariosComponent implements OnInit {
                     'terapia de sueño y apnea', 'ingeniería', 'marketing', 'licitaciones',
                     'equipos médicos', 'casa', 'cdc'
                 ];
-                return lista.filter(u => {
-                    const areaU = (u.area_id?.nombre || '').toLowerCase();
-                    return areasKatherine.includes(areaU);
-                });
+                return conArea.filter(u => areasKatherine.includes(u.area_id!.nombre.toLowerCase()));
             }
 
             // Caso especial: Operaciones
@@ -101,24 +106,15 @@ export class UsuariosComponent implements OnInit {
                     'distribución', 'atenciones', 'almacenes', 'facturación',
                     'desarrollo software', 'logística inversa', 'operaciones'
                 ];
-                return lista.filter(u => {
-                    const areaU = (u.area_id?.nombre || '').toLowerCase();
-                    return areasOperaciones.includes(areaU);
-                });
+                return conArea.filter(u => areasOperaciones.includes(u.area_id!.nombre.toLowerCase()));
             }
 
             // Gerente/Jefe estándar ve solo su área
-            return lista.filter(u => {
-                const areaU = (u.area_id?.nombre || '').toLowerCase();
-                return areaU === area;
-            });
+            return conArea.filter(u => u.area_id!.nombre.toLowerCase() === area);
         }
 
         // Otros roles ven solo su propia área
-        return lista.filter(u => {
-            const areaU = (u.area_id?.nombre || '').toLowerCase();
-            return areaU === area;
-        });
+        return conArea.filter(u => u.area_id!.nombre.toLowerCase() === area);
     }
 
     get usuariosFiltrados(): Usuario[] {
@@ -139,9 +135,7 @@ export class UsuariosComponent implements OnInit {
     }
 
     get esGerente(): boolean {
-        const puesto = (this.authService.usuarioActual?.area_puesto?.puesto_nombre ||
-            this.authService.usuarioActual?.puesto_id?.nombre || '').toLowerCase();
-        return puesto.includes('gerente');
+        return this.authService.esGerente;
     }
 
     iniciarDesactivacion(usuario: Usuario): void {

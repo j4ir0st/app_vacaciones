@@ -75,7 +75,7 @@
                             </div>
                             <div class="item-info">
                                 <span class="item-nombre">{{ u.first_name }} {{ u.last_name }}</span>
-                                <span class="item-area">{{ u.area_id.nombre }} - {{ u.puesto_id.nombre }}</span>
+                                <span class="item-area">{{ u.area_id?.nombre || 'Sin Área' }} - {{ u.puesto_id?.nombre || 'Sin Puesto' }}</span>
                             </div>
                         </div>
                         <div class="dropdown-vacio" *ngIf="usuariosBuscados.length === 0">
