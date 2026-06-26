@@ -8,7 +8,7 @@
     height: calc(100vh - 90px);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .pagina-header {
@@ -70,6 +70,291 @@
     display: flex;
     gap: 10px;
     align-items: center;
+}
+
+/* ========================================
+   Selectores de Rango de Fechas para Reporte
+   ======================================== */
+.rango-fechas-reporte {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(196, 30, 58, 0.06);
+    border: 1px solid rgba(196, 30, 58, 0.25);
+    border-radius: 10px;
+    padding: 5px 10px;
+}
+
+.fecha-selector-grupo {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+}
+
+.fecha-icono {
+    width: 16px;
+    height: 16px;
+    color: #c41e3a;
+    flex-shrink: 0;
+}
+
+.fecha-icono-btn {
+    cursor: pointer;
+    transition: color 0.2s, transform 0.15s;
+}
+
+.fecha-icono-btn:hover {
+    color: #9e0b2a;
+    transform: scale(1.15);
+}
+
+.fecha-input-contenedor {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.fecha-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #c41e3a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1;
+}
+
+.input-fecha-reporte {
+    border: none;
+    background: transparent;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+    width: 105px;
+    font-family: inherit;
+}
+
+.input-fecha-reporte:focus {
+    color: #c41e3a;
+}
+
+.input-fecha-reporte::-webkit-calendar-picker-indicator {
+    display: none;
+}
+
+.fecha-separador {
+    font-size: 0.85rem;
+    color: #c41e3a;
+    font-weight: 700;
+    padding: 0 2px;
+}
+
+/* ========================================
+   Calendario Picker Personalizado
+   ======================================== */
+.calendario-picker {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    width: 295px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(196, 30, 58, 0.08);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    z-index: 1010;
+    animation: dropdownSlide 0.2s ease-out;
+}
+
+.cal-picker-derecha {
+    left: auto;
+    right: 0;
+}
+
+.cal-header {
+    background: #c41e3a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.7rem 1rem;
+}
+
+.cal-titulo {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.cal-nav {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+    font-weight: 300;
+}
+
+.cal-nav:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.cal-dias-semana {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #fdf2f4;
+    border-bottom: 1px solid #fce4e8;
+    padding: 6px 8px 4px;
+}
+
+.cal-dias-semana span {
+    text-align: center;
+    font-size: 0.68rem;
+    font-weight: 800;
+    color: #c41e3a;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.cal-dias-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 6px 6px 4px;
+    gap: 1px;
+}
+
+.cal-dia {
+    background: none;
+    border: none;
+    border-radius: 8px;
+    width: 36px;
+    height: 34px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.12s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+    font-family: inherit;
+}
+
+.cal-dia:hover:not(.otro-mes):not(.seleccionado) {
+    background: rgba(196, 30, 58, 0.09);
+    color: #c41e3a;
+    font-weight: 700;
+}
+
+.cal-dia.otro-mes {
+    color: #cbd5e1;
+    cursor: default;
+    pointer-events: none;
+}
+
+.cal-dia.hoy:not(.seleccionado) {
+    font-weight: 800;
+    color: #c41e3a;
+    border: 1.5px solid rgba(196, 30, 58, 0.5);
+}
+
+.cal-dia.seleccionado {
+    background: #c41e3a;
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 3px 8px rgba(196, 30, 58, 0.35);
+}
+
+.cal-atajos {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px 7px;
+    border-top: 1px solid #f1f5f9;
+    background: #fafafa;
+}
+
+.cal-atajos span {
+    font-size: 0.77rem;
+    color: #c41e3a;
+    cursor: pointer;
+    font-weight: 600;
+    transition: color 0.15s;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.cal-atajos span:hover:not(.cal-sep) {
+    color: #9e0b2a;
+    text-decoration: underline;
+    background: rgba(196, 30, 58, 0.06);
+}
+
+.cal-sep {
+    color: #cbd5e1 !important;
+    cursor: default !important;
+    font-weight: 400 !important;
+    pointer-events: none;
+}
+
+.cal-footer {
+    display: flex;
+    border-top: 1px solid #e2e8f0;
+}
+
+.cal-btn-cancelar,
+.cal-btn-ok {
+    flex: 1;
+    border: none;
+    padding: 0.65rem;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    letter-spacing: 0.2px;
+}
+
+.cal-btn-cancelar {
+    background: #f8fafc;
+    color: #64748b;
+    border-right: 1px solid #e2e8f0;
+}
+
+.cal-btn-cancelar:hover {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.cal-btn-ok {
+    background: #c41e3a;
+    color: #fff;
+}
+
+.cal-btn-ok:hover:not(:disabled) {
+    background: #9e0b2a;
+}
+
+.cal-btn-ok:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.calendario-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1009;
+    background: transparent;
 }
 
 .btn-secundario {

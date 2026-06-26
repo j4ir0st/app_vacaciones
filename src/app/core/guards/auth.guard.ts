@@ -16,8 +16,9 @@ export class AuthGuard implements CanActivate {
         }
 
         // Verificar si la ruta requiere rol de aprobador
+        // Personal de Recursos Humanos tiene acceso aunque no sea jefe/gerente
         const requiereAprobador = route.data['requiereAprobador'];
-        if (requiereAprobador && !this.authService.esAprobador) {
+        if (requiereAprobador && !this.authService.esAprobador && !this.authService.esRecursosHumanos) {
             this.router.navigate(['/dashboard']);
             return false;
         }

@@ -39,7 +39,8 @@ export class NavbarComponent {
 
     // Verifica si un elemento del menu debe mostrarse
     debeVerse(elemento: ElementoMenu): boolean {
-        if (elemento.soloAprobador) return this.authService.esAprobador;
+        // Personal de Recursos Humanos: accede a todas las pestañas aunque no sea jefe/gerente
+        if (elemento.soloAprobador) return this.authService.esAprobador || this.authService.esRecursosHumanos;
         return true;
     }
 

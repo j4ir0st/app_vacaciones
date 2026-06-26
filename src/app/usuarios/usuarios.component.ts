@@ -79,8 +79,8 @@ export class UsuariosComponent implements OnInit {
         // Solo se muestran colaboradores con área asignada (excluye cuentas de sistema sin perfil)
         const conArea = lista.filter(u => u.area_id != null);
 
-        const username = autor.username?.toLowerCase() || '';
-        if (username === 'magreda') {
+        // Personal de Recursos Humanos: ve todos los colaboradores de todas las áreas
+        if (this.authService.esRecursosHumanos) {
             return conArea;
         }
 

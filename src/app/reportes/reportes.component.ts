@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { forkJoin, EMPTY, from, of } from 'rxjs';
-import { expand, map, reduce, concatMap, toArray, catchError } from 'rxjs/operators';
+import { EMPTY, from, of } from 'rxjs';
+import { expand, map, reduce, concatMap, catchError } from 'rxjs/operators';
+import * as XLSX from 'xlsx';
 import { AuthService } from '../core/services/auth.service';
 import { SolicitudService } from '../core/services/solicitud.service';
 import { UsuarioService } from '../core/services/usuario.service';
@@ -47,6 +48,19 @@ export class ReportesComponent implements OnInit {
     usuariosFiltrados: Usuario[] = [];
     textoBusquedaUsuario = '';
     mostrarResultadosUsuario = false;
+
+    // Rango de fechas para el corte del reporte completo
+    fechaDesde = '';
+    fechaHasta = '';
+
+    // Propiedades del calendario picker personalizado
+    readonly DIAS_SEMANA = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+    readonly MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+    calendarActivo: 'desde' | 'hasta' | null = null;
+    mesVista = 0;
+    anioVista = 0;
+    diaTemp = '';
 
     constructor(
         private authService: AuthService,
@@ -242,9 +256,17 @@ export class ReportesComponent implements OnInit {
      * Implementa la lógica de PowerApps para filtrar usuarios visibles.
      */
     private filtrarUsuariosSegunRol(autor: Usuario, lista: Usuario[]): Usuario[] {
-        const username = autor.username?.toLowerCase() || '';
-        if (username === 'magreda') {
-            return lista;
+        // Filtro base obligatorio: excluye inactivos, sin fecha de ingreso y sin área.
+        // Aplica a TODOS los perfiles antes de cualquier lógica de rol.
+        const listaValida = lista.filter(u =>
+            u.is_active === true &&
+            !!u.fecha_ingreso &&
+            u.area_id != null
+        );
+
+        // Personal de Recursos Humanos: ve todos los colaboradores para reportes
+        if (this.authService.esRecursosHumanos) {
+            return listaValida;
         }
 
         const puesto = (autor.puesto_id?.nombre || '').toLowerCase();
@@ -260,33 +282,26 @@ export class ReportesComponent implements OnInit {
                     'terapia de sueño y apnea', 'ingeniería', 'marketing', 'licitaciones',
                     'equipos médicos', 'casa', 'cdc'
                 ];
-                return lista.filter(u => {
+                return listaValida.filter(u => {
                     const areaU = (u.area_id?.nombre || '').toLowerCase();
                     return areasKatherine.includes(areaU);
                 });
             }
 
-            // Caso especial: Operaciones
+            // Caso especial: Gerente de Operaciones ve todo el personal
             if (area === 'operaciones') {
-                const areasOperaciones = [
-                    'distribución', 'atenciones', 'almacenes', 'facturación',
-                    'desarrollo software', 'logística inversa', 'operaciones'
-                ];
-                return lista.filter(u => {
-                    const areaU = (u.area_id?.nombre || '').toLowerCase();
-                    return areasOperaciones.includes(areaU);
-                });
+                return listaValida;
             }
 
             // Gerente/Jefe estándar ve solo su área
-            return lista.filter(u => {
+            return listaValida.filter(u => {
                 const areaU = (u.area_id?.nombre || '').toLowerCase();
                 return areaU === area;
             });
         }
 
         // Otros roles ven solo su propia área
-        return lista.filter(u => {
+        return listaValida.filter(u => {
             const areaU = (u.area_id?.nombre || '').toLowerCase();
             return areaU === area;
         });
@@ -369,9 +384,9 @@ export class ReportesComponent implements OnInit {
 
         const registros = fila.solicitudes.map(sol => {
             const tipoMap: Record<string, string> = { 'AT': 'Autorizado', 'AD': 'Adelanto' };
-            
+
             const idSolicitud = sol.url?.split('?')[0].split('/').filter(x => x).pop() || '';
-            
+
             return [
                 idSolicitud,
                 this.vacacionesService.formatearFechaHora(sol.fecha_solicitud || ''),
@@ -419,24 +434,103 @@ export class ReportesComponent implements OnInit {
     descargarReporte(): void {
         if (this.filasFiltradas.length === 0) return;
 
-        const cabeceras = ['Nombre', 'Área', 'Puesto', 'Empresa', 'Fecha Ingreso', 'Total Acumulado', 'Días Gozados', 'Días Truncos', 'Días Pendientes', 'Días Programados', 'Prog. 1', 'Prog. 2', 'Prog. 3'];
-        const registros = this.filasFiltradas.map(f => [
-            f.nombre,
-            f.area,
-            f.puesto,
-            f.empresa,
-            f.fechaIngreso,
-            f.totalAcumulado.toString().replace('.', ','),
-            f.diasUtilizados.toString().replace('.', ','),
-            f.diasTruncos.toString().replace('.', ','),
-            f.diasPendientes.toString().replace('.', ','),
-            f.diasProgramados.toString().replace('.', ','),
-            f.prog1,
-            f.prog2,
-            f.prog3
-        ]);
+        const aplicarFiltroFechas = this.fechaDesde || this.fechaHasta;
+        const cabeceras = ['Nombre', 'Área', 'Puesto', 'Empresa', 'Fecha Ingreso', 'Total Acumulado', 'Días Gozados', 'Días Truncos', 'Días Pendientes', 'Días Programados'];
+        let registros: string[][];
+        let nombreArchivo: string;
 
-        this.exportarCSV(cabeceras, registros, 'Reporte_Vacaciones_Completo');
+        if (!aplicarFiltroFechas) {
+            // Sin filtro de fechas: descarga lo que está en pantalla tal cual
+            registros = this.filasFiltradas.map(f => [
+                f.nombre, f.area, f.puesto, f.empresa, f.fechaIngreso,
+                f.totalAcumulado.toString().replace('.', ','),
+                f.diasUtilizados.toString().replace('.', ','),
+                f.diasTruncos.toString().replace('.', ','),
+                f.diasPendientes.toString().replace('.', ','),
+                f.diasProgramados.toString().replace('.', ',')
+            ]);
+            nombreArchivo = 'Reporte_Vacaciones_Completo';
+        } else {
+            // Con filtro de fechas: incluye colaboradores cuya fecha_ingreso esté en el rango
+            // y recalcula todos los campos con corte a fechaHasta
+            const desde = this.fechaDesde ? new Date(this.fechaDesde + 'T00:00:00') : null;
+            const hasta = this.fechaHasta ? new Date(this.fechaHasta + 'T00:00:00') : new Date();
+            hasta.setHours(23, 59, 59, 999);
+
+            registros = this.filasFiltradas
+                .filter(f => {
+                    if (!f.fechaIngreso) return false;
+                    const ingreso = new Date(f.fechaIngreso + 'T00:00:00');
+                    if (desde && ingreso < desde) return false;
+                    if (ingreso > hasta) return false;
+                    return true;
+                })
+                .map(f => {
+                    // Recalcular todos los campos con corte a la fecha "Hasta"
+                    const corte = this.calcularResumenConCorte(f.fechaIngreso, f.solicitudes, hasta);
+                    return [
+                        f.nombre, f.area, f.puesto, f.empresa, f.fechaIngreso,
+                        corte.totalAcumulado.toString().replace('.', ','),
+                        corte.diasGozados.toString().replace('.', ','),
+                        corte.diasTruncos.toString().replace('.', ','),
+                        corte.diasPendientes.toString().replace('.', ','),
+                        corte.diasProgramados.toString().replace('.', ',')
+                    ];
+                });
+
+            nombreArchivo = `Reporte_Vacaciones_Corte_${this.fechaHasta || this.fechaDesde}`;
+        }
+
+        this.exportarCSV(cabeceras, registros, nombreArchivo);
+    }
+
+    /**
+     * Recalcula todos los campos de vacaciones usando una fecha de corte personalizada.
+     * Replica la fórmula PowerApps de calcularResumen() con fecha configurable en vez de hoy.
+     */
+    private calcularResumenConCorte(
+        fechaIngreso: string,
+        solicitudes: SolicitudVacaciones[],
+        fechaCorte: Date
+    ): { totalAcumulado: number; diasGozados: number; diasTruncos: number; diasPendientes: number; diasProgramados: number } {
+
+        const ingreso = new Date(fechaIngreso + 'T00:00:00');
+
+        // Meses cumplidos hasta la fecha de corte (misma fórmula que VacacionesService)
+        let mesesCompletos = (fechaCorte.getFullYear() - ingreso.getFullYear()) * 12
+            + (fechaCorte.getMonth() - ingreso.getMonth());
+        if (fechaCorte.getDate() < ingreso.getDate()) mesesCompletos--;
+        const mesesCumplidos = Math.max(0, mesesCompletos);
+
+        // Total acumulado al corte (2.5 días por mes)
+        const totalAcumulado = mesesCumplidos * 2.5;
+
+        // Separar solicitudes AP/AS en gozadas (<=corte) y programadas (>corte)
+        const aprobadas = solicitudes.filter(s => {
+            const cod = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
+            return cod === 'AP' || cod === 'AS';
+        });
+
+        const diasGozados = aprobadas
+            .filter(s => s.fecha_inicio && new Date(s.fecha_inicio + 'T00:00:00') <= fechaCorte)
+            .reduce((sum, s) => sum + (s.total_periodo || 0), 0);
+
+        const diasProgramados = aprobadas
+            .filter(s => s.fecha_inicio && new Date(s.fecha_inicio + 'T00:00:00') > fechaCorte)
+            .reduce((sum, s) => sum + (s.total_periodo || 0), 0);
+
+        // Pendientes y Truncos con la misma fórmula de PowerApps
+        const diasDeAniosCompletos = Math.floor(totalAcumulado / 30) * 30;
+        const diasPendientesPotencial = diasDeAniosCompletos - diasGozados;
+        const diasPendientes = Math.max(0, diasPendientesPotencial);
+
+        const remanenteAnual = totalAcumulado % 30;
+        const diasTruncosCalc = diasPendientesPotencial > 0
+            ? remanenteAnual
+            : remanenteAnual + diasPendientesPotencial;
+        const diasTruncos = Math.max(0, diasTruncosCalc);
+
+        return { totalAcumulado, diasGozados, diasTruncos, diasPendientes, diasProgramados };
     }
 
     descargarReportePendientes(): void {
@@ -444,11 +538,7 @@ export class ReportesComponent implements OnInit {
 
         const cabeceras = ['Nombre', 'Área', 'Puesto', 'Empresa', 'Fecha Ingreso', 'Total Acumulado', 'Días Truncos', 'Días Pendientes'];
         const registros = this.filasFiltradas.map(f => [
-            f.nombre,
-            f.area,
-            f.puesto,
-            f.empresa,
-            f.fechaIngreso,
+            f.nombre, f.area, f.puesto, f.empresa, f.fechaIngreso,
             f.totalAcumulado.toString().replace('.', ','),
             f.diasTruncos.toString().replace('.', ','),
             f.diasPendientes.toString().replace('.', ',')
@@ -460,27 +550,197 @@ export class ReportesComponent implements OnInit {
     descargarReporteGozados(): void {
         if (this.filasFiltradas.length === 0) return;
 
-        const cabeceras = ['Nombre', 'Área', 'Puesto', 'Empresa', 'Fecha Ingreso', 'Total Acumulado', 'Días Gozados'];
-        const registros = this.filasFiltradas.map(f => [
-            f.nombre,
-            f.area,
-            f.puesto,
-            f.empresa,
-            f.fechaIngreso,
-            f.totalAcumulado.toString().replace('.', ','),
-            f.diasUtilizados.toString().replace('.', ',')
+        const hoy = new Date();
+        hoy.setHours(23, 59, 59, 999);
+
+        // Hoja 1: Resumen de Días Gozados
+        const cabecerasResumen = ['Nombre', 'Área', 'Puesto', 'Empresa', 'Fecha Ingreso', 'Total Acumulado', 'Días Gozados'];
+        const filasResumen = this.filasFiltradas.map(f => [
+            f.nombre, f.area, f.puesto, f.empresa, f.fechaIngreso,
+            parseFloat(f.totalAcumulado.toString().replace(',', '.')),
+            f.diasUtilizados
         ]);
 
-        this.exportarCSV(cabeceras, registros, 'Reporte_Vacaciones_Gozados');
+        // Hoja 2: Detalle de todas las solicitudes gozadas (AP o AS, fecha_inicio <= hoy)
+        // Ordenadas por nombre del colaborador
+        const cabecerasDetalle = [
+            'Nombre', 'Área', 'Estado', 'Tipo',
+            'Fecha Solicitud', 'Fecha Inicio', 'Fecha Final',
+            'Días', 'Aprobado por Jefe', 'Aprobado por Gerente', 'Motivo', 'Observaciones'
+        ];
+
+        const filasDetalle: any[][] = [];
+        // Ordenar colaboradores por nombre antes de iterar
+        const filasOrdenadas = [...this.filasFiltradas].sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+        for (const f of filasOrdenadas) {
+            const solicitudesGozadas = f.solicitudes
+                .filter(sol => {
+                    const cod = this.vacacionesService.obtenerCodigoEstado(sol.estado_solicitud);
+                    if (cod !== 'AP' && cod !== 'AS') return false;
+                    if (!sol.fecha_inicio) return false;
+                    return new Date(sol.fecha_inicio + 'T00:00:00') <= hoy;
+                })
+                .sort((a, b) => a.fecha_inicio.localeCompare(b.fecha_inicio));
+
+            for (const sol of solicitudesGozadas) {
+                const tipoMap: Record<string, string> = { 'AT': 'Autorizada', 'AD': 'Adelanto' };
+                filasDetalle.push([
+                    f.nombre,
+                    f.area,
+                    this.vacacionesService.obtenerLabelEstado(sol.estado_solicitud),
+                    tipoMap[sol.tipo_solicitud || ''] || sol.tipo_solicitud || '',
+                    this.vacacionesService.formatearFechaCompleta(sol.fecha_solicitud || ''),
+                    this.vacacionesService.formatearFechaCompleta(sol.fecha_inicio),
+                    this.vacacionesService.formatearFechaCompleta(sol.fecha_final),
+                    sol.total_periodo,
+                    this.usuarioService.resolverNombrePorUrl(sol.jefe_id),
+                    this.usuarioService.resolverNombrePorUrl(sol.gerente_id),
+                    (sol.motivo || '').replace(/\n/g, ' '),
+                    (sol.obs || '').replace(/\n/g, ' ')
+                ]);
+            }
+        }
+
+        this.exportarExcel(
+            [
+                { nombre: 'Resumen Días Gozados', cabeceras: cabecerasResumen, filas: filasResumen },
+                { nombre: 'Detalle Solicitudes',   cabeceras: cabecerasDetalle, filas: filasDetalle }
+            ],
+            `Reporte_Vacaciones_Gozados_${new Date().toISOString().slice(0, 10)}`
+        );
     }
 
     resetearFiltros(): void {
         this.usuarioSeleccionado = '';
         this.filtroArea = '';
+        this.fechaDesde = '';
+        this.fechaHasta = '';
     }
 
     refrescar(): void {
         this.cargarDatos();
     }
-}
 
+    /**
+     * Genera y descarga un archivo .xlsx con múltiples hojas.
+     */
+    private exportarExcel(
+        hojas: { nombre: string; cabeceras: string[]; filas: any[][] }[],
+        nombreArchivo: string
+    ): void {
+        const libro = XLSX.utils.book_new();
+
+        for (const hoja of hojas) {
+            const datos = [hoja.cabeceras, ...hoja.filas];
+            const hojaCsv = XLSX.utils.aoa_to_sheet(datos);
+
+            // Ajustar ancho de columnas automáticamente al contenido
+            const anchos = hoja.cabeceras.map((col, i) => {
+                const maxLong = Math.max(
+                    col.length,
+                    ...hoja.filas.map(r => String(r[i] ?? '').length)
+                );
+                return { wch: Math.min(maxLong + 4, 60) };
+            });
+            hojaCsv['!cols'] = anchos;
+
+            XLSX.utils.book_append_sheet(libro, hojaCsv, hoja.nombre);
+        }
+
+        XLSX.writeFile(libro, `${nombreArchivo}.xlsx`);
+    }
+
+    // ========================================
+    // Calendario Picker personalizado
+    // ========================================
+
+    abrirCalendario(tipo: 'desde' | 'hasta'): void {
+        const fechaActual = tipo === 'desde' ? this.fechaDesde : this.fechaHasta;
+        const base = fechaActual ? new Date(fechaActual + 'T00:00:00') : new Date();
+        this.mesVista = base.getMonth();
+        this.anioVista = base.getFullYear();
+        this.diaTemp = fechaActual || '';
+        this.calendarActivo = tipo;
+    }
+
+    cerrarCalendario(): void {
+        this.calendarActivo = null;
+        this.diaTemp = '';
+    }
+
+    navegarMes(delta: number): void {
+        let m = this.mesVista + delta;
+        let a = this.anioVista;
+        if (m > 11) { m = 0; a++; }
+        if (m < 0) { m = 11; a--; }
+        this.mesVista = m;
+        this.anioVista = a;
+    }
+
+    // Genera las 42 celdas del calendario (6 semanas) con días del mes anterior, actual y siguiente
+    get diasCalendario(): { fecha: string; dia: number; esOtroMes: boolean }[] {
+        const primerDia = new Date(this.anioVista, this.mesVista, 1);
+        const diaSemana = primerDia.getDay(); // 0=Dom, 1=Lun...
+        const offset = diaSemana === 0 ? 6 : diaSemana - 1; // ajuste a semana lunes-domingo
+        const dias: { fecha: string; dia: number; esOtroMes: boolean }[] = [];
+
+        // Días del mes anterior para completar primera semana
+        for (let i = offset; i > 0; i--) {
+            const d = new Date(this.anioVista, this.mesVista, 1 - i);
+            dias.push({ fecha: this.formatFechaISO(d), dia: d.getDate(), esOtroMes: true });
+        }
+
+        // Días del mes actual
+        const ultimoDia = new Date(this.anioVista, this.mesVista + 1, 0).getDate();
+        for (let i = 1; i <= ultimoDia; i++) {
+            const d = new Date(this.anioVista, this.mesVista, i);
+            dias.push({ fecha: this.formatFechaISO(d), dia: i, esOtroMes: false });
+        }
+
+        // Días del mes siguiente para completar 6 filas (42 celdas)
+        const restantes = 42 - dias.length;
+        for (let i = 1; i <= restantes; i++) {
+            const d = new Date(this.anioVista, this.mesVista + 1, i);
+            dias.push({ fecha: this.formatFechaISO(d), dia: d.getDate(), esOtroMes: true });
+        }
+
+        return dias;
+    }
+
+    seleccionarDiaTemp(fecha: string): void {
+        this.diaTemp = fecha;
+    }
+
+    confirmarFecha(): void {
+        if (!this.diaTemp) { this.cerrarCalendario(); return; }
+        if (this.calendarActivo === 'desde') this.fechaDesde = this.diaTemp;
+        else if (this.calendarActivo === 'hasta') this.fechaHasta = this.diaTemp;
+        this.cerrarCalendario();
+    }
+
+    // Atajos rápidos: Ayer, Hoy, Mañana
+    atajoDia(atajo: 'ayer' | 'hoy' | 'maniana'): void {
+        const hoy = new Date();
+        const d = new Date(hoy);
+        if (atajo === 'ayer') d.setDate(hoy.getDate() - 1);
+        else if (atajo === 'maniana') d.setDate(hoy.getDate() + 1);
+        this.mesVista = d.getMonth();
+        this.anioVista = d.getFullYear();
+        this.diaTemp = this.formatFechaISO(d);
+    }
+
+    get fechaHoy(): string {
+        return this.formatFechaISO(new Date());
+    }
+
+    get tituloCalendario(): string {
+        return `${this.MESES[this.mesVista]} ${this.anioVista}`;
+    }
+
+    private formatFechaISO(d: Date): string {
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${d.getFullYear()}-${mm}-${dd}`;
+    }
+}

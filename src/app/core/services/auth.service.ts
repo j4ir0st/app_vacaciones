@@ -110,13 +110,29 @@ export class AuthService {
         return `${u.first_name} ${u.last_name}`.trim() || u.username;
     }
 
+    // Verifica si el usuario pertenece al área de Recursos Humanos
+    get esRecursosHumanos(): boolean {
+        const u = this.usuarioActual;
+        if (!u) return false;
+        return (u.area_id?.nombre || '').toLowerCase() === 'recursos humanos';
+    }
+
+    // Verifica si el usuario es jefe del área de Recursos Humanos (tiene visibilidad Y permisos de aprobación)
+    get esJefeRecursosHumanos(): boolean {
+        const u = this.usuarioActual;
+        if (!u) return false;
+        if (!this.esRecursosHumanos) return false;
+        const puesto = (u.puesto_id?.nombre || '').toLowerCase();
+        return puesto.includes('jefe') || puesto.includes('gerente') || puesto.includes('supervisor');
+    }
+
     // Verifica si el usuario tiene rol de aprobador (jefe/gerente/supervisor)
     get esAprobador(): boolean {
         const u = this.usuarioActual;
         if (!u) return false;
 
-        const username = u.username?.toLowerCase() || '';
-        if (username === 'magreda') return true;
+        // Solo el jefe de RRHH puede aprobar, no todo el personal de RRHH
+        if (this.esJefeRecursosHumanos) return true;
 
         const grupos = u.groups ?? [];
         const tieneGrupo = grupos.some(g => GRUPOS_APROBADORES.includes(g));
@@ -136,8 +152,7 @@ export class AuthService {
     get esGerente(): boolean {
         const u = this.usuarioActual;
         if (!u) return false;
-        const username = u.username?.toLowerCase() || '';
-        if (username === 'magreda') return true;
+        if (this.esJefeRecursosHumanos) return true;
         const puesto = (u.area_puesto?.puesto_nombre || u.puesto_id?.nombre || '').toLowerCase();
         return puesto.includes('gerente') || (u.groups ?? []).some(g => g.toLowerCase() === 'gerentes');
     }
@@ -148,16 +163,17 @@ export class AuthService {
         const u = this.usuarioActual;
         if (!u) return [];
 
-        const username = u.username?.toLowerCase() || '';
-        if (username === 'magreda') {
+        // Personal de Recursos Humanos: acceso a todo el personal
+        if (this.esRecursosHumanos) {
             return ['*'];
         }
 
         const areaUser = (u.area_id?.nombre || '').trim();
         const areaLower = areaUser.toLowerCase();
+        const username = u.username?.toLowerCase() || '';
         const nombreUser = `${u.first_name} ${u.last_name}`.trim().toLowerCase();
 
-        // Si es Rol Aprobador (Jete/Gerente)
+        // Si es Rol Aprobador (Jefe/Gerente)
         if (this.esAprobador) {
             // Caso especial: Gerencia de Operaciones (ve múltiples áreas de logística/facturación)
             if (areaLower === 'operaciones') {
@@ -182,14 +198,13 @@ export class AuthService {
         const u = this.usuarioActual;
         if (!u) return false;
 
-        const username = u.username?.toLowerCase() || '';
         const areaNormalizada = (areaNombre || '').trim().toLowerCase();
 
         // Áreas de operaciones
         const areasOperaciones = ["distribución", "atenciones", "almacenes", "facturación", "desarrollo software", "logística inversa", "operaciones"];
 
-        // magreda no puede aprobar en las áreas de operaciones
-        if (username === 'magreda') {
+        // Solo el jefe de Recursos Humanos puede aprobar (el personal regular de RRHH solo tiene visibilidad)
+        if (this.esJefeRecursosHumanos) {
             return !areasOperaciones.includes(areaNormalizada);
         }
 

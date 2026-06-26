@@ -1,4 +1,7 @@
 <div class="pagina-reportes">
+    <!-- Overlay para cerrar el calendario al hacer clic fuera -->
+    <div class="calendario-overlay" *ngIf="calendarActivo" (click)="cerrarCalendario()"></div>
+
     <div class="interfaz-filtros" *ngIf="!filaSeleccionada">
         <div class="pagina-header">
             <div class="header-info">
@@ -6,6 +9,100 @@
                 <p class="subtitulo">Consolidado de días pendientes y acumulados por colaborador.</p>
             </div>
             <div class="header-acciones">
+                <!-- Selectores de rango de fechas para el reporte completo -->
+                <div class="rango-fechas-reporte">
+                    <!-- Selector DESDE con calendario -->
+                    <div class="fecha-selector-grupo">
+                        <svg class="fecha-icono fecha-icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            (click)="abrirCalendario('desde')">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <div class="fecha-input-contenedor">
+                            <label class="fecha-label">Desde</label>
+                            <input type="date" class="input-fecha-reporte" [(ngModel)]="fechaDesde" />
+                        </div>
+                        <!-- Dropdown calendario DESDE -->
+                        <div class="calendario-picker" *ngIf="calendarActivo === 'desde'" (click)="$event.stopPropagation()">
+                            <div class="cal-header">
+                                <button class="cal-nav" (click)="navegarMes(-1)">&#8249;</button>
+                                <span class="cal-titulo">{{ tituloCalendario }}</span>
+                                <button class="cal-nav" (click)="navegarMes(1)">&#8250;</button>
+                            </div>
+                            <div class="cal-dias-semana">
+                                <span *ngFor="let d of DIAS_SEMANA">{{ d }}</span>
+                            </div>
+                            <div class="cal-dias-grid">
+                                <button *ngFor="let dia of diasCalendario" class="cal-dia"
+                                    [class.otro-mes]="dia.esOtroMes"
+                                    [class.seleccionado]="dia.fecha === diaTemp"
+                                    [class.hoy]="dia.fecha === fechaHoy"
+                                    (click)="seleccionarDiaTemp(dia.fecha)">
+                                    {{ dia.dia }}
+                                </button>
+                            </div>
+                            <div class="cal-atajos">
+                                <span (click)="atajoDia('ayer')">Ayer</span>
+                                <span class="cal-sep">|</span>
+                                <span (click)="atajoDia('hoy')">Hoy</span>
+                                <span class="cal-sep">|</span>
+                                <span (click)="atajoDia('maniana')">Mañana</span>
+                            </div>
+                            <div class="cal-footer">
+                                <button class="cal-btn-cancelar" (click)="cerrarCalendario()">Cancelar</button>
+                                <button class="cal-btn-ok" (click)="confirmarFecha()" [disabled]="!diaTemp">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                    <span class="fecha-separador">—</span>
+                    <!-- Selector HASTA con calendario -->
+                    <div class="fecha-selector-grupo">
+                        <svg class="fecha-icono fecha-icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            (click)="abrirCalendario('hasta')">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <div class="fecha-input-contenedor">
+                            <label class="fecha-label">Hasta</label>
+                            <input type="date" class="input-fecha-reporte" [(ngModel)]="fechaHasta" />
+                        </div>
+                        <!-- Dropdown calendario HASTA -->
+                        <div class="calendario-picker cal-picker-derecha" *ngIf="calendarActivo === 'hasta'" (click)="$event.stopPropagation()">
+                            <div class="cal-header">
+                                <button class="cal-nav" (click)="navegarMes(-1)">&#8249;</button>
+                                <span class="cal-titulo">{{ tituloCalendario }}</span>
+                                <button class="cal-nav" (click)="navegarMes(1)">&#8250;</button>
+                            </div>
+                            <div class="cal-dias-semana">
+                                <span *ngFor="let d of DIAS_SEMANA">{{ d }}</span>
+                            </div>
+                            <div class="cal-dias-grid">
+                                <button *ngFor="let dia of diasCalendario" class="cal-dia"
+                                    [class.otro-mes]="dia.esOtroMes"
+                                    [class.seleccionado]="dia.fecha === diaTemp"
+                                    [class.hoy]="dia.fecha === fechaHoy"
+                                    (click)="seleccionarDiaTemp(dia.fecha)">
+                                    {{ dia.dia }}
+                                </button>
+                            </div>
+                            <div class="cal-atajos">
+                                <span (click)="atajoDia('ayer')">Ayer</span>
+                                <span class="cal-sep">|</span>
+                                <span (click)="atajoDia('hoy')">Hoy</span>
+                                <span class="cal-sep">|</span>
+                                <span (click)="atajoDia('maniana')">Mañana</span>
+                            </div>
+                            <div class="cal-footer">
+                                <button class="cal-btn-cancelar" (click)="cerrarCalendario()">Cancelar</button>
+                                <button class="cal-btn-ok" (click)="confirmarFecha()" [disabled]="!diaTemp">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <button class="btn-descargar btn-secundario" (click)="descargarReportePendientes()"
                     [disabled]="cargando || filasFiltradas.length === 0">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -13,7 +110,7 @@
                         <polyline points="7 10 12 15 17 10" />
                         <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
-                    Descargar Días Pendientes
+                    Días Pendientes
                 </button>
                 <button class="btn-descargar btn-secundario" (click)="descargarReporteGozados()"
                     [disabled]="cargando || filasFiltradas.length === 0">
@@ -22,7 +119,7 @@
                         <polyline points="7 10 12 15 17 10" />
                         <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
-                    Descargar Días Gozados
+                    Días Gozados
                 </button>
                 <button class="btn-descargar" (click)="descargarReporte()"
                     [disabled]="cargando || filasFiltradas.length === 0">
@@ -31,7 +128,7 @@
                         <polyline points="7 10 12 15 17 10" />
                         <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
-                    Descargar Reporte Completo
+                    Reporte Completo
                 </button>
             </div>
         </div>
@@ -75,7 +172,8 @@
                             </div>
                             <div class="item-info">
                                 <span class="item-nombre">{{ u.first_name }} {{ u.last_name }}</span>
-                                <span class="item-area">{{ u.area_id?.nombre || 'Sin Área' }} - {{ u.puesto_id?.nombre || 'Sin Puesto' }}</span>
+                                <span class="item-area">{{ u.area_id?.nombre || 'Sin Área' }} - {{ u.puesto_id?.nombre
+                                    || 'Sin Puesto' }}</span>
                             </div>
                         </div>
                         <div class="dropdown-vacio" *ngIf="usuariosBuscados.length === 0">
