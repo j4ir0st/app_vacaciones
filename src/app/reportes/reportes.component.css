@@ -1298,3 +1298,118 @@
     margin-bottom: 1rem;
     border: 1px solid #e2e8f0;
 }
+
+/* ========================================
+   Filtro Oficina (dropdown de radio)
+   ======================================== */
+
+.oficina-dropdown {
+    padding: 0.35rem 0;
+}
+
+.oficina-opcion {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 0.9rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #374151;
+    border-radius: 6px;
+    margin: 0 0.3rem;
+    transition: background 0.15s;
+    user-select: none;
+}
+
+.oficina-opcion:hover {
+    background: #f1f5f9;
+}
+
+.oficina-opcion.activa {
+    color: #c41e3a;
+    font-weight: 600;
+}
+
+.oficina-radio-mark {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid #cbd5e1;
+    flex-shrink: 0;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.oficina-opcion.activa .oficina-radio-mark {
+    border-color: #c41e3a;
+    background: #c41e3a;
+    box-shadow: inset 0 0 0 2px white;
+}
+
+/* ========================================
+   Filtro Área multi-selección (checkboxes)
+   ======================================== */
+
+.area-multiselect-dropdown {
+    padding: 0.35rem 0;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.area-check-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.9rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #374151;
+    border-radius: 6px;
+    margin: 0 0.3rem;
+    transition: background 0.15s;
+    user-select: none;
+}
+
+.area-check-item:hover {
+    background: #f1f5f9;
+}
+
+.area-check-item.oculta {
+    display: none;
+}
+
+.check-box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 2px solid #cbd5e1;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s, background 0.15s;
+    background: white;
+}
+
+.check-box.marcado {
+    background: #c41e3a;
+    border-color: #c41e3a;
+}
+
+.check-box svg {
+    width: 10px;
+    height: 10px;
+    stroke: white;
+}
+
+.area-multiselect-dropdown::-webkit-scrollbar {
+    width: 4px;
+}
+
+.area-multiselect-dropdown::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.area-multiselect-dropdown::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}

@@ -9,55 +9,8 @@
                 <p class="subtitulo">Consolidado de días pendientes y acumulados por colaborador.</p>
             </div>
             <div class="header-acciones">
-                <!-- Selectores de rango de fechas para el reporte completo -->
+                <!-- Selector de fecha de corte para el reporte completo -->
                 <div class="rango-fechas-reporte">
-                    <!-- Selector DESDE con calendario -->
-                    <div class="fecha-selector-grupo">
-                        <svg class="fecha-icono fecha-icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                            (click)="abrirCalendario('desde')">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                            <line x1="16" y1="2" x2="16" y2="6"/>
-                            <line x1="8" y1="2" x2="8" y2="6"/>
-                            <line x1="3" y1="10" x2="21" y2="10"/>
-                        </svg>
-                        <div class="fecha-input-contenedor">
-                            <label class="fecha-label">Desde</label>
-                            <input type="date" class="input-fecha-reporte" [(ngModel)]="fechaDesde" />
-                        </div>
-                        <!-- Dropdown calendario DESDE -->
-                        <div class="calendario-picker" *ngIf="calendarActivo === 'desde'" (click)="$event.stopPropagation()">
-                            <div class="cal-header">
-                                <button class="cal-nav" (click)="navegarMes(-1)">&#8249;</button>
-                                <span class="cal-titulo">{{ tituloCalendario }}</span>
-                                <button class="cal-nav" (click)="navegarMes(1)">&#8250;</button>
-                            </div>
-                            <div class="cal-dias-semana">
-                                <span *ngFor="let d of DIAS_SEMANA">{{ d }}</span>
-                            </div>
-                            <div class="cal-dias-grid">
-                                <button *ngFor="let dia of diasCalendario" class="cal-dia"
-                                    [class.otro-mes]="dia.esOtroMes"
-                                    [class.seleccionado]="dia.fecha === diaTemp"
-                                    [class.hoy]="dia.fecha === fechaHoy"
-                                    (click)="seleccionarDiaTemp(dia.fecha)">
-                                    {{ dia.dia }}
-                                </button>
-                            </div>
-                            <div class="cal-atajos">
-                                <span (click)="atajoDia('ayer')">Ayer</span>
-                                <span class="cal-sep">|</span>
-                                <span (click)="atajoDia('hoy')">Hoy</span>
-                                <span class="cal-sep">|</span>
-                                <span (click)="atajoDia('maniana')">Mañana</span>
-                            </div>
-                            <div class="cal-footer">
-                                <button class="cal-btn-cancelar" (click)="cerrarCalendario()">Cancelar</button>
-                                <button class="cal-btn-ok" (click)="confirmarFecha()" [disabled]="!diaTemp">OK</button>
-                            </div>
-                        </div>
-                    </div>
-                    <span class="fecha-separador">—</span>
-                    <!-- Selector HASTA con calendario -->
                     <div class="fecha-selector-grupo">
                         <svg class="fecha-icono fecha-icono-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             (click)="abrirCalendario('hasta')">
@@ -67,10 +20,10 @@
                             <line x1="3" y1="10" x2="21" y2="10"/>
                         </svg>
                         <div class="fecha-input-contenedor">
-                            <label class="fecha-label">Hasta</label>
+                            <label class="fecha-label">Fecha de Corte</label>
                             <input type="date" class="input-fecha-reporte" [(ngModel)]="fechaHasta" />
                         </div>
-                        <!-- Dropdown calendario HASTA -->
+                        <!-- Dropdown calendario FECHA DE CORTE -->
                         <div class="calendario-picker cal-picker-derecha" *ngIf="calendarActivo === 'hasta'" (click)="$event.stopPropagation()">
                             <div class="cal-header">
                                 <button class="cal-nav" (click)="navegarMes(-1)">&#8249;</button>
@@ -134,6 +87,7 @@
         </div>
 
         <div class="filtros-reporte">
+            <!-- Filtro Colaborador -->
             <div class="campo-filtro">
                 <label>Colaborador</label>
                 <div class="combobox-contenedor" [class.abierto]="mostrarResultadosUsuario">
@@ -186,15 +140,96 @@
                     (click)="mostrarResultadosUsuario = false">
                 </div>
             </div>
+
+            <!-- Filtro Oficina (solo RR.HH. y Gerente Operaciones) -->
+            <div class="campo-filtro" *ngIf="puedeVerFiltroOficina">
+                <label>Oficina</label>
+                <div class="combobox-contenedor" [class.abierto]="mostrarFiltroOficina">
+                    <div class="combobox-control" (click)="mostrarFiltroOficina = !mostrarFiltroOficina">
+                        <div class="seleccion-actual">
+                            <span class="nombre-sel" [class.placeholder]="filtroOficina === 'todas'">
+                                {{ filtroOficina === 'todas' ? 'Todas las Oficinas' : filtroOficina === 'caminitos' ? 'Caminitos' : 'Batallón' }}
+                            </span>
+                        </div>
+                        <div class="combobox-iconos">
+                            <svg *ngIf="filtroOficina !== 'todas'"
+                                (click)="$event.stopPropagation(); filtroOficina = 'todas'; mostrarFiltroOficina = false"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-clear">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-chevron">
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="combobox-dropdown oficina-dropdown" *ngIf="mostrarFiltroOficina">
+                        <label class="oficina-opcion" [class.activa]="filtroOficina === 'todas'"
+                            (click)="filtroOficina = 'todas'; mostrarFiltroOficina = false">
+                            <span class="oficina-radio-mark"></span>
+                            Todas las Oficinas
+                        </label>
+                        <label class="oficina-opcion" [class.activa]="filtroOficina === 'caminitos'"
+                            (click)="filtroOficina = 'caminitos'; filtroAreas = []; mostrarFiltroOficina = false">
+                            <span class="oficina-radio-mark"></span>
+                            Caminitos
+                        </label>
+                        <label class="oficina-opcion" [class.activa]="filtroOficina === 'batallon'"
+                            (click)="filtroOficina = 'batallon'; filtroAreas = []; mostrarFiltroOficina = false">
+                            <span class="oficina-radio-mark"></span>
+                            Batallón
+                        </label>
+                    </div>
+                </div>
+                <div class="combobox-overlay" *ngIf="mostrarFiltroOficina"
+                    (click)="mostrarFiltroOficina = false"></div>
+            </div>
+
+            <!-- Filtro Área multi-selección -->
             <div class="campo-filtro">
                 <label>Área</label>
-                <div class="select-wrapper">
-                    <select [(ngModel)]="filtroArea">
-                        <option value="">Todas las áreas</option>
-                        <option *ngFor="let area of areasDisponibles" [value]="area">{{ area }}</option>
-                    </select>
+                <div class="combobox-contenedor" [class.abierto]="mostrarFiltroArea">
+                    <div class="combobox-control" (click)="mostrarFiltroArea = !mostrarFiltroArea">
+                        <div class="seleccion-actual">
+                            <span class="nombre-sel" [class.placeholder]="filtroAreas.length === 0">
+                                {{ textoFiltroAreas }}
+                            </span>
+                        </div>
+                        <div class="combobox-iconos">
+                            <svg *ngIf="filtroAreas.length > 0"
+                                (click)="$event.stopPropagation(); filtroAreas = []; mostrarFiltroArea = false"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-clear">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-chevron">
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="combobox-dropdown area-multiselect-dropdown" *ngIf="mostrarFiltroArea">
+                        <label class="area-check-item"
+                            *ngFor="let area of areasDisponibles"
+                            [class.oculta]="!areaEnOficinaActiva(area)"
+                            (click)="$event.stopPropagation(); toggleFiltroArea(area)">
+                            <span class="check-box" [class.marcado]="filtroAreas.includes(area)">
+                                <svg *ngIf="filtroAreas.includes(area)" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="3">
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                            </span>
+                            {{ area }}
+                        </label>
+                        <div class="dropdown-vacio"
+                            *ngIf="sinAreasEnOficina">
+                            Sin áreas disponibles
+                        </div>
+                    </div>
                 </div>
+                <div class="combobox-overlay" *ngIf="mostrarFiltroArea"
+                    (click)="mostrarFiltroArea = false"></div>
             </div>
+
             <button class="btn-reset" (click)="resetearFiltros()" title="Limpiar filtros">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                     stroke-linejoin="round">

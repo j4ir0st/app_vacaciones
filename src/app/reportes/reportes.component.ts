@@ -38,7 +38,22 @@ interface FilaReporte {
 export class ReportesComponent implements OnInit {
     cargando = false;
     usuarioSeleccionado: string = ''; // Almacena el username para el filtro
-    filtroArea = '';
+
+    // Filtro de área multi-selección
+    filtroAreas: string[] = [];
+    mostrarFiltroArea = false;
+
+    // Filtro de oficina (visible solo para RR.HH. y Gerente Operaciones)
+    filtroOficina: 'todas' | 'caminitos' | 'batallon' = 'todas';
+    mostrarFiltroOficina = false;
+
+    // Áreas que pertenecen a la oficina Batallón (igual que las áreas de klewis)
+    readonly AREAS_BATALLON = [
+        'contabilidad', 'mantenimiento', 'provincia', 'vigilancia', 'finanzas',
+        'neurocirugía', 'traumatología', 'heridas y quemados', 'regulatorios',
+        'terapia de sueño y apnea', 'ingeniería', 'marketing', 'licitaciones',
+        'equipos médicos', 'casa', 'cdc'
+    ];
 
     todasLasFilas: FilaReporte[] = [];
     areasDisponibles: string[] = [];
@@ -49,15 +64,14 @@ export class ReportesComponent implements OnInit {
     textoBusquedaUsuario = '';
     mostrarResultadosUsuario = false;
 
-    // Rango de fechas para el corte del reporte completo
-    fechaDesde = '';
+    // Fecha de corte para el reporte completo (antes llamada "Hasta")
     fechaHasta = '';
 
     // Propiedades del calendario picker personalizado
     readonly DIAS_SEMANA = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
     readonly MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-    calendarActivo: 'desde' | 'hasta' | null = null;
+    calendarActivo: 'hasta' | null = null;
     mesVista = 0;
     anioVista = 0;
     diaTemp = '';
@@ -309,19 +323,78 @@ export class ReportesComponent implements OnInit {
 
     get filasFiltradas(): FilaReporte[] {
         return this.todasLasFilas.filter(f => {
-            const coincideUsuario = !this.usuarioSeleccionado || f.username === this.usuarioSeleccionado;
-            const coincideArea = !this.filtroArea || f.area === this.filtroArea;
-            return coincideUsuario && coincideArea;
+            // Filtro por colaborador
+            if (this.usuarioSeleccionado && f.username !== this.usuarioSeleccionado) return false;
+
+            // Filtro por oficina (Caminitos / Batallón)
+            if (this.filtroOficina !== 'todas') {
+                const areaNorm = (f.area || '').toLowerCase();
+                const esBatallon = this.AREAS_BATALLON.includes(areaNorm);
+                if (this.filtroOficina === 'batallon' && !esBatallon) return false;
+                if (this.filtroOficina === 'caminitos' && esBatallon) return false;
+            }
+
+            // Filtro por áreas seleccionadas (multi-selección)
+            if (this.filtroAreas.length > 0 && !this.filtroAreas.includes(f.area)) return false;
+
+            return true;
         });
     }
 
-    // Getter para el combobox buscador de usuarios (filtra por nombre/apellido y área activa)
+    // ¿Puede este usuario ver el filtro de Oficina?
+    get puedeVerFiltroOficina(): boolean {
+        if (this.authService.esRecursosHumanos) return true;
+        const usuario = this.authService.usuarioActual;
+        if (!usuario) return false;
+        const puesto = (usuario.puesto_id?.nombre || '').toLowerCase();
+        const area = (usuario.area_id?.nombre || '').toLowerCase();
+        return (puesto.includes('gerente') || puesto.includes('jefe')) && area === 'operaciones';
+    }
+
+    // Texto resumen de las áreas seleccionadas para mostrar en el botón del filtro
+    get textoFiltroAreas(): string {
+        if (this.filtroAreas.length === 0) return 'Todas las áreas';
+        if (this.filtroAreas.length === 1) return this.filtroAreas[0];
+        return `${this.filtroAreas.length} áreas seleccionadas`;
+    }
+
+    // Alterna la selección de un área en el filtro multi-selección
+    toggleFiltroArea(area: string): void {
+        const idx = this.filtroAreas.indexOf(area);
+        if (idx >= 0) {
+            this.filtroAreas.splice(idx, 1);
+        } else {
+            this.filtroAreas.push(area);
+        }
+    }
+
+    // Devuelve true si el área está en la lista activa del filtro oficina
+    areaEnOficinaActiva(area: string): boolean {
+        if (this.filtroOficina === 'todas') return true;
+        const areaNorm = area.toLowerCase();
+        const esBatallon = this.AREAS_BATALLON.includes(areaNorm);
+        if (this.filtroOficina === 'batallon') return esBatallon;
+        return !esBatallon; // caminitos
+    }
+
+    // true cuando ninguna área disponible pertenece a la oficina activa (para el mensaje vacío)
+    get sinAreasEnOficina(): boolean {
+        return this.areasDisponibles.every(a => !this.areaEnOficinaActiva(a));
+    }
+
+    // Getter para el combobox buscador de usuarios
     get usuariosBuscados(): Usuario[] {
         const busqueda = this.textoBusquedaUsuario.toLowerCase().trim();
-        // Filtrar por área si está seleccionada
         let base = this.usuariosFiltrados;
-        if (this.filtroArea) {
-            base = base.filter(u => (u.area_id?.nombre || u.area) === this.filtroArea);
+
+        // Aplicar filtro de oficina
+        if (this.filtroOficina !== 'todas') {
+            base = base.filter(u => this.areaEnOficinaActiva(u.area_id?.nombre || ''));
+        }
+
+        // Aplicar filtro de áreas seleccionadas
+        if (this.filtroAreas.length > 0) {
+            base = base.filter(u => this.filtroAreas.includes(u.area_id?.nombre || ''));
         }
 
         if (!busqueda) return base;
@@ -434,7 +507,7 @@ export class ReportesComponent implements OnInit {
     descargarReporte(): void {
         if (this.filasFiltradas.length === 0) return;
 
-        const aplicarFiltroFechas = this.fechaDesde || this.fechaHasta;
+        const aplicarFiltroFechas = this.fechaHasta;
         const cabeceras = ['Nombre', 'Área', 'Puesto', 'Empresa', 'Fecha Ingreso', 'Total Acumulado', 'Días Gozados', 'Días Truncos', 'Días Pendientes', 'Días Programados'];
         let registros: string[][];
         let nombreArchivo: string;
@@ -451,34 +524,24 @@ export class ReportesComponent implements OnInit {
             ]);
             nombreArchivo = 'Reporte_Vacaciones_Completo';
         } else {
-            // Con filtro de fechas: incluye colaboradores cuya fecha_ingreso esté en el rango
-            // y recalcula todos los campos con corte a fechaHasta
-            const desde = this.fechaDesde ? new Date(this.fechaDesde + 'T00:00:00') : null;
+            // Con filtro de fechas: todos los usuarios en pantalla se incluyen,
+            // los campos se recalculan usando fechaHasta como fecha de corte
             const hasta = this.fechaHasta ? new Date(this.fechaHasta + 'T00:00:00') : new Date();
             hasta.setHours(23, 59, 59, 999);
 
-            registros = this.filasFiltradas
-                .filter(f => {
-                    if (!f.fechaIngreso) return false;
-                    const ingreso = new Date(f.fechaIngreso + 'T00:00:00');
-                    if (desde && ingreso < desde) return false;
-                    if (ingreso > hasta) return false;
-                    return true;
-                })
-                .map(f => {
-                    // Recalcular todos los campos con corte a la fecha "Hasta"
-                    const corte = this.calcularResumenConCorte(f.fechaIngreso, f.solicitudes, hasta);
-                    return [
-                        f.nombre, f.area, f.puesto, f.empresa, f.fechaIngreso,
-                        corte.totalAcumulado.toString().replace('.', ','),
-                        corte.diasGozados.toString().replace('.', ','),
-                        corte.diasTruncos.toString().replace('.', ','),
-                        corte.diasPendientes.toString().replace('.', ','),
-                        corte.diasProgramados.toString().replace('.', ',')
-                    ];
-                });
+            registros = this.filasFiltradas.map(f => {
+                const corte = this.calcularResumenConCorte(f.fechaIngreso, f.solicitudes, hasta);
+                return [
+                    f.nombre, f.area, f.puesto, f.empresa, f.fechaIngreso,
+                    corte.totalAcumulado.toString().replace('.', ','),
+                    corte.diasGozados.toString().replace('.', ','),
+                    corte.diasTruncos.toString().replace('.', ','),
+                    corte.diasPendientes.toString().replace('.', ','),
+                    corte.diasProgramados.toString().replace('.', ',')
+                ];
+            });
 
-            nombreArchivo = `Reporte_Vacaciones_Corte_${this.fechaHasta || this.fechaDesde}`;
+            nombreArchivo = `Reporte_Vacaciones_Corte_${this.fechaHasta}`;
         }
 
         this.exportarCSV(cabeceras, registros, nombreArchivo);
@@ -605,7 +668,7 @@ export class ReportesComponent implements OnInit {
         this.exportarExcel(
             [
                 { nombre: 'Resumen Días Gozados', cabeceras: cabecerasResumen, filas: filasResumen },
-                { nombre: 'Detalle Solicitudes',   cabeceras: cabecerasDetalle, filas: filasDetalle }
+                { nombre: 'Detalle Solicitudes', cabeceras: cabecerasDetalle, filas: filasDetalle }
             ],
             `Reporte_Vacaciones_Gozados_${new Date().toISOString().slice(0, 10)}`
         );
@@ -613,8 +676,8 @@ export class ReportesComponent implements OnInit {
 
     resetearFiltros(): void {
         this.usuarioSeleccionado = '';
-        this.filtroArea = '';
-        this.fechaDesde = '';
+        this.filtroAreas = [];
+        this.filtroOficina = 'todas';
         this.fechaHasta = '';
     }
 
@@ -655,13 +718,12 @@ export class ReportesComponent implements OnInit {
     // Calendario Picker personalizado
     // ========================================
 
-    abrirCalendario(tipo: 'desde' | 'hasta'): void {
-        const fechaActual = tipo === 'desde' ? this.fechaDesde : this.fechaHasta;
-        const base = fechaActual ? new Date(fechaActual + 'T00:00:00') : new Date();
+    abrirCalendario(tipo: 'hasta'): void {
+        const base = this.fechaHasta ? new Date(this.fechaHasta + 'T00:00:00') : new Date();
         this.mesVista = base.getMonth();
         this.anioVista = base.getFullYear();
-        this.diaTemp = fechaActual || '';
-        this.calendarActivo = tipo;
+        this.diaTemp = this.fechaHasta || '';
+        this.calendarActivo = 'hasta';
     }
 
     cerrarCalendario(): void {
@@ -714,8 +776,7 @@ export class ReportesComponent implements OnInit {
 
     confirmarFecha(): void {
         if (!this.diaTemp) { this.cerrarCalendario(); return; }
-        if (this.calendarActivo === 'desde') this.fechaDesde = this.diaTemp;
-        else if (this.calendarActivo === 'hasta') this.fechaHasta = this.diaTemp;
+        this.fechaHasta = this.diaTemp;
         this.cerrarCalendario();
     }
 
