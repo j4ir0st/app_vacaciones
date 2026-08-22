@@ -497,20 +497,13 @@ export class AprobacionesComponent implements OnInit {
 
     /**
      * Determina si un gerente puede rechazar una solicitud ya aprobada.
-     * Solo si: es gerente, la solicitud está aprobada (AP) y la fecha de inicio es futura.
+     * Solo si: es gerente y la solicitud está aprobada (AP).
      */
     puedeRechazarAprobada(): boolean {
         if (!this.solicitudDetalle) return false;
         if (!this.authService.esGerente) return false;
         const codigoEstado = this.vacacionesService.obtenerCodigoEstado(this.solicitudDetalle.estado_solicitud);
-        if (codigoEstado !== 'AP') return false;
-
-        // Solo permitir si la fecha de inicio es mayor al día actual
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-        const fechaInicio = new Date(this.solicitudDetalle.fecha_inicio);
-        fechaInicio.setHours(0, 0, 0, 0);
-        return fechaInicio > hoy;
+        return codigoEstado === 'AP';
     }
 
     /**

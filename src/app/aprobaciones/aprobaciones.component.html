@@ -236,7 +236,7 @@
                 </button>
             </div>
 
-            <!-- Botón Rechazar para Gerente en solicitudes Aprobadas con fecha futura -->
+            <!-- Botón Rechazar para Gerente en solicitudes Aprobadas -->
             <div class="detalle-footer-acciones" *ngIf="!rechazoExitoso && puedeRechazarAprobada() && puedeAprobarSolicitud(solicitudDetalle)">
                 <button class="btn-outline-danger" [disabled]="procesandoDetalle" (click)="confirmarRechazo()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

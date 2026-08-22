@@ -82,3 +82,9 @@ Implementado el 25 de mayo de 2026, se incorpora un esquema de permisos global p
 - **Acceso Total**: El usuario `magreda` hereda privilegios elevados de Gerente administrativo y visualiza a todos los usuarios, saldos de vacaciones, reportes globales y el calendario de todas las áreas de la compañía. Se implementa mediante un token virtual de áreas visibles `['*']` centralizado en `AuthService`.
 - **Restricción de Operaciones**: Por políticas internas de negocio, `magreda` **no** tiene permitido aprobar ni rechazar solicitudes pertenecientes al área de **Operaciones** (y sus sub-áreas como Distribución, Atenciones, Almacenes, Facturación, Desarrollo Software y Logística Inversa). Las acciones de aprobación de estas áreas están bloqueadas y se muestra un banner de advertencia premium en la vista de detalle indicando que estas solicitudes son competencia exclusiva de la Jefatura/Gerencia de Operaciones.
 - **Gestión de Colaboradores**: Se le permite registrar colaboradores en cualquier área del sistema y realizar la activación/desactivación de usuarios globales.
+
+### Rechazo de Solicitudes Aprobadas por Gerencia
+Permite a los usuarios con rol de Gerente rechazar cualquier solicitud en estado Aprobado (`AP`), sin importar la fecha de inicio de la solicitud (removiendo la restricción previa que limitaba el rechazo únicamente a fechas futuras).
+
+### Visibilidad de Calendario para Coordinadores y Supervisores de Operaciones
+Se agrega la regla mediante `getAreasVisiblesCalendario()` en `AuthService` para que los usuarios con puesto de **Coordinador** o **Supervisor** en cualquiera de las subáreas de Operaciones (Distribución, Atenciones, Almacenes, Facturación, Desarrollo Software, Logística Inversa y Operaciones) tengan visibilidad de todas las subáreas de Operaciones **exclusivamente en el módulo de Calendario**, manteniendo sus restricciones estándar en los módulos de aprobación y reportes.

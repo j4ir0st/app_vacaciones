@@ -96,7 +96,7 @@ export class CalendarioComponent implements OnInit {
 
     private configurarFiltrosIniciales(): void {
         // Usar la lógica centralizada de permisos para el calendario
-        const areasVisibles = this.authService.getAreasVisibles();
+        const areasVisibles = this.authService.getAreasVisiblesCalendario();
         if (areasVisibles.includes('*')) {
             this.areasFiltradas = this.todasAreas.map(a => a.nombre);
         } else {
@@ -113,7 +113,7 @@ export class CalendarioComponent implements OnInit {
     }
 
     private cargarUsuariosYSolicitudes(): void {
-        const esAccesoTotal = this.authService.getAreasVisibles().includes('*');
+        const esAccesoTotal = this.authService.getAreasVisiblesCalendario().includes('*');
         const areasQuery = esAccesoTotal ? '' : this.areasFiltradas.join(',');
 
         // 1. Cargar Usuarios Filtrados por Área
@@ -140,7 +140,7 @@ export class CalendarioComponent implements OnInit {
     }
 
     private cargarTodasLasSolicitudes(): void {
-        const areasVisibles = this.authService.getAreasVisibles();
+        const areasVisibles = this.authService.getAreasVisiblesCalendario();
         const esAccesoTotal = areasVisibles.includes('*');
         const paramsArea = esAccesoTotal ? {} : this.solicitudService.obtenerFiltroArea(areasVisibles);
 

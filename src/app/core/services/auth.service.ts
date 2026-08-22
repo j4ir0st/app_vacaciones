@@ -193,6 +193,32 @@ export class AuthService {
         return [areaUser];
     }
 
+    // Retorna la lista de nombres de áreas que el usuario tiene permiso para visualizar exclusivamente en el Calendario
+    getAreasVisiblesCalendario(): string[] {
+        const u = this.usuarioActual;
+        if (!u) return [];
+
+        // Personal de Recursos Humanos: acceso a todo el personal
+        if (this.esRecursosHumanos) {
+            return ['*'];
+        }
+
+        const areaUser = (u.area_id?.nombre || '').trim();
+        const areaLower = areaUser.toLowerCase();
+        const puesto = (u.area_puesto?.puesto_nombre || u.puesto_id?.nombre || '').toLowerCase();
+        const esCoordinadorOSupervisor = puesto.includes('coordinador') || puesto.includes('supervisor') || puesto.includes('jefe') || puesto.includes('gerente');
+
+        const areasOperacionesLower = ["distribución", "atenciones", "almacenes", "facturación", "desarrollo software", "logística inversa", "operaciones"];
+        const areasOperaciones = ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa", "Operaciones"];
+
+        // Si es coordinador o supervisor en alguna subárea de Operaciones, accede a todas las subáreas de Gerencia de Operaciones
+        if (esCoordinadorOSupervisor && areasOperacionesLower.includes(areaLower)) {
+            return areasOperaciones;
+        }
+
+        return this.getAreasVisibles();
+    }
+
     // Verifica si el usuario actual tiene permitido aprobar una solicitud en un área específica
     puedeAprobarEnArea(areaNombre: string): boolean {
         const u = this.usuarioActual;
