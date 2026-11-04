@@ -1,6 +1,6 @@
 import { Component, Output, EventEmitter, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { EMPTY } from 'rxjs';
+import { EMPTY, forkJoin, of } from 'rxjs';
 import { expand, map, reduce } from 'rxjs/operators';
 import { AuthService } from '../core/services/auth.service';
 import { SolicitudService } from '../core/services/solicitud.service';
@@ -41,6 +41,17 @@ export class NuevaSolicitudComponent implements OnInit {
     conflictosFechas: { nombre: string; area: string; puesto: string; estado: string; fechaInicio: string; fechaFinal: string }[] = [];
     verificandoConflictos = false;
     conflictosAceptados = false;
+
+    // Áreas pertenecientes a la Gerencia de Operaciones
+    private readonly AREAS_OPERACIONES = [
+        'distribución', 'distribucion',
+        'atenciones',
+        'almacenes',
+        'facturación', 'facturacion',
+        'desarrollo software',
+        'logística inversa', 'logistica inversa',
+        'operaciones'
+    ];
 
     get usuarioActual() {
         return this.authService.usuarioActual;
@@ -123,6 +134,11 @@ export class NuevaSolicitudComponent implements OnInit {
 
         this.formulario.get('dias')?.valueChanges.subscribe((val: number) => {
             this.recalcularAlCambiarDias(val);
+            this.conflictosAceptados = false;
+            this.verificarConflictosFechas();
+        });
+
+        this.formulario.get('usuario_id')?.valueChanges.subscribe(() => {
             this.conflictosAceptados = false;
             this.verificarConflictosFechas();
         });
@@ -258,6 +274,8 @@ export class NuevaSolicitudComponent implements OnInit {
         this.formulario.get('usuario_id')?.setValue(u.url);
         this.textoBusquedaUsuario = ''; // Limpiar búsqueda al seleccionar
         this.mostrarResultados = false;
+        this.conflictosAceptados = false;
+        this.verificarConflictosFechas();
     }
 
     // Obtiene el nombre completo del colaborador seleccionado para mostrarlo en el resumen
@@ -359,83 +377,142 @@ export class NuevaSolicitudComponent implements OnInit {
             .toUpperCase();
     }
 
-    // Verifica si hay solicitudes de la misma área que se solapen con las fechas seleccionadas
+    // Verifica si hay solicitudes de la misma área que se solapen con las fechas seleccionadas,
+    // e incluye al Gerente de Operaciones si el solicitante es Supervisor, Coordinador o Jefe de un área de operaciones.
     private verificarConflictosFechas(): void {
         const fechaInicio = this.formulario.get('fecha_inicio')?.value;
         const fechaFinal = this.formulario.get('fecha_final')?.value;
 
-        // No verificar si no hay fechas completas o si es gerente
-        if (!fechaInicio || !fechaFinal || this.authService.esGerente) {
+        if (!fechaInicio || !fechaFinal) {
             this.conflictosFechas = [];
             return;
         }
 
-        // Obtener el área del usuario seleccionado
+        // Obtener el colaborador seleccionado
         const selectedUrl = this.formulario.get('usuario_id')?.value;
-        let areaNombre = '';
+        let selectedUser: Usuario | null = null;
         if (selectedUrl === this.usuarioActual?.url) {
-            areaNombre = this.usuarioActual?.area_id?.nombre || '';
+            selectedUser = this.usuarioActual;
         } else {
-            const selectedUser = this.usuarios.find(u => u.url === selectedUrl);
-            areaNombre = selectedUser?.area_id?.nombre || this.usuarioActual?.area_id?.nombre || '';
+            selectedUser = this.usuarios.find(u => u.url === selectedUrl) || null;
+        }
+
+        const areaNombre = (selectedUser?.area_id?.nombre || selectedUser?.area || this.usuarioActual?.area_id?.nombre || '').trim();
+        const puestoNombre = (selectedUser?.area_puesto?.puesto_nombre || selectedUser?.puesto_id?.nombre || '').toLowerCase().trim();
+
+        // Si el solicitante seleccionado es Gerente, no aplican alertas de conflicto
+        const esGerente = puestoNombre.includes('gerente') || (selectedUrl === this.usuarioActual?.url && this.authService.esGerente);
+        if (esGerente) {
+            this.conflictosFechas = [];
+            return;
         }
 
         if (!areaNombre) return;
 
         this.verificandoConflictos = true;
 
-        // Consultar solicitudes del área en el backend
-        const urlSolicitudes = `${this.solicitudService.URL_SOLICITUDES}&area_nombre=${encodeURIComponent(areaNombre)}`;
-        this.solicitudService.obtenerSolicitudes(urlSolicitudes).pipe(
+        // Validar si el colaborador es Supervisor, Coordinador o Jefe de un área de Operaciones
+        const esMando = puestoNombre.includes('supervisor') || puestoNombre.includes('coordinador') || puestoNombre.includes('jefe');
+        const areaNorm = areaNombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const perteneceAOperaciones = this.AREAS_OPERACIONES.some(a => a.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === areaNorm);
+        const debeVerificarGerenteOperaciones = esMando && perteneceAOperaciones;
+
+        // 1. Petición para solicitudes de su propia área
+        const urlSolicitudesArea = `${this.solicitudService.URL_SOLICITUDES}&area_nombre=${encodeURIComponent(areaNombre)}`;
+        const obsSolicitudesArea = this.solicitudService.obtenerSolicitudes(urlSolicitudesArea).pipe(
             expand((resp: any) => resp.next ? this.solicitudService.obtenerSolicitudes(resp.next) : EMPTY),
             map((resp: any) => Array.isArray(resp) ? resp : (resp.results || [])),
             reduce((acc: any[], curr: any[]) => acc.concat(curr), [])
-        ).subscribe({
-            next: (solicitudes: SolicitudVacaciones[]) => {
+        );
+
+        // 2. Si es mando de Operaciones y su área no es 'Operaciones', consultamos también las solicitudes de Operaciones
+        const consultarOperaciones = debeVerificarGerenteOperaciones && areaNorm !== 'operaciones';
+        const obsSolicitudesOperaciones = consultarOperaciones
+            ? this.solicitudService.obtenerSolicitudes(`${this.solicitudService.URL_SOLICITUDES}&area_nombre=Operaciones`).pipe(
+                expand((resp: any) => resp.next ? this.solicitudService.obtenerSolicitudes(resp.next) : EMPTY),
+                map((resp: any) => Array.isArray(resp) ? resp : (resp.results || [])),
+                reduce((acc: any[], curr: any[]) => acc.concat(curr), [])
+            )
+            : of([] as SolicitudVacaciones[]);
+
+        // 3. Usuarios de Operaciones para identificar con precisión al Gerente de Operaciones
+        const obsUsuariosOperaciones = debeVerificarGerenteOperaciones
+            ? this.usuarioService.obtenerUsuariosPorNombreArea('Operaciones')
+            : of([] as Usuario[]);
+
+        forkJoin({
+            solicitudesArea: obsSolicitudesArea,
+            solicitudesOperaciones: obsSolicitudesOperaciones,
+            usuariosOperaciones: obsUsuariosOperaciones
+        }).subscribe({
+            next: ({ solicitudesArea, solicitudesOperaciones, usuariosOperaciones }) => {
                 this.verificandoConflictos = false;
-                this.detectarConflictos(solicitudes, fechaInicio, fechaFinal, selectedUrl);
+                this.detectarConflictos(
+                    solicitudesArea,
+                    solicitudesOperaciones,
+                    usuariosOperaciones,
+                    fechaInicio,
+                    fechaFinal,
+                    selectedUrl,
+                    debeVerificarGerenteOperaciones
+                );
             },
-            error: () => {
+            error: (err) => {
+                console.error('Error al verificar conflictos de fechas:', err);
                 this.verificandoConflictos = false;
             }
         });
     }
 
     // Detecta conflictos de solapamiento de fechas con solicitudes existentes
-    private detectarConflictos(solicitudes: SolicitudVacaciones[], inicio: string, fin: string, urlSolicitante: string): void {
+    private detectarConflictos(
+        solicitudesArea: SolicitudVacaciones[],
+        solicitudesOperaciones: SolicitudVacaciones[],
+        usuariosOperaciones: Usuario[],
+        inicio: string,
+        fin: string,
+        urlSolicitante: string,
+        debeVerificarGerenteOperaciones: boolean
+    ): void {
         const fechaIni = new Date(inicio + 'T00:00:00');
         const fechaFin = new Date(fin + 'T23:59:59');
 
         const estadosAVerificar = ['AP', 'AS', 'PD'];
+        const conflictos: { nombre: string; area: string; puesto: string; estado: string; fechaInicio: string; fechaFinal: string }[] = [];
+        const idsProcesados = new Set<string>();
 
-        this.conflictosFechas = solicitudes
-            .filter(s => {
-                // Solo verificar estados relevantes
-                const codigoEstado = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
-                if (!estadosAVerificar.includes(codigoEstado)) return false;
+        // Identificar al Gerente de Operaciones entre los usuarios de Operaciones
+        const gerenteOperaciones = usuariosOperaciones.find(u => {
+            const p = (u.area_puesto?.puesto_nombre || u.puesto_id?.nombre || '').toLowerCase();
+            return p.includes('gerente');
+        });
 
-                // No comparar con las solicitudes del propio usuario que está solicitando
-                const urlUsuarioSoli = typeof s.usuario_id === 'string' ? s.usuario_id : '';
-                if (urlUsuarioSoli === urlSolicitante) return false;
+        // 1. Conflictos en su propia área (compañeros de su misma área)
+        for (const s of solicitudesArea) {
+            const codigoEstado = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
+            if (!estadosAVerificar.includes(codigoEstado)) continue;
 
-                // Verificar solapamiento de fechas
-                const solInicio = new Date(s.fecha_inicio + 'T00:00:00');
-                const solFin = new Date(s.fecha_final + 'T23:59:59');
-                return fechaIni <= solFin && fechaFin >= solInicio;
-            })
-            .map(s => {
+            const urlUsuarioSoli = typeof s.usuario_id === 'string' ? s.usuario_id : '';
+            if (urlUsuarioSoli === urlSolicitante) continue;
+
+            const solInicio = new Date(s.fecha_inicio + 'T00:00:00');
+            const solFin = new Date(s.fecha_final + 'T23:59:59');
+            if (fechaIni <= solFin && fechaFin >= solInicio) {
+                const sKey = s.url || `${s.fecha_inicio}-${s.fecha_final}-${urlUsuarioSoli}`;
+                if (idsProcesados.has(sKey)) continue;
+                idsProcesados.add(sKey);
+
                 let nombre = 'Usuario';
                 let area = '';
                 let puesto = '';
-                const codigoEstado = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
 
                 if (typeof s.usuario_id === 'object' && s.usuario_id) {
                     nombre = (s.usuario_id as any).fullname || 'Usuario';
                     area = (s.usuario_id as any).area || '';
                     puesto = (s.usuario_id as any).puesto || '';
                 } else if (typeof s.usuario_id === 'string') {
-                    // Buscar en la lista de usuarios cargados
-                    const usr = this.usuarios.find(u => u.url === s.usuario_id);
+                    const usr = this.usuarios.find(u => u.url === s.usuario_id) ||
+                                usuariosOperaciones.find(u => u.url === s.usuario_id);
                     if (usr) {
                         nombre = `${usr.first_name} ${usr.last_name}`.trim();
                         area = usr.area_id?.nombre || usr.area || '';
@@ -446,15 +523,77 @@ export class NuevaSolicitudComponent implements OnInit {
                 const etiquetaEstado = codigoEstado === 'AP' ? 'aprobada' :
                     codigoEstado === 'AS' ? 'aprobada por supervisor' : 'pendiente';
 
-                return {
+                conflictos.push({
                     nombre,
                     area,
                     puesto,
                     estado: etiquetaEstado,
                     fechaInicio: s.fecha_inicio,
                     fechaFinal: s.fecha_final
-                };
-            });
+                });
+            }
+        }
+
+        // 2. Conflictos con el Gerente de Operaciones (para coordinadores/supervisores/jefes de áreas de operaciones)
+        if (debeVerificarGerenteOperaciones && solicitudesOperaciones.length > 0) {
+            for (const s of solicitudesOperaciones) {
+                const codigoEstado = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
+                if (!estadosAVerificar.includes(codigoEstado)) continue;
+
+                const urlUsuarioSoli = typeof s.usuario_id === 'string' ? s.usuario_id : '';
+                if (urlUsuarioSoli === urlSolicitante) continue;
+
+                // Verificar si esta solicitud corresponde al Gerente de Operaciones
+                let esDelGerente = false;
+                let puestoDetectado = '';
+                let nombreDetectado = '';
+
+                if (gerenteOperaciones && (urlUsuarioSoli === gerenteOperaciones.url || (s.usuario_id as any)?.fullname === `${gerenteOperaciones.first_name} ${gerenteOperaciones.last_name}`.trim())) {
+                    esDelGerente = true;
+                    nombreDetectado = `${gerenteOperaciones.first_name} ${gerenteOperaciones.last_name}`.trim();
+                    puestoDetectado = gerenteOperaciones.puesto_id?.nombre || 'Gerente de Operaciones';
+                } else if (typeof s.usuario_id === 'object' && s.usuario_id) {
+                    const puestoObj = ((s.usuario_id as any).puesto || '').toLowerCase();
+                    if (puestoObj.includes('gerente')) {
+                        esDelGerente = true;
+                        nombreDetectado = (s.usuario_id as any).fullname || 'Gerente de Operaciones';
+                        puestoDetectado = (s.usuario_id as any).puesto || 'Gerente de Operaciones';
+                    }
+                } else if (typeof s.usuario_id === 'string') {
+                    const usr = usuariosOperaciones.find(u => u.url === s.usuario_id);
+                    const p = (usr?.puesto_id?.nombre || '').toLowerCase();
+                    if (p.includes('gerente')) {
+                        esDelGerente = true;
+                        nombreDetectado = usr ? `${usr.first_name} ${usr.last_name}`.trim() : 'Gerente de Operaciones';
+                        puestoDetectado = usr?.puesto_id?.nombre || 'Gerente de Operaciones';
+                    }
+                }
+
+                if (!esDelGerente) continue;
+
+                const solInicio = new Date(s.fecha_inicio + 'T00:00:00');
+                const solFin = new Date(s.fecha_final + 'T23:59:59');
+                if (fechaIni <= solFin && fechaFin >= solInicio) {
+                    const sKey = s.url || `${s.fecha_inicio}-${s.fecha_final}-${urlUsuarioSoli}`;
+                    if (idsProcesados.has(sKey)) continue;
+                    idsProcesados.add(sKey);
+
+                    const etiquetaEstado = codigoEstado === 'AP' ? 'aprobada' :
+                        codigoEstado === 'AS' ? 'aprobada por supervisor' : 'pendiente';
+
+                    conflictos.push({
+                        nombre: nombreDetectado || 'Gerente de Operaciones',
+                        area: 'Operaciones',
+                        puesto: puestoDetectado || 'Gerente de Operaciones',
+                        estado: etiquetaEstado,
+                        fechaInicio: s.fecha_inicio,
+                        fechaFinal: s.fecha_final
+                    });
+                }
+            }
+        }
+
+        this.conflictosFechas = conflictos;
     }
 
     // Genera el mensaje de sistema para el campo obs cuando hay conflictos
