@@ -9,8 +9,80 @@ server {
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
-    # Proxy inverso para la API (mismo origen para evitar CORS)
-    # ^~ asegura que coincida antes que las expresiones regulares
+    # Proxy inverso para las rutas de la API de Django (evita error 405 y CORS)
+    location /api/ {
+        proxy_pass ${BACKEND_URL}/api/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header 'Access-Control-Allow-Origin' '*' always;
+    }
+
+    location /users/ {
+        proxy_pass ${BACKEND_URL}/users/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header 'Access-Control-Allow-Origin' '*' always;
+    }
+
+    location /SolicitudVacaciones/ {
+        proxy_pass ${BACKEND_URL}/SolicitudVacaciones/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header 'Access-Control-Allow-Origin' '*' always;
+    }
+
+    location /EU_Area/ {
+        proxy_pass ${BACKEND_URL}/EU_Area/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header 'Access-Control-Allow-Origin' '*' always;
+    }
+
+    location /EU_Puesto/ {
+        proxy_pass ${BACKEND_URL}/EU_Puesto/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header 'Access-Control-Allow-Origin' '*' always;
+    }
+
+    location /Empresa/ {
+        proxy_pass ${BACKEND_URL}/Empresa/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header 'Access-Control-Allow-Origin' '*' always;
+    }
+
+    location /NewAPI/ {
+        proxy_pass ${BACKEND_URL}/NewAPI/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header 'Access-Control-Allow-Origin' '*' always;
+    }
+
+    location /admin/ {
+        proxy_pass ${BACKEND_URL}/admin/;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        add_header 'Access-Control-Allow-Origin' '*' always;
+    }
+
+    # Proxy inverso para compatibilidad con prefijo /api-proxy/
     location ^~ /api-proxy/ {
         resolver 8.8.8.8;
         # La barra "/" al final de proxy_pass indica a nginx que reemplace el prefijo

@@ -22,6 +22,10 @@ RUN npm run build -- --configuration production --base-href=/app_vacaciones/
 # Stage 2: Servidor nginx para servir la aplicación
 FROM nginx:alpine
 
+# Copiar script para resolver localhost -> host.docker.internal automáticamente
+COPY 16-resolve-backend.envsh /docker-entrypoint.d/16-resolve-backend.envsh
+RUN chmod +x /docker-entrypoint.d/16-resolve-backend.envsh
+
 # Copiar los archivos compilados al directorio de nginx
 COPY --from=build /app/dist/app-vacaciones /usr/share/nginx/html/app_vacaciones
 

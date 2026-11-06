@@ -1,11 +1,23 @@
 <header class="app-header">
     <!-- Logo de la empresa a la izquierda -->
     <div class="header-izquierda">
+        <!-- Botón menú hamburguesa para pantallas móviles -->
+        <button class="btn-menu-movil" (click)="toggleMenu.emit()" title="Alternar menú lateral">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+        </button>
+
         <div class="logo-contenedor" (click)="refrescarManual()" title="Refrescar datos">
             <img [src]="apiUrl + '/NewAPI/static/avatars/LogoSurgiC_SinFondo.png'" alt="Surgicorp"
                 class="logo-surgicorp" />
         </div>
-        <h2 class="header-titulo">Administrador de Vacaciones</h2>
+        <h2 class="header-titulo">
+            <span class="titulo-desktop">Administrador de Vacaciones</span>
+            <span class="titulo-movil">VACACIONES</span>
+        </h2>
     </div>
 
     <!-- Perfil del usuario -->

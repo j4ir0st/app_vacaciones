@@ -4,6 +4,7 @@ export type EstadoSolicitud = { [key: string]: string } | string;
 export type TipoSolicitud = 'Autorizada' | 'Adelanto';
 
 export interface SolicitudVacaciones {
+    id?: number;    // ID numérico de la solicitud
     url: string;    // url de la solicitud de Vacaciones.
     usuario_id: {
         fullname: string;

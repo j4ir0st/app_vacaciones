@@ -123,7 +123,7 @@ export class AuthService {
         if (!u) return false;
         if (!this.esRecursosHumanos) return false;
         const puesto = (u.puesto_id?.nombre || '').toLowerCase();
-        return puesto.includes('jefe') || puesto.includes('gerente') || puesto.includes('supervisor');
+        return puesto.includes('jefe') || puesto.includes('gerente');
     }
 
     // Verifica si el usuario tiene rol de aprobador (jefe/gerente/supervisor)
@@ -185,6 +185,11 @@ export class AuthService {
                 return ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
             }
 
+            // Caso especial: Fernando Rodriguez (ve Atenciones y Distribución)
+            if (username === 'frodriguez' || nombreUser.includes('fernando rodriguez')) {
+                return ["Atenciones", "Distribución"];
+            }
+
             // Caso general: Solo ve su propia área
             return [areaUser];
         }
@@ -210,6 +215,14 @@ export class AuthService {
 
         const areasOperacionesLower = ["distribución", "atenciones", "almacenes", "facturación", "desarrollo software", "logística inversa", "operaciones"];
         const areasOperaciones = ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa", "Operaciones"];
+
+        const username = u.username?.toLowerCase() || '';
+        const nombreUser = `${u.first_name} ${u.last_name}`.trim().toLowerCase();
+
+        // Caso especial: Fernando Rodríguez solo visualiza Atenciones y Distribución en el Calendario
+        if (username === 'frodriguez' || nombreUser.includes('fernando rodriguez')) {
+            return ["Atenciones", "Distribución"];
+        }
 
         // Si es coordinador o supervisor en alguna subárea de Operaciones, accede a todas las subáreas de Gerencia de Operaciones
         if (esCoordinadorOSupervisor && areasOperacionesLower.includes(areaLower)) {

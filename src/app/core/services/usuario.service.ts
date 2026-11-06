@@ -81,6 +81,20 @@ export class UsuarioService {
         );
     }
 
+    // Obtiene usuarios filtrando por oficina_id (soporta paginación y solo usuarios activos)
+    obtenerUsuariosPorOficina(oficinaId: number | string, soloActivos: boolean = true): Observable<Usuario[]> {
+        let url = `${this.URL_USUARIOS}&oficina_id=${encodeURIComponent(oficinaId)}`;
+        if (soloActivos) {
+            url += '&is_active=true';
+        }
+
+        return this.http.get<any>(url).pipe(
+            expand((resp: any) => resp.next ? this.http.get<any>(this.fixUrl(resp.next)) : EMPTY),
+            map((resp: any) => Array.isArray(resp) ? resp : (resp.results || [])),
+            reduce((acc: Usuario[], curr: Usuario[]) => acc.concat(curr), [])
+        );
+    }
+
     // Obtiene un usuario específico por su URL
     obtenerUsuario(url: string): Observable<Usuario> {
         let urlConFormato = this.fixUrl(url);

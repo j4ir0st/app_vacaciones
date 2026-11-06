@@ -232,4 +232,13 @@ export class VacacionesService {
 
         return { prog1, prog2, prog3 };
     }
+
+    // Extrae el ID numérico de una solicitud a partir de su objeto o de su URL
+    obtenerIdSolicitud(sol: { id?: number; url?: string } | null | undefined): number | null {
+        if (!sol) return null;
+        if (sol.id) return Number(sol.id);
+        if (!sol.url) return null;
+        const matches = sol.url.match(/\/SolicitudVacaciones\/(\d+)\/?/);
+        return matches ? parseInt(matches[1], 10) : null;
+    }
 }

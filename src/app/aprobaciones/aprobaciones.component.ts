@@ -62,6 +62,9 @@ export class AprobacionesComponent implements OnInit {
     aprobacionExitosaGerente = false;
     fechaFirma: Date = new Date();
 
+    // ID de solicitud procesando aprobación directa con 1 clic
+    solicitudAprobandoId: number | null = null;
+
     // Mensajes de error
     errorRechazo = '';
 
@@ -182,9 +185,11 @@ export class AprobacionesComponent implements OnInit {
         // Si el backend envía el nombre del área directamente en el campo raíz por compatibilidad
         const areaOriginal = typeof sol.area_id === 'string' && !sol.area_id.includes('/') ? sol.area_id : (sol as any).area_nombre;
         const areaFinal = areaOriginal || areaUsuario;
+        const idSolicitud = this.vacacionesService.obtenerIdSolicitud(sol) || undefined;
 
         return {
             ...sol,
+            id: idSolicitud,
             nombreUsuario: nombreUsuario,
             avatarUsuario: this.solicitudService.obtenerUrlAvatar(infoUsuarioObj?.avatar || ''),
             areaNombre: areaFinal,
@@ -208,15 +213,17 @@ export class AprobacionesComponent implements OnInit {
         const puestoUsuario = (usuarioActual.puesto_id?.nombre || '').trim().toLowerCase();
         const areaUsuario = (usuarioActual.area_id?.nombre || '').toLowerCase();
         const nombreUsuario = `${usuarioActual.first_name} ${usuarioActual.last_name}`.trim().toLowerCase();
-        const esGerenteOJefe = puestoUsuario.includes('gerente') || puestoUsuario.includes('jefe');
+        const esAprobador = puestoUsuario.includes('gerente') || puestoUsuario.includes('jefe') || puestoUsuario.includes('supervisor') || this.authService.esAprobador;
 
         let areas: string[] = [];
 
-        if (esGerenteOJefe) {
+        if (esAprobador) {
             if (areaUsuario === 'operaciones') {
                 areas = ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa", "Operaciones"];
             } else if (nombreUsuario.includes('katherine lewis') || usuarioActual.username?.toLowerCase() === 'klewis') {
                 areas = ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
+            } else if (usuarioActual.username?.toLowerCase() === 'frodriguez' || nombreUsuario.includes('fernando rodriguez')) {
+                areas = ["Atenciones", "Distribución"];
             } else {
                 areas = [usuarioActual.area_id?.nombre || ''];
             }
@@ -239,6 +246,79 @@ export class AprobacionesComponent implements OnInit {
     }
 
     /**
+     * Determina si una solicitud puede ser aprobada rápidamente desde el badge.
+     */
+    puedeAprobarRapido(sol: FilaSolicitud): boolean {
+        if (!sol) return false;
+        const codigo = this.vacacionesService.obtenerCodigoEstado(sol.estado_solicitud);
+        if (codigo !== 'PD' && codigo !== 'AS') return false;
+        // Si ya está aprobada por supervisor ('AS'), solo un gerente puede dar la aprobación final
+        if (codigo === 'AS' && !this.authService.esGerente) return false;
+        return this.puedeAprobarSolicitud(sol);
+    }
+
+    /**
+     * Aprueba la solicitud inmediatamente al dar clic en el badge con rayo,
+     * determinando el rol en automático (Gerente -> AP, Supervisor -> AS).
+     */
+    alHacerClicBadge(event: Event, sol: FilaSolicitud): void {
+        event.stopPropagation();
+        if (!this.puedeAprobarRapido(sol)) return;
+        if (this.solicitudAprobandoId === sol.id) return; // Evitar doble clic
+
+        const esGerente = this.authService.esGerente;
+        const rol: 'gerente' | 'supervisor' = esGerente ? 'gerente' : 'supervisor';
+        this.ejecutarAprobacionDirecta(sol, rol);
+    }
+
+    /**
+     * Envía la aprobación directa al servidor DRF y actualiza el estado de forma inmediata.
+     */
+    ejecutarAprobacionDirecta(sol: FilaSolicitud, rol: 'supervisor' | 'gerente'): void {
+        if (!sol?.url) return;
+        const usuarioActual = this.authService.usuarioActual;
+        if (!usuarioActual) return;
+
+        this.solicitudAprobandoId = sol.id ?? null;
+        const fechaActualIso = new Date().toISOString();
+        const payloadAuditoria: any = {};
+
+        if (rol === 'gerente') {
+            payloadAuditoria['estado_solicitud'] = 'AP';
+            payloadAuditoria['gerente_id'] = usuarioActual.url;
+            payloadAuditoria['fecha_gerente'] = fechaActualIso;
+            if (!sol.jefe_id) {
+                payloadAuditoria['jefe_id'] = usuarioActual.url;
+                payloadAuditoria['fecha_jefe'] = fechaActualIso;
+            }
+        } else {
+            payloadAuditoria['estado_solicitud'] = 'AS';
+            payloadAuditoria['jefe_id'] = usuarioActual.url;
+            payloadAuditoria['fecha_jefe'] = fechaActualIso;
+        }
+
+        const urlSolicitud = sol.url;
+        this.solicitudService.actualizarSolicitud(urlSolicitud, payloadAuditoria).subscribe({
+            next: () => {
+                if (rol === 'gerente') {
+                    this.solicitudService.enviarNotificacion(urlSolicitud).subscribe({
+                        error: (err) => console.warn('Aviso: error secundario en notificación:', err)
+                    });
+                }
+                this.solicitudAprobandoId = null;
+                // Feedback reactivo inmediato
+                sol.estado_solicitud = rol === 'gerente' ? 'AP' : 'AS';
+                this.cargarDatos();
+            },
+            error: (error) => {
+                this.solicitudAprobandoId = null;
+                console.error('Error al realizar aprobación directa:', error);
+                alert('No se pudo completar la aprobación en este momento.');
+            }
+        });
+    }
+
+    /**
      * Aplica el filtro en memoria basado en el estado seleccionado en los botones.
      */
     aplicarFiltroSolicitudes(): void {
@@ -255,11 +335,15 @@ export class AprobacionesComponent implements OnInit {
             (sol: FilaSolicitud) => this.vacacionesService.obtenerCodigoEstado(sol.estado_solicitud) === codigoBuscado
         );
 
-        // Filtro por texto de búsqueda (nombre o apellido)
+        // Filtro por texto de búsqueda (ID de solicitud, nombre, área o puesto)
         const busq = this.textoBusqueda.toLowerCase().trim();
         if (busq) {
+            const busqId = busq.replace('#', '').trim();
             filtradas = filtradas.filter(sol =>
-                sol.nombreUsuario.toLowerCase().includes(busq)
+                (sol.id && String(sol.id).includes(busqId)) ||
+                sol.nombreUsuario.toLowerCase().includes(busq) ||
+                sol.areaNombre.toLowerCase().includes(busq) ||
+                sol.puestoNombre.toLowerCase().includes(busq)
             );
         }
 

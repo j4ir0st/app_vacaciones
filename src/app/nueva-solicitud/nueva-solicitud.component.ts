@@ -175,20 +175,15 @@ export class NuevaSolicitudComponent implements OnInit {
         const areasOperaciones = ['Distribución', 'Atenciones', 'Almacenes', 'Facturación',
             'Desarrollo Software', 'Logística Inversa', 'Operaciones'];
 
-        // Caso especial: magreda ve todos los usuarios excepto los de áreas de operaciones
-        if (username === 'magreda') {
-            this.usuarioService.obtenerUsuariosTodo().subscribe({
+        // Caso especial: Jefe de Recursos Humanos consulta usuarios de la oficina Batallón (oficina_id=2)
+        if (this.authService.esJefeRecursosHumanos) {
+            this.usuarioService.obtenerUsuariosPorOficina(2).subscribe({
                 next: (lista: Usuario[]) => {
-                    const areasOperacionesNorm = areasOperaciones.map(a => a.toLowerCase());
-                    this.usuarios = lista.filter(u =>
-                        u.is_active &&
-                        u.area_id != null &&
-                        !areasOperacionesNorm.includes((u.area_id.nombre || '').toLowerCase())
-                    );
+                    this.usuarios = lista.filter(u => u.is_active && u.area_id != null);
                     this.cargandoUsuarios = false;
                 },
                 error: (err: any) => {
-                    console.error('Error cargando usuarios para magreda:', err);
+                    console.error('Error cargando usuarios por oficina_id para RR.HH.:', err);
                     this.cargandoUsuarios = false;
                 }
             });
@@ -205,6 +200,9 @@ export class NuevaSolicitudComponent implements OnInit {
             } else if (username === 'klewis' || username === 'klewism' || nombreUser.toLowerCase().includes('katherine lewis')) {
                 // Caso específico para Katherine Lewis (acceso multi-área)
                 areasAFiltar = ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
+            } else if (username === 'frodriguez' || nombreUser.toLowerCase().includes('fernando rodriguez')) {
+                // Caso específico para Fernando Rodríguez (doble área: Atenciones y Distribución)
+                areasAFiltar = ['Atenciones', 'Distribución'];
             } else {
                 // Por defecto, ven solo su propia área
                 areasAFiltar = [areaOriginal];
@@ -512,7 +510,7 @@ export class NuevaSolicitudComponent implements OnInit {
                     puesto = (s.usuario_id as any).puesto || '';
                 } else if (typeof s.usuario_id === 'string') {
                     const usr = this.usuarios.find(u => u.url === s.usuario_id) ||
-                                usuariosOperaciones.find(u => u.url === s.usuario_id);
+                        usuariosOperaciones.find(u => u.url === s.usuario_id);
                     if (usr) {
                         nombre = `${usr.first_name} ${usr.last_name}`.trim();
                         area = usr.area_id?.nombre || usr.area || '';
@@ -609,4 +607,4 @@ export class NuevaSolicitudComponent implements OnInit {
     aceptarConflictos(): void {
         this.conflictosAceptados = true;
     }
-}
+}

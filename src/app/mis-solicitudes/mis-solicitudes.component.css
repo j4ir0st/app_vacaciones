@@ -1,13 +1,19 @@
-.pagina-solicitudes {
-    padding: 0.4rem 0.4rem;
-    margin: 0 auto;
+﻿.pagina-solicitudes {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0.4rem 0.6rem 0;
+    box-sizing: border-box;
 }
 
 .pagina-header {
+    flex-shrink: 0;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.6rem;
 }
 
 .header-info h2 {
@@ -21,6 +27,54 @@
     font-size: 0.9rem;
     color: #64748b;
     margin-top: 0.25rem;
+}
+
+.header-acciones {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.input-busqueda-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #f8fafb;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0 0.75rem;
+    min-width: 260px;
+    transition: all 0.2s ease;
+}
+
+.input-busqueda-wrapper:focus-within {
+    border-color: #c41e3a;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.1);
+}
+
+.icono-busqueda {
+    width: 18px;
+    height: 18px;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.input-busqueda-solicitudes {
+    border: none;
+    background: transparent;
+    padding: 0.55rem 0.5rem;
+    font-size: 0.88rem;
+    color: #1e293b;
+    width: 100%;
+    outline: none;
+}
+
+.icono-limpiar {
+    width: 16px;
+    height: 16px;
+    color: #94a3b8;
+    cursor: pointer;
 }
 
 .btn-nueva {
@@ -37,6 +91,7 @@
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 6px -1px rgba(196, 30, 58, 0.2);
+    white-space: nowrap;
 }
 
 .btn-nueva svg {
@@ -45,16 +100,17 @@
 }
 
 .btn-nueva:hover {
-    background-color: #00a08a;
+    background-color: #a01530;
     transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 191, 165, 0.3);
+    box-shadow: 0 6px 12px rgba(196, 30, 58, 0.3);
 }
 
 .filtros-container {
+    flex-shrink: 0;
     background: #f1f5f9;
-    padding: 0.4rem;
+    padding: 0.35rem;
     border-radius: 12px;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.6rem;
     display: flex;
     overflow-x: auto;
 }
@@ -92,13 +148,14 @@
 
 /* Solicitud Card Layout */
 .solicitudes-lista {
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
-    max-height: calc(100vh - 264px);
+    gap: 0.35rem;
     overflow-y: auto;
-    padding-right: 0.5rem;
-    padding-top: 0.2rem;
+    padding-right: 0.4rem;
+    padding-bottom: 1.5rem;
 }
 
 /* Personalización del scrollbar para que sea sutil */
@@ -122,7 +179,7 @@
     padding: 1rem 1.5rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
     display: grid;
-    grid-template-columns: 180px 1fr 180px 50px;
+    grid-template-columns: 80px 170px 1fr 180px 45px;
     align-items: center;
     transition: all 0.2s ease;
     position: relative;
@@ -659,8 +716,120 @@ input[readonly] {
     border: 1px solid transparent;
 }
 
-/* Responsividad Detalle */
+/* Responsividad Móvil (Mobile First) */
 @media (max-width: 770px) {
+    .pagina-solicitudes {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0.4rem 0.6rem 0;
+    box-sizing: border-box;
+}
+
+    .pagina-header {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.6rem;
+}
+
+    .header-acciones {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+    }
+
+    .input-busqueda-wrapper {
+        min-width: 100%;
+        width: 100%;
+    }
+
+    .btn-nueva {
+        justify-content: center;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+    }
+
+    .filtros-container {
+    flex-shrink: 0;
+    background: #f1f5f9;
+    padding: 0.35rem;
+    border-radius: 12px;
+    margin-bottom: 0.6rem;
+    display: flex;
+    overflow-x: auto;
+}
+
+    .filtros {
+        gap: 0.35rem;
+    }
+
+    .btn-filtro {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.78rem;
+    }
+
+    .solicitudes-lista {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    overflow-y: auto;
+    padding-right: 0.4rem;
+    padding-bottom: 1.5rem;
+}
+
+    .solicitud-card {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.65rem;
+        padding: 0.85rem 1rem;
+        min-height: auto;
+    }
+
+    .card-id {
+        display: inline-block;
+    }
+
+    .badge-label {
+        min-width: auto;
+        max-width: none;
+        padding: 0.3rem 0.6rem;
+        font-size: 0.72rem;
+    }
+
+    .card-fechas {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .card-motivo {
+        margin-top: 0.35rem;
+        font-size: 0.82rem;
+        color: #64748b;
+    }
+
+    .card-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.78rem;
+        border-top: 1px dashed #e2e8f0;
+        padding-top: 0.5rem;
+        width: 100%;
+    }
+
+    .card-acciones {
+        align-self: flex-end;
+    }
+
     .grid-2 {
         grid-template-columns: 1fr;
     }
@@ -679,5 +848,22 @@ input[readonly] {
 
     .timeline-step {
         width: 100%;
+    }
+
+    .modal-overlay {
+        padding: 0.5rem;
+    }
+
+    .modal-contenido {
+        width: 100%;
+        max-width: 100%;
+        max-height: 96vh;
+        border-radius: 14px;
+    }
+
+    .modal-confirm {
+        width: 100%;
+        max-width: 100%;
+        padding: 1.2rem;
     }
 }

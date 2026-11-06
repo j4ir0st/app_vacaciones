@@ -38,6 +38,7 @@ export class MisSolicitudesComponent implements OnInit, OnDestroy {
     mostrarFormulario = false;
     solicitudACancelar: SolicitudVacaciones | null = null;
     solicitudDetalle: SolicitudVacaciones | null = null;
+    textoBusqueda = '';
 
     private refreshSub?: Subscription;
 
@@ -100,7 +101,10 @@ export class MisSolicitudesComponent implements OnInit, OnDestroy {
                         return uInfo.fullname.toLowerCase().includes(nombreCompleto);
                     }
                     return true;
-                });
+                }).map(s => ({
+                    ...s,
+                    id: this.vacacionesService.obtenerIdSolicitud(s) || s.id
+                }));
 
                 todas = [...todas, ...itemsLimpio];
                 this.solicitudes = [...todas].sort((a, b) =>
@@ -135,9 +139,9 @@ export class MisSolicitudesComponent implements OnInit, OnDestroy {
     }
 
     aplicarFiltro(): void {
-        if (this.filtroEstado === 'Todos') {
-            this.solicitudesFiltradas = this.solicitudes;
-        } else {
+        let filtradas = this.solicitudes;
+
+        if (this.filtroEstado !== 'Todos') {
             const mapFiltroACodigo: Record<string, string> = {
                 'Pendiente': 'PD',
                 'Aprobado': 'AP',
@@ -145,11 +149,29 @@ export class MisSolicitudesComponent implements OnInit, OnDestroy {
                 'Rechazado': 'RC'
             };
             const codigoBuscado = mapFiltroACodigo[this.filtroEstado];
-            this.solicitudesFiltradas = this.solicitudes.filter(s => {
+            filtradas = filtradas.filter(s => {
                 const cod = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
                 return codigoBuscado === 'RC' ? (cod === 'RC' || cod === 'CN') : (cod === codigoBuscado);
             });
         }
+
+        // Filtro por texto de búsqueda (ID de solicitud, motivo o fechas)
+        const busq = this.textoBusqueda.toLowerCase().trim();
+        if (busq) {
+            const busqId = busq.replace('#', '').trim();
+            filtradas = filtradas.filter(s =>
+                (s.id && String(s.id).includes(busqId)) ||
+                (s.motivo && s.motivo.toLowerCase().includes(busq)) ||
+                (s.fecha_inicio && s.fecha_inicio.includes(busq)) ||
+                (s.fecha_final && s.fecha_final.includes(busq))
+            );
+        }
+
+        this.solicitudesFiltradas = filtradas;
+    }
+
+    onBusquedaChange(): void {
+        this.aplicarFiltro();
     }
 
     cambiarFiltro(estado: string): void {

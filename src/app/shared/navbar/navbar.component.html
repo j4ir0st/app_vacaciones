@@ -19,7 +19,7 @@
     <!-- Elementos del menú -->
     <ul class="navbar-menu">
         <li *ngFor="let item of elementosMenu">
-            <a *ngIf="debeVerse(item)" [routerLink]="item.ruta" class="menu-item" [class.activo]="estaActivo(item.ruta)"
+            <a *ngIf="debeVerse(item)" [routerLink]="item.ruta" (click)="onNavegar()" class="menu-item" [class.activo]="estaActivo(item.ruta)"
                 [title]="!expandido ? item.etiqueta : ''">
 
                 <!-- Icono del elemento (SVG personalizados estilo PowerApps/Lucide) -->

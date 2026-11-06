@@ -327,10 +327,12 @@ export class CalendarioComponent implements OnInit {
 
                 const fechaFinVisual = new Date(s.fecha_final);
                 fechaFinVisual.setDate(fechaFinVisual.getDate() + 1);
+                const idSol = s.id || this.vacacionesService.obtenerIdSolicitud(s);
+                s.id = idSol || undefined;
 
                 return {
                     id: String(s.url),
-                    title: `${nombreCompleto} (${s.total_periodo}d)`,
+                    title: idSol ? `#${idSol} ${nombreCompleto} (${s.total_periodo}d)` : `${nombreCompleto} (${s.total_periodo}d)`,
                     start: s.fecha_inicio,
                     end: fechaFinVisual.toISOString().split('T')[0],
                     backgroundColor: mapaColores.get(urlUsuario) || '#c41e3a',
@@ -371,6 +373,7 @@ export class CalendarioComponent implements OnInit {
         const solicitud = evento.extendedProps?.solicitud;
         if (solicitud) {
             this.eventoSeleccionado = {
+                id: solicitud.id,
                 nombre: evento.extendedProps.nombreCompleto,
                 inicio: solicitud.fecha_inicio,
                 fin: solicitud.fecha_final,

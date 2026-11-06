@@ -3,6 +3,9 @@
     <app-navbar [expandido]="menuExpandido" (toggleMenu)="alternarMenu()">
     </app-navbar>
 
+    <!-- Backdrop oscuro en móvil para cerrar al hacer clic afuera -->
+    <div class="sidebar-backdrop" *ngIf="menuExpandido" (click)="alternarMenu()"></div>
+
     <!-- Área de contenido principal -->
     <div class="contenido-principal">
         <!-- Header superior -->

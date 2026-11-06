@@ -86,9 +86,9 @@ export class UsuariosComponent implements OnInit {
 
         const puesto = (autor.puesto_id?.nombre || '').toLowerCase();
         const area = (autor.area_id?.nombre || '').toLowerCase();
-        const esGerenteOJefe = puesto.includes('gerente') || puesto.includes('jefe');
+        const esAprobador = puesto.includes('gerente') || puesto.includes('jefe') || puesto.includes('supervisor') || this.authService.esAprobador;
 
-        if (esGerenteOJefe) {
+        if (esAprobador) {
             // Caso especial: Katherine Lewis (basado en username 'klewis')
             if (autor.username.toLowerCase() === 'klewis') {
                 const areasKatherine = [
@@ -100,6 +100,12 @@ export class UsuariosComponent implements OnInit {
                 return conArea.filter(u => areasKatherine.includes(u.area_id!.nombre.toLowerCase()));
             }
 
+            // Caso especial: Fernando Rodriguez (ve Atenciones y Distribución)
+            if (autor.username.toLowerCase() === 'frodriguez') {
+                const areasFernando = ['atenciones', 'distribución', 'distribucion'];
+                return conArea.filter(u => areasFernando.includes((u.area_id?.nombre || '').toLowerCase()));
+            }
+
             // Caso especial: Operaciones
             if (area === 'operaciones') {
                 const areasOperaciones = [
@@ -109,7 +115,7 @@ export class UsuariosComponent implements OnInit {
                 return conArea.filter(u => areasOperaciones.includes(u.area_id!.nombre.toLowerCase()));
             }
 
-            // Gerente/Jefe estándar ve solo su área
+            // Gerente/Jefe/Supervisor estándar ve solo su área
             return conArea.filter(u => u.area_id!.nombre.toLowerCase() === area);
         }
 

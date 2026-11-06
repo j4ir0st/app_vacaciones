@@ -21,6 +21,31 @@
     gap: 1.5rem;
 }
 
+/* Botón menú hamburguesa en móviles (oculto en escritorio) */
+.btn-menu-movil {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.18);
+    border: none;
+    color: #fff;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.btn-menu-movil:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.btn-menu-movil svg {
+    width: 22px;
+    height: 22px;
+}
+
 .logo-contenedor {
     background: #fff;
     padding: 1px 4px;
@@ -43,6 +68,16 @@
     color: #fff;
     margin: 0;
     letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+}
+
+.titulo-desktop {
+    display: inline;
+}
+
+.titulo-movil {
+    display: none;
 }
 
 /* Perfil del usuario */
@@ -171,14 +206,12 @@
 .user-name {
     font-size: 1rem;
     color: #1e293b;
-    /* color: #333; */
     font-weight: 700;
 }
 
 .user-role {
     font-size: 0.85rem;
     color: #64748b;
-    /* color: #888; */
     font-weight: 500;
 }
 
@@ -252,4 +285,65 @@
     position: fixed;
     inset: 0;
     z-index: 1049;
+}
+
+/* ========================================
+   Responsive móvil (<= 768px)
+   ======================================== */
+@media (max-width: 768px) {
+    .app-header {
+        padding: 0 0.8rem;
+        height: 60px;
+    }
+
+    .header-izquierda {
+        gap: 0.6rem;
+    }
+
+    .btn-menu-movil {
+        display: flex;
+    }
+
+    .header-titulo {
+        font-size: 1.05rem;
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    .titulo-desktop {
+        display: none !important;
+    }
+
+    .titulo-movil {
+        display: inline-block !important;
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        color: #ffffff;
+        font-family: 'Outfit', sans-serif;
+    }
+
+    .logo-contenedor {
+        height: 34px;
+        padding: 1px 2px;
+    }
+
+    .logo-surgicorp {
+        height: 32px;
+    }
+
+    .info-usuario {
+        display: none;
+    }
+
+    .avatar {
+        width: 38px;
+        height: 38px;
+    }
+
+    .perfil-usuario {
+        padding: 0.2rem;
+        gap: 0.3rem;
+    }
 }

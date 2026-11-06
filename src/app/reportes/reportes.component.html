@@ -349,6 +349,9 @@
             <h4 class="titulo-seccion">Historial de Solicitudes</h4>
             <div class="galeria-solicitudes-mini">
                 <div class="solicitud-card-mini" *ngFor="let sol of filaSeleccionada.solicitudes">
+                    <div class="mini-id" *ngIf="sol.id || sol.url">
+                        <span class="badge-solicitud-id">#{{ sol.id || vacacionesService.obtenerIdSolicitud(sol) }}</span>
+                    </div>
                     <div class="mini-status">
                         <span class="badge-label-mini" [ngClass]="claseEstado(sol.estado_solicitud)">
                             {{ vacacionesService.obtenerLabelEstado(sol.estado_solicitud) }}

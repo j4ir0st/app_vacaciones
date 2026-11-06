@@ -4,13 +4,28 @@
             <h2>Mis Solicitudes</h2>
             <p class="subtitulo">Vea y administre sus solicitudes de vacaciones</p>
         </div>
-        <button class="btn-nueva" (click)="mostrarFormulario = true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Nueva Solicitud
-        </button>
+        <div class="header-acciones">
+            <div class="input-busqueda-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icono-busqueda">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input type="text" [(ngModel)]="textoBusqueda" (input)="onBusquedaChange()"
+                    placeholder="Buscar por ID, motivo o fecha..." class="input-busqueda-solicitudes">
+                <svg *ngIf="textoBusqueda" (click)="textoBusqueda = ''; onBusquedaChange()" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" class="icono-limpiar">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </div>
+            <button class="btn-nueva" (click)="mostrarFormulario = true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Nueva Solicitud
+            </button>
+        </div>
     </div>
 
     <!-- Filtros por estado con Contadores -->
@@ -47,6 +62,10 @@
     <div class="solicitudes-lista" *ngIf="!solicitudDetalle && solicitudesFiltradas.length > 0">
         <div class="solicitud-card animate-in cursor-pointer" *ngFor="let sol of solicitudesFiltradas"
             (click)="verDetalle(sol)">
+            <div class="card-id">
+                <span class="badge-solicitud-id" *ngIf="sol.id">#{{ sol.id }}</span>
+            </div>
+
             <div class="card-status">
                 <span class="badge-label" [ngClass]="claseEstado(sol.estado_solicitud)">
                     {{ vacacionesService.obtenerLabelEstado(sol.estado_solicitud) }}
@@ -121,8 +140,11 @@
                     </span>
                 </div>
                 <div class="usuario-info-lg">
-                    <span class="nombre-empleado-lg">{{ authService.usuarioActual?.first_name }} {{
-                        authService.usuarioActual?.last_name }}</span>
+                    <div class="usuario-titulo-id">
+                        <span class="badge-solicitud-id" *ngIf="solicitudDetalle.id">#{{ solicitudDetalle.id }}</span>
+                        <span class="nombre-empleado-lg">{{ authService.usuarioActual?.first_name }} {{
+                            authService.usuarioActual?.last_name }}</span>
+                    </div>
                     <span class="badge-role">{{ authService.usuarioActual?.area_puesto?.puesto_nombre ||
                         authService.usuarioActual?.puesto_id?.nombre || 'Usuario' }}</span>
                 </div>

@@ -17,6 +17,10 @@ services:
     # El comando solo es necesario en modo DESARROLLO (Dockerfile.dev)
     # command: npm start -- --host 0.0.0.0 --poll 2000
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
     environment:
       - TZ=America/Lima
       - BACKEND_URL=${BACKEND_URL}

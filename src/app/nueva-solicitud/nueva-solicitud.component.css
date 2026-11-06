@@ -756,4 +756,103 @@ input[readonly] {
     color: #f59e0b;
     flex-shrink: 0;
 }
+
+/* ========================================
+   Mobile First / Responsive (Móviles <= 680px)
+   ======================================== */
+@media (max-width: 680px) {
+    .stepper-contenedor {
+        padding: 0.85rem 0.75rem;
+        border-radius: 14px;
+        box-shadow: none;
+    }
+
+    .stepper-header {
+        padding: 0;
+        margin-bottom: 1rem;
+    }
+
+    .paso-circulo {
+        width: 32px;
+        height: 32px;
+        font-size: 0.82rem;
+        border-radius: 8px;
+    }
+
+    .paso-circulo svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .paso-nombre {
+        font-size: 0.62rem;
+        letter-spacing: 0;
+    }
+
+    .paso-linea {
+        margin: 0 0.15rem;
+        margin-bottom: 1.1rem;
+    }
+
+    .panel-titulo {
+        font-size: 1.15rem;
+    }
+
+    .panel-subt {
+        font-size: 0.78rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .form-fila,
+    .form-fila.grid-3 {
+        grid-template-columns: 1fr !important;
+        gap: 0.7rem;
+    }
+
+    .form-campo {
+        margin-bottom: 0.75rem;
+    }
+
+    .form-campo label {
+        font-size: 0.8rem;
+    }
+
+    .form-campo select,
+    .form-campo input,
+    .form-campo textarea {
+        font-size: 0.9rem;
+        padding: 0.65rem 0.8rem;
+        border-radius: 8px;
+    }
+
+    .resumen-grid {
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+        padding: 0.8rem;
+    }
+
+    .resumen-item span {
+        font-size: 0.9rem;
+    }
+
+    .stepper-footer {
+        gap: 0.6rem;
+        padding-top: 0.8rem;
+        margin-top: 1rem;
+    }
+
+    .btn-primario,
+    .btn-secundario,
+    .btn-exito {
+        padding: 0.65rem 1rem;
+        font-size: 0.88rem;
+        border-radius: 10px;
+        min-height: 44px;
+        justify-content: center;
+    }
+
+    .combobox-dropdown {
+        max-height: 220px;
+    }
+}
 

@@ -44,6 +44,13 @@ export class NavbarComponent {
         return true;
     }
 
+    // Al hacer clic en un enlace del menú, si estamos en móvil cerramos el menú
+    onNavegar(): void {
+        if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+            this.toggleMenu.emit();
+        }
+    }
+
     // Verifica si la ruta está activa
     estaActivo(ruta: string): boolean {
         return this.router.url.startsWith(ruta);
