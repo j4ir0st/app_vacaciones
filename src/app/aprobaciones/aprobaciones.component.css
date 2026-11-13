@@ -1,4 +1,4 @@
-﻿/* ========================================
+/* ========================================
    Aprobaciones - Estilos de Gestión de Solicitudes
    ======================================== */
 
@@ -1230,26 +1230,151 @@
 
 @media (max-width: 770px) {
     .pagina-admin {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
-    padding: 0.4rem 0.6rem 0;
-    box-sizing: border-box;
-}
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+        padding: 0.4rem 0.6rem 0;
+        box-sizing: border-box;
+    }
 
-    .solicitud-card {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+    .pagina-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .header-info h2 {
+        font-size: 1.3rem;
+        white-space: nowrap;
+    }
+
+    .header-info .subtitulo {
+        display: none;
+    }
+
+    .header-busqueda {
+        width: 100%;
+    }
+
+    .input-busqueda-wrapper {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .filtros-container {
+        flex-shrink: 0;
+        background: #f1f5f9;
+        padding: 0.35rem;
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
+        display: flex;
+        overflow-x: auto;
+    }
+
+    .btn-filtro {
+        padding: 0.45rem 0.75rem;
+        font-size: 0.78rem;
+    }
+
+    .solicitudes-lista {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        overflow-y: auto;
+        padding-right: 0.2rem;
+        padding-bottom: 1.5rem;
+    }
+
+    .solicitudes-lista .solicitud-card {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.6rem !important;
+        padding: 0.85rem 1rem !important;
+        min-height: 110px !important;
+        height: auto !important;
+        flex-shrink: 0 !important;
+        animation: none !important;
+    }
+
+    .celda-id {
+        display: inline-block;
+        margin-bottom: -0.2rem;
+    }
+
+    .celda-usuario {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .celda-usuario .usuario-info {
+        margin-left: 6px;
+    }
+
+    .card-fechas {
+        text-align: left;
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #1e293b;
+        background: #f8fafc;
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+    }
+
+    .card-meta {
+        font-size: 0.75rem;
+        color: #64748b;
     }
 
     .card-status {
-        grid-column: span 1;
+        justify-content: flex-end;
+        width: 100%;
+        border-top: 1px dashed #e2e8f0;
+        padding-top: 0.5rem;
+    }
+
+    .badge-estado {
+        max-width: none;
+        width: 100%;
+        justify-content: center;
+        padding: 0.45rem 0.8rem;
+    }
+
+    .detalle-container {
+        height: 100%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 15px;
+    }
+
+    .detalle-body {
+        flex-shrink: 0;
     }
 
     .grid-2 {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px 15px;
+    }
+
+    .campo-detalle label {
+        font-size: 10.5px;
+        margin-bottom: 2px;
+    }
+
+    .campo-detalle .valor-primario {
+        font-size: 14px;
+    }
+
+    .campo-detalle .valor {
+        font-size: 12.5px;
+        word-break: break-word;
     }
 
     .detalle-header {

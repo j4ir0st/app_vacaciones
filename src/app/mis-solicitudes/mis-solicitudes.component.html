@@ -165,19 +165,24 @@
                 </div>
                 <div class="campo-detalle">
                     <label>Enviado el</label>
-                    <p class="valor">{{ solicitudDetalle.fecha_solicitud ?
+                    <p class="valor fecha-desktop">{{ solicitudDetalle.fecha_solicitud ?
                         vacacionesService.formatearFecha(solicitudDetalle.fecha_solicitud) :
                         vacacionesService.formatearFecha(solicitudDetalle.fecha_inicio) }} {{
                         solicitudDetalle.fecha_solicitud ? solicitudDetalle.fecha_solicitud.substring(11, 16) :
                         '12:00' }}</p>
+                    <p class="valor fecha-movil">{{ solicitudDetalle.fecha_solicitud ?
+                        vacacionesService.formatearFechaHoraCorta(solicitudDetalle.fecha_solicitud) :
+                        (vacacionesService.formatearFechaCompleta(solicitudDetalle.fecha_inicio) + ' 12:00') }}</p>
                 </div>
                 <div class="campo-detalle">
                     <label>Fecha Inicio</label>
-                    <p class="valor">{{ vacacionesService.formatearFecha(solicitudDetalle.fecha_inicio) }}</p>
+                    <p class="valor fecha-desktop">{{ vacacionesService.formatearFecha(solicitudDetalle.fecha_inicio) }}</p>
+                    <p class="valor fecha-movil">{{ vacacionesService.formatearFechaCompleta(solicitudDetalle.fecha_inicio) }}</p>
                 </div>
                 <div class="campo-detalle">
                     <label>Fecha Final</label>
-                    <p class="valor">{{ vacacionesService.formatearFecha(solicitudDetalle.fecha_final) }}</p>
+                    <p class="valor fecha-desktop">{{ vacacionesService.formatearFecha(solicitudDetalle.fecha_final) }}</p>
+                    <p class="valor fecha-movil">{{ vacacionesService.formatearFechaCompleta(solicitudDetalle.fecha_final) }}</p>
                 </div>
                 <div class="campo-detalle" *ngIf="solicitudDetalle.motivo">
                     <label>Motivo</label>

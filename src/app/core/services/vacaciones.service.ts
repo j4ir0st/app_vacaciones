@@ -136,6 +136,20 @@ export class VacacionesService {
         return `${dia}/${mes}/${anio} ${hStr}:${mStr}:${sStr} (${ampm})`;
     }
 
+    // Formato corto de fecha y hora: dd/mm/yyyy hh:mm
+    formatearFechaHoraCorta(fecha: string): string {
+        if (!fecha) return '';
+        const match = fecha.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/);
+        const fechaLimpia = match ? match[1] : fecha;
+        const d = new Date(fechaLimpia);
+        const dia = String(d.getDate()).padStart(2, '0');
+        const mes = String(d.getMonth() + 1).padStart(2, '0');
+        const anio = d.getFullYear();
+        const horas = String(d.getHours()).padStart(2, '0');
+        const minutos = String(d.getMinutes()).padStart(2, '0');
+        return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
+    }
+
     obtenerCodigoEstado(estado: EstadoSolicitud | undefined): string {
         if (!estado) return '';
         if (typeof estado === 'string') return estado;

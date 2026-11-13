@@ -126,6 +126,12 @@ export class AprobacionesComponent implements OnInit {
 
                 this.todasSolicitudes = listaSolicitudes.map((sol: SolicitudVacaciones): FilaSolicitud => {
                     return this.mapearSolicitud(sol, listaUsuarios);
+                }).filter((sol: FilaSolicitud) => {
+                    // Filtrado de seguridad en memoria según áreas autorizadas
+                    if (this.authService.esRecursosHumanos) return true;
+                    const areasPermitidas = this.authService.getAreasVisibles().map(a => a.toLowerCase().trim());
+                    if (areasPermitidas.includes('*')) return true;
+                    return areasPermitidas.includes((sol.areaNombre || '').toLowerCase().trim());
                 }).sort((a: FilaSolicitud, b: FilaSolicitud) => {
                     // Orden descendente por fecha de solicitud (las más recientes primero)
                     return (b.fecha_solicitud || '').localeCompare(a.fecha_solicitud || '');
@@ -210,31 +216,14 @@ export class AprobacionesComponent implements OnInit {
             return '';
         }
 
-        const puestoUsuario = (usuarioActual.puesto_id?.nombre || '').trim().toLowerCase();
-        const areaUsuario = (usuarioActual.area_id?.nombre || '').toLowerCase();
-        const nombreUsuario = `${usuarioActual.first_name} ${usuarioActual.last_name}`.trim().toLowerCase();
-        const esAprobador = puestoUsuario.includes('gerente') || puestoUsuario.includes('jefe') || puestoUsuario.includes('supervisor') || this.authService.esAprobador;
-
-        let areas: string[] = [];
-
-        if (esAprobador) {
-            if (areaUsuario === 'operaciones') {
-                areas = ["Distribución", "Atenciones", "Almacenes", "Facturación", "Desarrollo Software", "Logística Inversa", "Operaciones"];
-            } else if (nombreUsuario.includes('katherine lewis') || usuarioActual.username?.toLowerCase() === 'klewis') {
-                areas = ["Contabilidad", "Mantenimiento", "Provincia", "Vigilancia", "Finanzas", "Neurocirugía", "Traumatología", "Heridas Y Quemados", "Regulatorios", "Terapia de Sueño y Apnea", "Ingeniería", "Marketing", "Licitaciones", "Equipos Médicos", "Casa", "CDC"];
-            } else if (usuarioActual.username?.toLowerCase() === 'frodriguez' || nombreUsuario.includes('fernando rodriguez')) {
-                areas = ["Atenciones", "Distribución"];
-            } else {
-                areas = [usuarioActual.area_id?.nombre || ''];
-            }
-        } else {
-            areas = [usuarioActual.area_id?.nombre || ''];
+        // Reutilización centralizada de áreas según permisos del usuario
+        const areasVisibles = this.authService.getAreasVisibles();
+        if (areasVisibles.includes('*')) {
+            return '';
         }
 
-        const areasFiltradas = areas.filter(a => a).map(a => a.trim());
-        const filtroArea = areasFiltradas.length > 0 ? `&area_nombre=${encodeURIComponent(areasFiltradas.join(','))}` : '';
-
-        return filtroArea;
+        const areasFiltradas = areasVisibles.filter(a => a && a.trim() !== '');
+        return areasFiltradas.length > 0 ? `&area_nombre=${encodeURIComponent(areasFiltradas.join(','))}` : '';
     }
 
     /**

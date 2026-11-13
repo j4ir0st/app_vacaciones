@@ -945,6 +945,14 @@
     background-color: #eef6ff !important;
 }
 
+.btn-texto-movil {
+    display: none;
+}
+
+.acciones-filtro-fila {
+    display: contents;
+}
+
 .btn-refrescar,
 .btn-reset {
     background: #f1f5f9;
@@ -1217,33 +1225,157 @@
 
 @media (max-width: 850px) {
     .pagina-reportes {
-        height: auto;
-        overflow: visible;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding: 0.4rem 0.5rem 0;
+    }
+
+    .pagina-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .header-info h2 {
+        font-size: 1.3rem;
+        white-space: nowrap;
+    }
+
+    .header-info .subtitulo {
+        display: none;
+    }
+
+    .header-acciones {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 0.4rem;
+        padding-bottom: 0.2rem;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .rango-fechas-reporte {
+        padding: 3px 6px;
+        flex-shrink: 0;
+    }
+
+    .fecha-input-contenedor label.fecha-label {
+        font-size: 0.55rem;
+    }
+
+    .input-fecha-reporte {
+        font-size: 0.72rem;
+        width: 90px;
+    }
+
+    .btn-descargar {
+        flex-shrink: 0;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.72rem;
+        white-space: nowrap;
+    }
+
+    .btn-descargar svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    .filtros-reporte {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.4rem;
+        padding: 0.6rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .campo-filtro label {
+        font-size: 0.65rem;
+    }
+
+    .combobox-control,
+    .select-wrapper select {
+        height: 36px;
+        padding: 0 0.8rem;
+    }
+
+    .nombre-sel {
+        font-size: 0.85rem;
+    }
+
+    .acciones-filtro-fila {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+        margin-top: 0.2rem;
+    }
+
+    .btn-reset,
+    .btn-refrescar {
+        flex: 1;
+        height: 36px;
+        padding: 0.4rem 0.6rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        border-radius: 8px;
+    }
+
+    .btn-texto-movil {
+        display: inline-block;
+        font-size: 0.78rem;
+        font-weight: 600;
     }
 
     .reportes-lista-container {
-        height: auto;
+        flex: 1;
+        min-height: 0;
+        height: 100%;
         max-height: none;
-        margin-bottom: 50px;
+        margin-bottom: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .reportes-lista {
+        flex: 1;
+        height: 100%;
+        overflow-y: auto;
+        padding: 0.2rem 0.2rem 1.5rem 0.2rem;
     }
 
     .reporte-card {
         grid-template-columns: 1fr;
-        gap: 1rem;
-        padding: 1rem;
+        gap: 0.6rem;
+        padding: 0.75rem 0.85rem;
     }
 
     .card-usuario {
         border-right: none;
         border-bottom: 1px solid #f1f5f9;
         padding-right: 0;
-        padding-bottom: 1rem;
+        padding-bottom: 0.5rem;
     }
 
-    .filtros-reporte {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.8rem;
+    .usuario-main .nombre-empleado {
+        font-size: 0.95rem;
+    }
+
+    .card-datos {
+        gap: 0.5rem;
+    }
+
+    .dato-item .etiqueta {
+        font-size: 0.65rem;
+    }
+
+    .dato-item .valor {
+        font-size: 1rem;
     }
 }
 
