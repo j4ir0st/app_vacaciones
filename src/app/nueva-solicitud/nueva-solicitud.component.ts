@@ -9,6 +9,8 @@ import { UsuarioService } from '../core/services/usuario.service';
 import { Usuario } from '../core/models/usuario.model';
 import { SolicitudVacaciones } from '../core/models/solicitud-vacaciones.model';
 
+type ConflictoFecha = { nombre: string; area: string; puesto: string; estado: string; fechaInicio: string; fechaFinal: string };
+
 @Component({
     selector: 'app-nueva-solicitud',
     templateUrl: './nueva-solicitud.component.html',
@@ -38,9 +40,18 @@ export class NuevaSolicitudComponent implements OnInit {
     mostrarResultados = false;
 
     // Conflictos de fechas
-    conflictosFechas: { nombre: string; area: string; puesto: string; estado: string; fechaInicio: string; fechaFinal: string }[] = [];
+    conflictosFechas: ConflictoFecha[] = [];
+    // Cruces informativos con el Gerente de Operaciones (no bloquean la solicitud)
+    avisosGerente: ConflictoFecha[] = [];
     verificandoConflictos = false;
     conflictosAceptados = false;
+    private idVerificacion = 0;
+
+    // Restricción para el área de Distribución: salvo los jefes, no pueden aceptar conflictos y deben cambiar de fechas
+    esAreaDistribucion = false;
+    esJefeColaborador = false;
+    rangosDisponibles: { inicio: string; fin: string; dias: number; etiqueta: string }[] = [];
+    alcanceDisponibilidad: 'semana' | 'mes' | '' = '';
 
     // Áreas pertenecientes a la Gerencia de Operaciones
     private readonly AREAS_OPERACIONES = [
@@ -52,6 +63,11 @@ export class NuevaSolicitudComponent implements OnInit {
         'logística inversa', 'logistica inversa',
         'operaciones'
     ];
+
+    // Los colaboradores de Distribución (excepto jefes) no pueden continuar con fechas en conflicto
+    get puedeAceptarConflictos(): boolean {
+        return !this.esAreaDistribucion || this.esJefeColaborador;
+    }
 
     get usuarioActual() {
         return this.authService.usuarioActual;
@@ -381,6 +397,15 @@ export class NuevaSolicitudComponent implements OnInit {
         const fechaInicio = this.formulario.get('fecha_inicio')?.value;
         const fechaFinal = this.formulario.get('fecha_final')?.value;
 
+        // Invalida respuestas de verificaciones anteriores que lleguen tarde
+        const idVerificacion = ++this.idVerificacion;
+        this.verificandoConflictos = false;
+        this.rangosDisponibles = [];
+        this.alcanceDisponibilidad = '';
+        this.avisosGerente = [];
+        this.esAreaDistribucion = false;
+        this.esJefeColaborador = false;
+
         if (!fechaInicio || !fechaFinal) {
             this.conflictosFechas = [];
             return;
@@ -413,7 +438,14 @@ export class NuevaSolicitudComponent implements OnInit {
         const esMando = puestoNombre.includes('supervisor') || puestoNombre.includes('coordinador') || puestoNombre.includes('jefe');
         const areaNorm = areaNombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         const perteneceAOperaciones = this.AREAS_OPERACIONES.some(a => a.normalize('NFD').replace(/[\u0300-\u036f]/g, '') === areaNorm);
+        this.esAreaDistribucion = areaNorm === 'distribucion';
+        this.esJefeColaborador = this.esAreaDistribucion && puestoNombre.includes('jefe');
         const debeVerificarGerenteOperaciones = esMando && perteneceAOperaciones;
+
+        // Distribución necesita el puesto de cada compañero para separar usuarios y mandos
+        const obsUsuariosArea = this.esAreaDistribucion
+            ? this.usuarioService.obtenerUsuariosPorNombreArea(areaNombre)
+            : of([] as Usuario[]);
 
         // 1. Petición para solicitudes de su propia área
         const urlSolicitudesArea = `${this.solicitudService.URL_SOLICITUDES}&area_nombre=${encodeURIComponent(areaNombre)}`;
@@ -441,10 +473,26 @@ export class NuevaSolicitudComponent implements OnInit {
         forkJoin({
             solicitudesArea: obsSolicitudesArea,
             solicitudesOperaciones: obsSolicitudesOperaciones,
-            usuariosOperaciones: obsUsuariosOperaciones
+            usuariosOperaciones: obsUsuariosOperaciones,
+            usuariosArea: obsUsuariosArea
         }).subscribe({
-            next: ({ solicitudesArea, solicitudesOperaciones, usuariosOperaciones }) => {
+            next: ({ solicitudesArea, solicitudesOperaciones, usuariosOperaciones, usuariosArea }) => {
+                if (idVerificacion !== this.idVerificacion) return;
                 this.verificandoConflictos = false;
+                if (this.esAreaDistribucion) {
+                    this.detectarConflictosDistribucion(
+                        solicitudesArea,
+                        usuariosArea || [],
+                        solicitudesOperaciones,
+                        usuariosOperaciones || [],
+                        fechaInicio,
+                        fechaFinal,
+                        selectedUser,
+                        selectedUrl,
+                        esMando
+                    );
+                    return;
+                }
                 this.detectarConflictos(
                     solicitudesArea,
                     solicitudesOperaciones,
@@ -456,6 +504,7 @@ export class NuevaSolicitudComponent implements OnInit {
                 );
             },
             error: (err) => {
+                if (idVerificacion !== this.idVerificacion) return;
                 console.error('Error al verificar conflictos de fechas:', err);
                 this.verificandoConflictos = false;
             }
@@ -478,12 +527,6 @@ export class NuevaSolicitudComponent implements OnInit {
         const estadosAVerificar = ['AP', 'AS', 'PD'];
         const conflictos: { nombre: string; area: string; puesto: string; estado: string; fechaInicio: string; fechaFinal: string }[] = [];
         const idsProcesados = new Set<string>();
-
-        // Identificar al Gerente de Operaciones entre los usuarios de Operaciones
-        const gerenteOperaciones = usuariosOperaciones.find(u => {
-            const p = (u.area_puesto?.puesto_nombre || u.puesto_id?.nombre || '').toLowerCase();
-            return p.includes('gerente');
-        });
 
         // 1. Conflictos en su propia área (compañeros de su misma área)
         for (const s of solicitudesArea) {
@@ -533,78 +576,301 @@ export class NuevaSolicitudComponent implements OnInit {
         }
 
         // 2. Conflictos con el Gerente de Operaciones (para coordinadores/supervisores/jefes de áreas de operaciones)
-        if (debeVerificarGerenteOperaciones && solicitudesOperaciones.length > 0) {
-            for (const s of solicitudesOperaciones) {
-                const codigoEstado = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
-                if (!estadosAVerificar.includes(codigoEstado)) continue;
-
-                const urlUsuarioSoli = typeof s.usuario_id === 'string' ? s.usuario_id : '';
-                if (urlUsuarioSoli === urlSolicitante) continue;
-
-                // Verificar si esta solicitud corresponde al Gerente de Operaciones
-                let esDelGerente = false;
-                let puestoDetectado = '';
-                let nombreDetectado = '';
-
-                if (gerenteOperaciones && (urlUsuarioSoli === gerenteOperaciones.url || (s.usuario_id as any)?.fullname === `${gerenteOperaciones.first_name} ${gerenteOperaciones.last_name}`.trim())) {
-                    esDelGerente = true;
-                    nombreDetectado = `${gerenteOperaciones.first_name} ${gerenteOperaciones.last_name}`.trim();
-                    puestoDetectado = gerenteOperaciones.puesto_id?.nombre || 'Gerente de Operaciones';
-                } else if (typeof s.usuario_id === 'object' && s.usuario_id) {
-                    const puestoObj = ((s.usuario_id as any).puesto || '').toLowerCase();
-                    if (puestoObj.includes('gerente')) {
-                        esDelGerente = true;
-                        nombreDetectado = (s.usuario_id as any).fullname || 'Gerente de Operaciones';
-                        puestoDetectado = (s.usuario_id as any).puesto || 'Gerente de Operaciones';
-                    }
-                } else if (typeof s.usuario_id === 'string') {
-                    const usr = usuariosOperaciones.find(u => u.url === s.usuario_id);
-                    const p = (usr?.puesto_id?.nombre || '').toLowerCase();
-                    if (p.includes('gerente')) {
-                        esDelGerente = true;
-                        nombreDetectado = usr ? `${usr.first_name} ${usr.last_name}`.trim() : 'Gerente de Operaciones';
-                        puestoDetectado = usr?.puesto_id?.nombre || 'Gerente de Operaciones';
-                    }
-                }
-
-                if (!esDelGerente) continue;
-
-                const solInicio = new Date(s.fecha_inicio + 'T00:00:00');
-                const solFin = new Date(s.fecha_final + 'T23:59:59');
-                if (fechaIni <= solFin && fechaFin >= solInicio) {
-                    const sKey = s.url || `${s.fecha_inicio}-${s.fecha_final}-${urlUsuarioSoli}`;
-                    if (idsProcesados.has(sKey)) continue;
-                    idsProcesados.add(sKey);
-
-                    const etiquetaEstado = codigoEstado === 'AP' ? 'aprobada' :
-                        codigoEstado === 'AS' ? 'aprobada por supervisor' : 'pendiente';
-
-                    conflictos.push({
-                        nombre: nombreDetectado || 'Gerente de Operaciones',
-                        area: 'Operaciones',
-                        puesto: puestoDetectado || 'Gerente de Operaciones',
-                        estado: etiquetaEstado,
-                        fechaInicio: s.fecha_inicio,
-                        fechaFinal: s.fecha_final
-                    });
-                }
-            }
+        if (debeVerificarGerenteOperaciones) {
+            conflictos.push(...this.detectarConflictosGerente(
+                solicitudesOperaciones, usuariosOperaciones, inicio, fin, urlSolicitante, estadosAVerificar
+            ));
         }
 
         this.conflictosFechas = conflictos;
     }
 
+    // Conflictos con las solicitudes del Gerente de Operaciones que se solapan con el rango indicado
+    private detectarConflictosGerente(
+        solicitudesOperaciones: SolicitudVacaciones[],
+        usuariosOperaciones: Usuario[],
+        inicio: string,
+        fin: string,
+        urlSolicitante: string,
+        estadosAVerificar: string[]
+    ): ConflictoFecha[] {
+        const fechaIni = new Date(inicio + 'T00:00:00');
+        const fechaFin = new Date(fin + 'T23:59:59');
+        const conflictos: ConflictoFecha[] = [];
+        const idsProcesados = new Set<string>();
+
+        // Identificar al Gerente de Operaciones entre los usuarios de Operaciones
+        const gerenteOperaciones = usuariosOperaciones.find(u => {
+            const p = (u.area_puesto?.puesto_nombre || u.puesto_id?.nombre || '').toLowerCase();
+            return p.includes('gerente');
+        });
+
+        for (const s of solicitudesOperaciones) {
+            const codigoEstado = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
+            if (!estadosAVerificar.includes(codigoEstado)) continue;
+
+            const urlUsuarioSoli = typeof s.usuario_id === 'string' ? s.usuario_id : '';
+            if (urlUsuarioSoli === urlSolicitante) continue;
+
+            // Verificar si esta solicitud corresponde al Gerente de Operaciones
+            let esDelGerente = false;
+            let puestoDetectado = '';
+            let nombreDetectado = '';
+
+            if (gerenteOperaciones && (urlUsuarioSoli === gerenteOperaciones.url || (s.usuario_id as any)?.fullname === `${gerenteOperaciones.first_name} ${gerenteOperaciones.last_name}`.trim())) {
+                esDelGerente = true;
+                nombreDetectado = `${gerenteOperaciones.first_name} ${gerenteOperaciones.last_name}`.trim();
+                puestoDetectado = gerenteOperaciones.puesto_id?.nombre || 'Gerente de Operaciones';
+            } else if (typeof s.usuario_id === 'object' && s.usuario_id) {
+                const puestoObj = ((s.usuario_id as any).puesto || '').toLowerCase();
+                if (puestoObj.includes('gerente')) {
+                    esDelGerente = true;
+                    nombreDetectado = (s.usuario_id as any).fullname || 'Gerente de Operaciones';
+                    puestoDetectado = (s.usuario_id as any).puesto || 'Gerente de Operaciones';
+                }
+            } else if (typeof s.usuario_id === 'string') {
+                const usr = usuariosOperaciones.find(u => u.url === s.usuario_id);
+                const p = (usr?.puesto_id?.nombre || '').toLowerCase();
+                if (p.includes('gerente')) {
+                    esDelGerente = true;
+                    nombreDetectado = usr ? `${usr.first_name} ${usr.last_name}`.trim() : 'Gerente de Operaciones';
+                    puestoDetectado = usr?.puesto_id?.nombre || 'Gerente de Operaciones';
+                }
+            }
+
+            if (!esDelGerente) continue;
+
+            const solInicio = new Date(s.fecha_inicio + 'T00:00:00');
+            const solFin = new Date(s.fecha_final + 'T23:59:59');
+            if (fechaIni <= solFin && fechaFin >= solInicio) {
+                const sKey = s.url || `${s.fecha_inicio}-${s.fecha_final}-${urlUsuarioSoli}`;
+                if (idsProcesados.has(sKey)) continue;
+                idsProcesados.add(sKey);
+
+                conflictos.push({
+                    nombre: nombreDetectado || 'Gerente de Operaciones',
+                    area: 'Operaciones',
+                    puesto: puestoDetectado || 'Gerente de Operaciones',
+                    estado: this.etiquetaEstado(codigoEstado),
+                    fechaInicio: s.fecha_inicio,
+                    fechaFinal: s.fecha_final
+                });
+            }
+        }
+
+        return conflictos;
+    }
+
+    // Reglas exclusivas del área de Distribución:
+    // - Solo cuentan solicitudes Aprobadas (AP) o Aprobadas por Supervisor (AS) de la propia área.
+    // - Colaboradores sin mando solo se cruzan con colaboradores sin mando; los mandos
+    //   (supervisor, coordinador, jefe) solo se cruzan entre ellos.
+    // - Los cruces con el Gerente de Operaciones son solo un aviso, no bloquean.
+    private detectarConflictosDistribucion(
+        solicitudesArea: SolicitudVacaciones[],
+        usuariosArea: Usuario[],
+        solicitudesOperaciones: SolicitudVacaciones[],
+        usuariosOperaciones: Usuario[],
+        inicio: string,
+        fin: string,
+        solicitante: Usuario | null,
+        urlSolicitante: string,
+        solicitanteEsMando: boolean
+    ): void {
+        const estadosAVerificar = ['AP', 'AS'];
+        const fechaIni = new Date(inicio + 'T00:00:00');
+        const fechaFin = new Date(fin + 'T23:59:59');
+        const nombreSolicitante = this.normalizarTexto(solicitante ? `${solicitante.first_name} ${solicitante.last_name}` : '');
+
+        const conflictos: ConflictoFecha[] = [];
+        const rangosOcupados: { inicio: string; fin: string }[] = [];
+        const idsProcesados = new Set<string>();
+
+        for (const s of solicitudesArea) {
+            const codigoEstado = this.vacacionesService.obtenerCodigoEstado(s.estado_solicitud);
+            if (!estadosAVerificar.includes(codigoEstado)) continue;
+
+            const datos = this.datosUsuarioSolicitud(s, usuariosArea);
+            const esPropia = (!!datos.url && datos.url === urlSolicitante) ||
+                (!datos.url && !!nombreSolicitante && this.normalizarTexto(datos.nombre) === nombreSolicitante);
+            if (esPropia) continue;
+
+            const otroEsMando = this.esPuestoMando(datos.puesto);
+            if (otroEsMando !== solicitanteEsMando) continue;
+
+            const sKey = s.url || `${s.fecha_inicio}-${s.fecha_final}-${datos.url || datos.nombre}`;
+            if (idsProcesados.has(sKey)) continue;
+            idsProcesados.add(sKey);
+
+            rangosOcupados.push({ inicio: s.fecha_inicio, fin: s.fecha_final });
+
+            const solInicio = new Date(s.fecha_inicio + 'T00:00:00');
+            const solFin = new Date(s.fecha_final + 'T23:59:59');
+            if (fechaIni <= solFin && fechaFin >= solInicio) {
+                conflictos.push({
+                    nombre: datos.nombre,
+                    area: datos.area || 'Distribución',
+                    puesto: datos.puesto,
+                    estado: this.etiquetaEstado(codigoEstado),
+                    fechaInicio: s.fecha_inicio,
+                    fechaFinal: s.fecha_final
+                });
+            }
+        }
+
+        this.conflictosFechas = conflictos;
+        this.avisosGerente = solicitanteEsMando
+            ? this.detectarConflictosGerente(solicitudesOperaciones, usuariosOperaciones, inicio, fin, urlSolicitante, estadosAVerificar)
+            : [];
+
+        if (conflictos.length > 0 && !this.puedeAceptarConflictos) {
+            this.calcularFechasDisponibles(inicio, rangosOcupados);
+        }
+    }
+
+    // Obtiene nombre, área, puesto y url del colaborador dueño de una solicitud
+    private datosUsuarioSolicitud(s: SolicitudVacaciones, usuariosArea: Usuario[]): { url: string; nombre: string; area: string; puesto: string } {
+        const nombreUsuario = (u: Usuario) => `${u.first_name} ${u.last_name}`.trim();
+        const puestoUsuario = (u?: Usuario) => u?.area_puesto?.puesto_nombre || u?.puesto_id?.nombre || '';
+
+        if (typeof s.usuario_id === 'string') {
+            const usr = usuariosArea.find(u => u.url === s.usuario_id) || this.usuarios.find(u => u.url === s.usuario_id);
+            return {
+                url: s.usuario_id,
+                nombre: usr ? nombreUsuario(usr) : 'Usuario',
+                area: usr?.area_id?.nombre || usr?.area || '',
+                puesto: puestoUsuario(usr)
+            };
+        }
+
+        const obj: any = s.usuario_id || {};
+        const nombre = obj.fullname || 'Usuario';
+        const usr = usuariosArea.find(u => this.normalizarTexto(nombreUsuario(u)) === this.normalizarTexto(nombre));
+        return {
+            url: obj.url || usr?.url || '',
+            nombre,
+            area: obj.area || usr?.area_id?.nombre || '',
+            puesto: obj.puesto || puestoUsuario(usr)
+        };
+    }
+
+    private esPuestoMando(puesto: string): boolean {
+        const p = this.normalizarTexto(puesto);
+        return p.includes('supervisor') || p.includes('coordinador') || p.includes('jefe');
+    }
+
+    private normalizarTexto(texto: string): string {
+        return (texto || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+
+    private etiquetaEstado(codigoEstado: string): string {
+        return codigoEstado === 'AP' ? 'aprobada' :
+            codigoEstado === 'AS' ? 'aprobada por supervisor' : 'pendiente';
+    }
+
+    // Calcula los bloques de días libres en la semana (lunes a domingo) de la fecha de inicio;
+    // si no hay ninguno, busca en todo el mes. Solo considera días desde hoy en adelante.
+    private calcularFechasDisponibles(fechaInicio: string, rangosOcupados: { inicio: string; fin: string }[]): void {
+        const base = this.parsearFechaLocal(fechaInicio);
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        const desplazamientoLunes = (base.getDay() + 6) % 7;
+        const inicioSemana = new Date(base);
+        inicioSemana.setDate(base.getDate() - desplazamientoLunes);
+        const finSemana = new Date(inicioSemana);
+        finSemana.setDate(inicioSemana.getDate() + 6);
+
+        let rangos = this.buscarBloquesLibres(inicioSemana, finSemana, hoy, rangosOcupados);
+        let alcance: 'semana' | 'mes' = 'semana';
+
+        if (rangos.length === 0) {
+            const inicioMes = new Date(base.getFullYear(), base.getMonth(), 1);
+            const finMes = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+            rangos = this.buscarBloquesLibres(inicioMes, finMes, hoy, rangosOcupados);
+            alcance = 'mes';
+        }
+
+        this.rangosDisponibles = rangos;
+        this.alcanceDisponibilidad = alcance;
+    }
+
+    // Recorre día a día el intervalo y agrupa los días libres consecutivos en bloques
+    private buscarBloquesLibres(
+        desde: Date,
+        hasta: Date,
+        hoy: Date,
+        rangosOcupados: { inicio: string; fin: string }[]
+    ): { inicio: string; fin: string; dias: number; etiqueta: string }[] {
+        const ocupados = rangosOcupados.map(r => ({
+            inicio: this.parsearFechaLocal(r.inicio).getTime(),
+            fin: this.parsearFechaLocal(r.fin).getTime()
+        }));
+        const estaOcupado = (d: Date) => ocupados.some(r => d.getTime() >= r.inicio && d.getTime() <= r.fin);
+
+        const bloques: { inicio: string; fin: string; dias: number; etiqueta: string }[] = [];
+        let bloqueInicio: Date | null = null;
+        let bloqueFin: Date | null = null;
+
+        const cerrarBloque = () => {
+            if (!bloqueInicio || !bloqueFin) return;
+            const dias = Math.round((bloqueFin.getTime() - bloqueInicio.getTime()) / 86400000) + 1;
+            const etiqueta = dias === 1
+                ? this.formatearDiaCorto(bloqueInicio)
+                : `${this.formatearDiaCorto(bloqueInicio)} al ${this.formatearDiaCorto(bloqueFin)}`;
+            bloques.push({ inicio: this.aFechaIso(bloqueInicio), fin: this.aFechaIso(bloqueFin), dias, etiqueta });
+            bloqueInicio = null;
+            bloqueFin = null;
+        };
+
+        for (const d = new Date(desde); d <= hasta; d.setDate(d.getDate() + 1)) {
+            const libre = d >= hoy && !estaOcupado(d);
+            if (libre) {
+                if (!bloqueInicio) bloqueInicio = new Date(d);
+                bloqueFin = new Date(d);
+            } else {
+                cerrarBloque();
+            }
+        }
+        cerrarBloque();
+
+        return bloques;
+    }
+
+    // Aplica como nueva fecha de inicio el comienzo del bloque disponible seleccionado
+    seleccionarRangoDisponible(rango: { inicio: string; dias: number }): void {
+        const control = this.formulario.get('fecha_inicio');
+        control?.setValue(rango.inicio);
+        control?.markAsDirty();
+    }
+
+    private parsearFechaLocal(fecha: string): Date {
+        return new Date(fecha.split('T')[0] + 'T00:00:00');
+    }
+
+    private aFechaIso(d: Date): string {
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${d.getFullYear()}-${mm}-${dd}`;
+    }
+
+    private formatearDiaCorto(d: Date): string {
+        return d.toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+
     // Genera el mensaje de sistema para el campo obs cuando hay conflictos
     private generarMensajeConflictos(): string {
-        if (this.conflictosFechas.length === 0) return '';
+        const todos = [...this.conflictosFechas, ...this.avisosGerente];
+        if (todos.length === 0) return '';
 
-        return this.conflictosFechas.map(c =>
+        return todos.map(c =>
             `System Message: Ya existe ${c.nombre} (${c.area} - ${c.puesto}) que tiene una solicitud ${c.estado} para las fechas ${c.fechaInicio} al ${c.fechaFinal}.`
         ).join(' | ');
     }
 
     // Acepta los conflictos detectados y permite continuar
     aceptarConflictos(): void {
+        if (!this.puedeAceptarConflictos) return;
         this.conflictosAceptados = true;
     }
 }

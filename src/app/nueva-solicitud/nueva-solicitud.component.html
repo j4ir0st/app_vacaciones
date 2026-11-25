@@ -148,10 +148,55 @@
                             <span class="conflicto-fechas">del {{ c.fechaInicio }} al {{ c.fechaFinal }}</span>
                         </div>
                     </div>
-                    <p class="conflictos-pregunta">¿Desea continuar con la solicitud a pesar de estos conflictos?</p>
-                    <button class="btn-aceptar-conflicto" (click)="aceptarConflictos()">
-                        Sí, continuar de todas formas
-                    </button>
+                    <ng-container *ngIf="puedeAceptarConflictos">
+                        <p class="conflictos-pregunta">¿Desea continuar con la solicitud a pesar de estos conflictos?</p>
+                        <button class="btn-aceptar-conflicto" (click)="aceptarConflictos()">
+                            Sí, continuar de todas formas
+                        </button>
+                    </ng-container>
+
+                    <!-- Área de Distribución (excepto jefes): obligatorio cambiar el rango de fechas -->
+                    <div class="disponibles-bloque" *ngIf="!puedeAceptarConflictos">
+                        <p class="conflictos-pregunta">
+                            Para el área de Distribución no se permiten solicitudes con fechas en conflicto.
+                            Seleccione otro rango de fechas.
+                        </p>
+                        <ng-container *ngIf="rangosDisponibles.length > 0; else sinDisponibles">
+                            <span class="disponibles-titulo">
+                                Fechas disponibles {{ alcanceDisponibilidad === 'semana' ? 'en esa semana' : 'en ese mes' }}:
+                            </span>
+                            <div class="disponibles-lista">
+                                <button type="button" class="chip-disponible" *ngFor="let r of rangosDisponibles"
+                                    [class.chip-completo]="r.dias >= diasCalculados"
+                                    (click)="seleccionarRangoDisponible(r)"
+                                    [title]="'Usar ' + r.inicio + ' como fecha de inicio'">
+                                    {{ r.etiqueta }}
+                                    <small>({{ r.dias }} día{{ r.dias === 1 ? '' : 's' }})</small>
+                                </button>
+                            </div>
+                            <span class="disponibles-hint">Haga clic en un rango para usarlo como fecha de inicio.</span>
+                        </ng-container>
+                        <ng-template #sinDisponibles>
+                            <span class="disponibles-titulo">No hay fechas disponibles en esa semana ni en ese mes.</span>
+                        </ng-template>
+                    </div>
+                </div>
+
+                <!-- Cruce con el Gerente de Operaciones: solo aviso, no bloquea -->
+                <div class="aviso-gerente" *ngIf="avisosGerente.length > 0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                    <div>
+                        <strong>Aviso:</strong>
+                        <span *ngFor="let c of avisosGerente; let last = last">
+                            {{ c.nombre }} ({{ c.puesto }}) tiene una solicitud {{ c.estado }}
+                            del {{ c.fechaInicio }} al {{ c.fechaFinal }}{{ last ? '.' : ';' }}
+                        </span>
+                        Puede continuar; se registrará en las observaciones.
+                    </div>
                 </div>
 
                 <!-- Conflictos aceptados (pequeño aviso) -->

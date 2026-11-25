@@ -736,6 +736,79 @@ input[readonly] {
     box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
 }
 
+/* Fechas disponibles sugeridas (área de Distribución) */
+.disponibles-bloque {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.disponibles-titulo {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #92400e;
+}
+
+.disponibles-lista {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.chip-disponible {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+    border-radius: 999px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.chip-disponible small {
+    font-weight: 400;
+    opacity: 0.8;
+}
+
+.chip-disponible:hover {
+    background: #d1fae5;
+    border-color: #6ee7b7;
+}
+
+.chip-disponible.chip-completo {
+    border-color: #10b981;
+}
+
+.disponibles-hint {
+    font-size: 0.75rem;
+    color: #a16207;
+}
+
+/* Aviso informativo de cruce con el Gerente de Operaciones */
+.aviso-gerente {
+    margin-top: 0.6rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    color: #1e40af;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.aviso-gerente svg {
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    color: #3b82f6;
+    flex-shrink: 0;
+}
+
 /* Aviso compacto cuando los conflictos fueron aceptados */
 .conflictos-aceptados {
     margin-top: 0.6rem;
