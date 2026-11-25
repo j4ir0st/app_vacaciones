@@ -13,10 +13,12 @@ export interface Usuario {
     first_name: string;
     last_name: string;
     email: string;
-    groups: string[];     // Grupos de permisos del usuario
+    codigo?: string | null; // Código interno del usuario (ej. código de vendedor)
+    groups: string[];     // Grupos de permisos del usuario (URLs de /groups/)
     area: string;         // Nombre del área (deprecated o para fallback)
     area_id?: ObjetoSerializado | null;   // Objeto con URL y Nombre del área
     puesto_id?: ObjetoSerializado | null; // Objeto con URL y Nombre del puesto
+    oficina_id?: (ObjetoSerializado & { id?: number }) | null; // Oficina (EU_Oficina) en lectura; se escribe con oficina_id_write
     empr_id: string;      // ID de la empresa (Surgicorp maneja 4 empresas)
     fecha_ingreso: string; // Fecha de ingreso para cálculo de vacaciones
     avatar: string | null; // Foto de perfil opcional

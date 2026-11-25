@@ -155,9 +155,10 @@
                         </button>
                     </ng-container>
 
-                    <!-- Área de Distribución (excepto jefes): obligatorio cambiar el rango de fechas -->
-                    <div class="disponibles-bloque" *ngIf="!puedeAceptarConflictos">
-                        <p class="conflictos-pregunta">
+                    <!-- Área de Distribución (excepto jefes): obligatorio cambiar el rango de fechas.
+                         El Gerente de Operaciones ve las sugerencias pero puede continuar. -->
+                    <div class="disponibles-bloque" *ngIf="mostrarFechasDisponibles">
+                        <p class="conflictos-pregunta" *ngIf="!puedeAceptarConflictos">
                             Para el área de Distribución no se permiten solicitudes con fechas en conflicto.
                             Seleccione otro rango de fechas.
                         </p>

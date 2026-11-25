@@ -36,7 +36,8 @@
 
     <div class="usuarios-container">
         <div class="usuarios-grid">
-            <div class="usuario-card animate-in" *ngFor="let u of usuariosFiltrados" [class.inactivo]="!u.is_active">
+            <div class="usuario-card animate-in" *ngFor="let u of usuariosFiltrados" [class.inactivo]="!u.is_active"
+                [class.editable]="esGerenteOperaciones" (click)="abrirEdicion(u)">
                 <div class="usuario-header">
                     <div class="usuario-info-principal">
                         <div class="avatar-circular">
@@ -68,7 +69,7 @@
                     </div>
                     <div class="usuario-acciones" *ngIf="esGerente">
                         <button class="btn-toggle-estado" [class.btn-activar]="!u.is_active"
-                            (click)="iniciarDesactivacion(u)">
+                            (click)="iniciarDesactivacion(u, $event)">
                             {{ u.is_active ? 'Desactivar' : 'Activar' }}
                         </button>
                     </div>
@@ -126,5 +127,22 @@
         </div>
         <app-crear-usuario (cerrar)="onUsuarioCreado()" (cancelar)="intentarCerrarModal()">
         </app-crear-usuario>
+    </div>
+</div>
+
+<!-- Modal: Editar Usuario (solo Gerente de Operaciones) -->
+<div class="modal-overlay glass-effect" *ngIf="usuarioAEditar" (click)="intentarCerrarEdicion()">
+    <div class="modal-contenido asistente-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header cabecera-modal-asistente">
+            <button class="btn-cerrar-modal" (click)="intentarCerrarEdicion()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
+        </div>
+        <app-editar-usuario [usuario]="usuarioAEditar" (guardado)="onUsuarioEditado()"
+            (cancelar)="intentarCerrarEdicion()">
+        </app-editar-usuario>
     </div>
 </div>

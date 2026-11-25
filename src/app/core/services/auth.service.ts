@@ -157,6 +157,15 @@ export class AuthService {
         return puesto.includes('gerente') || (u.groups ?? []).some(g => g.toLowerCase() === 'gerentes');
     }
 
+    // Verifica si el usuario es el Gerente de Operaciones (gerente del área Operaciones)
+    get esGerenteOperaciones(): boolean {
+        const u = this.usuarioActual;
+        if (!u) return false;
+        const area = (u.area_id?.nombre || u.area || '').toLowerCase().trim();
+        const puesto = (u.area_puesto?.puesto_nombre || u.puesto_id?.nombre || '').toLowerCase();
+        return area === 'operaciones' && puesto.includes('gerente');
+    }
+
     // Retorna la lista de nombres de áreas que el usuario tiene permiso para visualizar
     // Basado en la lógica de negocio heredada de PowerApps
     getAreasVisibles(): string[] {

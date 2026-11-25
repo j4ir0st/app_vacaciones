@@ -64,9 +64,15 @@ export class NuevaSolicitudComponent implements OnInit {
         'operaciones'
     ];
 
-    // Los colaboradores de Distribución (excepto jefes) no pueden continuar con fechas en conflicto
+    // Los colaboradores de Distribución (excepto jefes) no pueden continuar con fechas en conflicto,
+    // salvo que la solicitud la registre el Gerente de Operaciones
     get puedeAceptarConflictos(): boolean {
-        return !this.esAreaDistribucion || this.esJefeColaborador;
+        return !this.esAreaDistribucion || this.esJefeColaborador || this.authService.esGerenteOperaciones;
+    }
+
+    // Se sugieren fechas libres a Distribución mientras la regla aplique o lo registre el Gerente de Operaciones
+    get mostrarFechasDisponibles(): boolean {
+        return this.esAreaDistribucion && !this.esJefeColaborador;
     }
 
     get usuarioActual() {
@@ -723,7 +729,7 @@ export class NuevaSolicitudComponent implements OnInit {
             ? this.detectarConflictosGerente(solicitudesOperaciones, usuariosOperaciones, inicio, fin, urlSolicitante, estadosAVerificar)
             : [];
 
-        if (conflictos.length > 0 && !this.puedeAceptarConflictos) {
+        if (conflictos.length > 0 && this.mostrarFechasDisponibles) {
             this.calcularFechasDisponibles(inicio, rangosOcupados);
         }
     }

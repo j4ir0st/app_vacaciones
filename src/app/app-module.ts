@@ -26,6 +26,7 @@ import { CalendarioComponent } from './calendario/calendario.component';
 import { AprobacionesComponent } from './aprobaciones/aprobaciones.component';
 import { UsuariosComponent } from './usuarios/usuarios.component';
 import { CrearUsuarioComponent } from './usuarios/crear-usuario/crear-usuario.component';
+import { EditarUsuarioComponent } from './usuarios/editar-usuario/editar-usuario.component';
 import { ReportesComponent } from './reportes/reportes.component';
 
 // FullCalendar
@@ -46,6 +47,7 @@ import { FullCalendarModule } from '@fullcalendar/angular';
     AprobacionesComponent,
     UsuariosComponent,
     CrearUsuarioComponent,
+    EditarUsuarioComponent,
     ReportesComponent,
     NotificacionComponent,
   ],

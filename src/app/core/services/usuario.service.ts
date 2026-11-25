@@ -169,6 +169,17 @@ export class UsuarioService {
     }
 
     /**
+     * Obtiene la lista de Oficinas desde el endpoint EU_Oficina.
+     */
+    obtenerOficinas(): Observable<any[]> {
+        return this.http.get<any>(`${environment.apiUrl}/EU_Oficina/?format=json`).pipe(
+            expand((resp: any) => resp?.next ? this.http.get<any>(this.fixUrl(resp.next)) : EMPTY),
+            map((resp: any) => Array.isArray(resp) ? resp : (resp?.results || [])),
+            reduce((acc: any[], curr: any[]) => acc.concat(curr), [])
+        );
+    }
+
+    /**
      * Obtiene la lista de Empresas desde el endpoint Empresa.
      */
     obtenerEmpresas(): Observable<any[]> {
@@ -182,6 +193,24 @@ export class UsuarioService {
      */
     crearUsuarioCompleto(datos: FormData): Observable<any> {
         return this.http.post<any>(this.URL_USUARIOS, datos);
+    }
+
+    /**
+     * Actualiza parcialmente un usuario enviando multipart/form-data (permite avatar y contraseña).
+     */
+    actualizarUsuarioCompleto(url: string, datos: FormData): Observable<Usuario> {
+        return this.http.patch<Usuario>(this.fixUrl(url), datos);
+    }
+
+    /**
+     * Obtiene los grupos de permisos (auth_group) disponibles.
+     */
+    obtenerGrupos(): Observable<{ url: string; name: string }[]> {
+        return this.http.get<any>(`${environment.apiUrl}/groups/?format=json`).pipe(
+            expand((resp: any) => resp?.next ? this.http.get<any>(this.fixUrl(resp.next)) : EMPTY),
+            map((resp: any) => Array.isArray(resp) ? resp : (resp?.results || [])),
+            reduce((acc: any[], curr: any[]) => acc.concat(curr), [])
+        );
     }
 
     // ========================================

@@ -8,6 +8,7 @@ import { RefreshService } from '../core/services/refresh.service';
 import { Usuario } from '../core/models/usuario.model';
 import { environment } from '../../environments/environment';
 import { CrearUsuarioComponent } from './crear-usuario/crear-usuario.component';
+import { EditarUsuarioComponent } from './editar-usuario/editar-usuario.component';
 import { ViewChild } from '@angular/core';
 
 @Component({
@@ -26,6 +27,10 @@ export class UsuariosComponent implements OnInit {
     // Estado del modal de creación
     mostrarModalCrear = false;
     @ViewChild(CrearUsuarioComponent) compCrearUsuario?: CrearUsuarioComponent;
+
+    // Edición de usuarios (exclusivo del Gerente de Operaciones)
+    usuarioAEditar: Usuario | null = null;
+    @ViewChild(EditarUsuarioComponent) compEditarUsuario?: EditarUsuarioComponent;
 
     // Filtro de usuarios activos
     mostrarSoloActivos = true;
@@ -144,7 +149,31 @@ export class UsuariosComponent implements OnInit {
         return this.authService.esGerente;
     }
 
-    iniciarDesactivacion(usuario: Usuario): void {
+    get esGerenteOperaciones(): boolean {
+        return this.authService.esGerenteOperaciones;
+    }
+
+    abrirEdicion(usuario: Usuario): void {
+        if (!this.esGerenteOperaciones) return;
+        this.usuarioAEditar = usuario;
+    }
+
+    intentarCerrarEdicion(): void {
+        const comp = this.compEditarUsuario;
+        if (comp && comp.hayCambios && !comp.exito &&
+            !window.confirm('¿Está seguro que desea salir? Se perderán los cambios no guardados.')) {
+            return;
+        }
+        this.usuarioAEditar = null;
+    }
+
+    onUsuarioEditado(): void {
+        this.usuarioAEditar = null;
+        this.cargarDatos(true);
+    }
+
+    iniciarDesactivacion(usuario: Usuario, evento?: Event): void {
+        evento?.stopPropagation();
         if (!this.esGerente) return;
         this.usuarioADesactivar = usuario;
     }

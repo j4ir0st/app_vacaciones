@@ -1,0 +1,221 @@
+<div class="stepper-contenedor animate-in">
+    <!-- Cabecera con el usuario que se edita -->
+    <div class="editar-cabecera" *ngIf="!exito">
+        <div class="editar-avatar">
+            <img *ngIf="avatarPreview" [src]="avatarPreview" alt="Avatar" />
+            <span *ngIf="!avatarPreview">{{ obtenerIniciales() }}</span>
+        </div>
+        <div class="editar-identidad">
+            <strong>{{ usuario.first_name }} {{ usuario.last_name }}</strong>
+            <span>{{ '@' }}{{ usuario.username }}</span>
+        </div>
+    </div>
+
+    <!-- Indicador de pasos -->
+    <div class="stepper-header" *ngIf="!exito">
+        <ng-container *ngFor="let nombre of pasos; let i = index; let last = last">
+            <div class="paso-indicador" [class.paso-activo]="pasoActual >= i + 1" (click)="irAPaso(i + 1)">
+                <div class="paso-circulo">
+                    <svg *ngIf="pasoActual > i + 1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span *ngIf="pasoActual <= i + 1">{{ i + 1 }}</span>
+                </div>
+                <span class="paso-nombre">{{ nombre }}</span>
+            </div>
+            <div class="paso-linea" *ngIf="!last" [class.linea-activa]="pasoActual >= i + 2"></div>
+        </ng-container>
+    </div>
+
+    <div class="stepper-contenido" *ngIf="!exito">
+        <div class="editar-cargando" *ngIf="cargandoMaestros">
+            <div class="loader-inner"></div>
+            <span>Cargando datos...</span>
+        </div>
+
+        <form [formGroup]="formulario" *ngIf="!cargandoMaestros" autocomplete="off">
+
+            <!-- PASO 1: INFORMACIÓN PERSONAL -->
+            <div class="paso-panel" *ngIf="pasoActual === 1">
+                <h3 class="panel-titulo">Información Personal</h3>
+                <p class="panel-subt">Datos básicos del colaborador</p>
+
+                <div class="form-campo">
+                    <label>Nombre de usuario:</label>
+                    <input type="text" [value]="usuario.username" readonly class="input-locked" />
+                    <div class="valid-hint">El nombre de usuario no se puede modificar.</div>
+                </div>
+
+                <div class="form-fila grid-2">
+                    <div class="form-campo">
+                        <label>Nombre(s):</label>
+                        <input type="text" formControlName="first_name" maxlength="150" />
+                    </div>
+                    <div class="form-campo">
+                        <label>Apellidos:</label>
+                        <input type="text" formControlName="last_name" maxlength="150" />
+                    </div>
+                </div>
+
+                <div class="form-campo">
+                    <label>Correo electrónico:</label>
+                    <input type="email" formControlName="email" placeholder="usuario@surgicorperu.com" maxlength="254"
+                        [class.input-error]="formulario.get('email')?.invalid" />
+                    <div class="valid-hint error" *ngIf="formulario.get('email')?.invalid">
+                        Ingrese un correo válido o déjelo vacío.
+                    </div>
+                </div>
+
+                <div class="form-campo">
+                    <label>Código interno:</label>
+                    <input type="text" formControlName="codigo" maxlength="30" placeholder="Ej: B117 (código de vendedor)" />
+                </div>
+            </div>
+
+            <!-- PASO 2: DATOS DE EMPRESA -->
+            <div class="paso-panel" *ngIf="pasoActual === 2">
+                <h3 class="panel-titulo">Datos de Empresa</h3>
+                <p class="panel-subt">Asignación del colaborador en la organización</p>
+
+                <div class="form-fila grid-2">
+                    <div class="form-campo">
+                        <label>Área:</label>
+                        <select formControlName="area_id">
+                            <option value="" *ngIf="!tieneArea">Sin asignar</option>
+                            <option *ngFor="let a of areasDisponibles" [value]="a.url">{{ a.nombre }}</option>
+                        </select>
+                    </div>
+                    <div class="form-campo">
+                        <label>Área para aplicaciones:</label>
+                        <input type="text" formControlName="area" maxlength="30" placeholder="Ej: Distribución" />
+                    </div>
+                </div>
+
+                <div class="form-fila grid-2">
+                    <div class="form-campo">
+                        <label>Puesto:</label>
+                        <select formControlName="puesto_id">
+                            <option value="" *ngIf="!tienePuesto">Sin asignar</option>
+                            <option *ngFor="let p of puestosDisponibles" [value]="p.url">{{ p.nombre }}</option>
+                        </select>
+                    </div>
+                    <div class="form-campo">
+                        <label>Empresa:</label>
+                        <select formControlName="empr_id">
+                            <option value="" *ngIf="!tieneEmpresa">Sin asignar</option>
+                            <option *ngFor="let e of empresasDisponibles" [value]="e.empresa">{{ e.empresa }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-fila grid-2">
+                    <div class="form-campo">
+                        <label>Oficina:</label>
+                        <select formControlName="oficina_id">
+                            <option value="">Sin oficina</option>
+                            <option *ngFor="let o of oficinasDisponibles" [value]="o.url">{{ o.nombre }}</option>
+                        </select>
+                    </div>
+                    <div class="form-campo">
+                        <label>Fecha de Ingreso:</label>
+                        <input type="date" formControlName="fecha_ingreso" />
+                    </div>
+                </div>
+
+                <label class="editar-switch">
+                    <input type="checkbox" formControlName="is_active" />
+                    <span>Usuario activo</span>
+                </label>
+            </div>
+
+            <!-- PASO 3: ACCESO -->
+            <div class="paso-panel" *ngIf="pasoActual === 3">
+                <h3 class="panel-titulo">Acceso</h3>
+                <p class="panel-subt">Contraseña, permisos y foto de perfil</p>
+
+                <div class="form-fila grid-2">
+                    <div class="form-campo">
+                        <label>Nueva contraseña:</label>
+                        <input type="password" formControlName="password" placeholder="Dejar vacío para no cambiar"
+                            autocomplete="new-password"
+                            [class.input-error]="formulario.get('password')?.touched && formulario.get('password')?.invalid" />
+                        <div class="valid-hint" [class.error]="formulario.get('password')?.invalid">
+                            Mínimo 8 caracteres. Opcional.
+                        </div>
+                    </div>
+                    <div class="form-campo">
+                        <label>Confirmar contraseña:</label>
+                        <input type="password" formControlName="password_confirm" autocomplete="new-password" />
+                        <div class="valid-hint error" *ngIf="formulario.hasError('noCoincide')">
+                            Las contraseñas no coinciden.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-campo" *ngIf="gruposDisponibles.length > 0">
+                    <label>Grupos de permisos:</label>
+                    <div class="editar-grupos">
+                        <button type="button" class="chip-grupo" *ngFor="let g of gruposDisponibles"
+                            [class.chip-grupo-activo]="gruposSeleccionados.has(g.url)" (click)="alternarGrupo(g.url)">
+                            {{ g.name }}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-campo">
+                    <label>Avatar / Foto de Perfil:</label>
+                    <div class="avatar-upload-container">
+                        <div class="avatar-preview-box" (click)="fileInput.click()">
+                            <img *ngIf="avatarPreview" [src]="avatarPreview" />
+                            <div *ngIf="!avatarPreview" class="avatar-placeholder">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <path d="M12 4v16m8-8H4" />
+                                </svg>
+                                <span>Subir Foto</span>
+                            </div>
+                        </div>
+                        <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*"
+                            style="display: none;" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert-error" *ngIf="error">{{ error }}</div>
+        </form>
+    </div>
+
+    <!-- Navegación -->
+    <div class="stepper-footer" *ngIf="!exito">
+        <button type="button" class="btn-secundario" (click)="pasoActual === 1 ? cancelar.emit() : anteriorPaso()">
+            {{ pasoActual === 1 ? 'Cancelar' : 'Anterior' }}
+        </button>
+
+        <button type="button" class="btn-primario" *ngIf="pasoActual < totalPasos" (click)="siguientePaso()"
+            [disabled]="cargandoMaestros">
+            Siguiente
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+            </svg>
+        </button>
+
+        <button type="button" class="btn-exito" *ngIf="pasoActual === totalPasos" (click)="guardar()"
+            [disabled]="cargando || formulario.invalid || !hayCambios">
+            <span *ngIf="!cargando">Guardar Cambios</span>
+            <span *ngIf="cargando">Guardando...</span>
+        </button>
+    </div>
+
+    <!-- Éxito -->
+    <div class="exito-panel" *ngIf="exito">
+        <div class="exito-icono">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+        </div>
+        <h2>¡Usuario Actualizado!</h2>
+        <p>Los datos de {{ usuario.first_name }} {{ usuario.last_name }} se guardaron correctamente.</p>
+        <button class="btn-primario" (click)="finalizar()">Volver a Usuarios</button>
+    </div>
+</div>

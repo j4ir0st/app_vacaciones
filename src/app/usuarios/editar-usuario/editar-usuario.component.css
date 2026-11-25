@@ -1,0 +1,128 @@
+/* Estilos propios del editor; la base (stepper, campos, botones) viene de crear-usuario.component.css */
+
+.editar-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.editar-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #c41e3a, #9b182e);
+    color: #fff;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.editar-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.editar-identidad {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.editar-identidad strong {
+    color: #1a202c;
+    font-size: 1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.editar-identidad span {
+    color: #718096;
+    font-size: 0.8rem;
+}
+
+.paso-indicador {
+    cursor: pointer;
+}
+
+.paso-panel {
+    min-height: 0;
+}
+
+.editar-cargando {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 3rem 0;
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.editar-cargando .loader-inner {
+    position: static;
+    transform: none;
+}
+
+.editar-switch {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4a5568;
+    cursor: pointer;
+    min-height: 44px;
+}
+
+.editar-switch input {
+    width: 20px;
+    height: 20px;
+    accent-color: #c41e3a;
+}
+
+.editar-grupos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.chip-grupo {
+    min-height: 36px;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    border: 1.5px solid #e2e8f0;
+    background: #f8fafc;
+    color: #4a5568;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.chip-grupo-activo {
+    background: #fdecef;
+    border-color: #c41e3a;
+    color: #9b182e;
+}
+
+/* Mobile first: en pantallas pequeñas reducimos márgenes y apilamos las filas */
+@media (max-width: 600px) {
+    .stepper-contenedor {
+        padding: 1rem;
+    }
+
+    .form-fila.grid-2 {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .paso-nombre {
+        font-size: 0.62rem;
+    }
+}

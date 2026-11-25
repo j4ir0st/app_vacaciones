@@ -190,8 +190,8 @@ export class CrearUsuarioComponent implements OnInit {
         formData.append('empr_id', fVals.empr_id);
         formData.append('fecha_ingreso', fVals.fecha_ingreso);
 
-        // Grupo "Vacaciones" (ID 5) automático - Usamos URL absoluta probada
-        formData.append('groups', 'https://appsurgicorperu.com/groups/5/');
+        // Grupo "Vacaciones" (ID 5) automático. Ruta relativa: DRF la resuelve igual en local y en producción
+        formData.append('groups', '/groups/5/');
         formData.append('is_active', 'true');
 
         if (this.avatarSeleccionado) {
@@ -211,7 +211,9 @@ export class CrearUsuarioComponent implements OnInit {
                 this.cargando = false;
                 console.error('Error al crear usuario:', err);
                 this.error = 'Hubo un error al procesar la creación. Verifique que los datos sean correctos.';
-                if (err.error && typeof err.error === 'object') {
+                if (err.error?.detail) {
+                    this.error = err.error.detail;
+                } else if (err.error && typeof err.error === 'object') {
                     // Si el backend envía errores de validación específicos
                     const keys = Object.keys(err.error);
                     if (keys.length > 0) {
